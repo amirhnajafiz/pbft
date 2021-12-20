@@ -6,10 +6,23 @@ import (
 	"net/http"
 )
 
+type newsfeedPostRequest struct {
+	Title string `json:"title"`
+	Post  string `json:"post"`
+}
+
 func NewsFeedPost(feed *newsfeed.Repo) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, map[string]string{
-			"hello": "Found me",
-		})
+		requestBody := newsfeedPostRequest{}
+		_ = c.Bind(&requestBody)
+
+		item := newsfeed.Item{
+			Title: requestBody.Title,
+			Post:  requestBody.Post,
+		}
+
+		feed.Add(item)
+
+		c.Status(http.StatusNoContent)
 	}
 }

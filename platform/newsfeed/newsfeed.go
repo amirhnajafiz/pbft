@@ -10,7 +10,9 @@ type Repo struct {
 }
 
 func New() *Repo {
-	return &Repo{}
+	return &Repo{
+		Items: []Item{},
+	}
 }
 
 func (r *Repo) Add(item Item) {

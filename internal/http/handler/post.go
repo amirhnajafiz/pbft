@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/amirhnajafiz/news-feeder/internal/provider"
@@ -14,16 +15,21 @@ type newsfeedPostRequest struct {
 
 func NewsFeedPost(feed provider.Adder) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requestBody := newsfeedPostRequest{}
+		var requestBody newsfeedPostRequest
 
-		_ = c.Bind(&requestBody)
+		err := c.ShouldBindJSON(&requestBody)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+
+		fmt.Println(requestBody)
 
 		item := provider.Item{
 			Title: requestBody.Title,
 			Post:  requestBody.Post,
 		}
 
-		feed.Add(item)
+		feed.Add(&item)
 
 		c.Status(http.StatusNoContent)
 	}

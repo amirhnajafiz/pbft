@@ -1,11 +1,11 @@
 package provider
 
 type Getter interface {
-	GetAll() []Item
+	GetAll() []*Item
 }
 
 type Adder interface {
-	Add(item Item)
+	Add(item *Item)
 }
 
 type Item struct {
@@ -14,19 +14,19 @@ type Item struct {
 }
 
 type Repo struct {
-	Items []Item
+	Items []*Item
 }
 
 func New() *Repo {
 	return &Repo{
-		Items: []Item{},
+		Items: []*Item{},
 	}
 }
 
-func (r *Repo) Add(item Item) {
+func (r *Repo) Add(item *Item) {
 	r.Items = append(r.Items, item)
 }
 
-func (r *Repo) GetAll() []Item {
+func (r *Repo) GetAll() []*Item {
 	return r.Items
 }

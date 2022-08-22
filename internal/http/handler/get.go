@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// NewsFeedGet
+// input is an interface.
 func NewsFeedGet(feed provider.Getter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		results := feed.GetAll()

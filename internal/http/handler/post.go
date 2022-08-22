@@ -13,6 +13,8 @@ type newsfeedPostRequest struct {
 	Post  string `json:"post"`
 }
 
+// NewsFeedPost
+// input is an interface.
 func NewsFeedPost(feed provider.Adder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var requestBody newsfeedPostRequest

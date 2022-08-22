@@ -11,9 +11,59 @@ applications. The main idea is to learn **Gin**, user request body parsing and *
 our golang application.
 
 ## What do I learn from this project?
+- Golang interface
 - Gin framework
 - Unit testing
 - Docker
+
+## Golang Interface
+Interfaces are named collections of method signatures. To see an example, check the project _internal/provider/provider.go_
+to see how you can use interfaces.
+
+Read more about interfaces at [Golang Website](https://gobyexample.com/interfaces).
+
+## Gin framework
+Gin is a web framework written in Go (Golang). 
+It features a martini-like API with performance 
+that is up to 40 times faster thanks to _http-router_.
+
+Read more about **Gin** at [Gin Website](https://gin-gonic.com/).
+
+## Unit testing
+Golang provides unit testing for its applications. Any file that ends with
+_*test.go_ can be executed as a test file.
+
+
+Unit testing is an important part of writing
+principled Go programs. 
+The **testing package** provides the tools we 
+need to write unit tests and the go test 
+command runs tests.
+
+Read more about **Tests** at [Go Dev](https://go.dev/doc/tutorial/add-a-test).
+
+## Docker
+The most straightforward way to use this 
+image is to use a Go container as both the build 
+and runtime environment. 
+In your Dockerfile, writing something along 
+the lines of the following will compile and run 
+your project (assuming it uses go.mod for 
+dependency management):
+```Dockerfile
+FROM golang:1.18
+
+WORKDIR /usr/src/app
+
+# pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+COPY . .
+RUN go build -v -o /usr/local/bin/app ./...
+
+CMD ["app"]
+```
 
 ## Setup project
 After cloning the project run the following command:
@@ -77,5 +127,5 @@ curl localhost:8080/newsfeed
 
 Post news:
 ```shell
-curl -X POST -d "{'title':'me2', 'post':'me1'}" localhost:8080/newsfeed
+curl -X POST -d '{"title":"me2", "post":"me1"}' localhost:8080/newsfeed
 ```

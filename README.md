@@ -1,5 +1,5 @@
 <p align="center">
- <img src="gn.jpeg" alt="logo" />
+ <img src="assets/gn.jpeg" alt="logo" />
 </p>
 
 <h1 align="center">
@@ -39,6 +39,11 @@ principled Go programs.
 The **testing package** provides the tools we 
 need to write unit tests and the go test 
 command runs tests.
+
+You can execute tests by following command:
+```shell
+go test -v ./...
+```
 
 Read more about **Tests** at [Go Dev](https://go.dev/doc/tutorial/add-a-test).
 

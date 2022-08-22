@@ -1,3 +1,7 @@
+<p align="center">
+ <img src="gn.jpeg" alt="logo" />
+</p>
+
 <h1 align="center">
 News Feeder
 </h1>

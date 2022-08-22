@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"cmd/platform/newsfeed"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/amirhnajafiz/news-feeder/internal/provider"
+	"github.com/gin-gonic/gin"
 )
 
 type newsfeedPostRequest struct {
@@ -11,12 +12,13 @@ type newsfeedPostRequest struct {
 	Post  string `json:"post"`
 }
 
-func NewsFeedPost(feed newsfeed.Adder) gin.HandlerFunc {
+func NewsFeedPost(feed provider.Adder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestBody := newsfeedPostRequest{}
+
 		_ = c.Bind(&requestBody)
 
-		item := newsfeed.Item{
+		item := provider.Item{
 			Title: requestBody.Title,
 			Post:  requestBody.Post,
 		}

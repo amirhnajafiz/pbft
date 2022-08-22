@@ -1,16 +1,15 @@
 package main
 
 import (
-	"cmd/cmd/httpd/handler"
-	"cmd/platform/newsfeed"
+	"github.com/amirhnajafiz/news-feeder/internal/http/handler"
+	"github.com/amirhnajafiz/news-feeder/internal/provider"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	feed := newsfeed.New()
+	feed := provider.New()
 	r := gin.Default()
 
-	r.GET("/ping", handler.PingGet())
 	r.GET("/newsfeed", handler.NewsFeedGet(feed))
 	r.POST("/newsfeed", handler.NewsFeedPost(feed))
 

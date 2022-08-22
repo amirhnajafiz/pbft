@@ -1,4 +1,4 @@
-module cmd
+module github.com/amirhnajafiz/news-feeder
 
 go 1.17
 

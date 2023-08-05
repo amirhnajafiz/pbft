@@ -25,8 +25,10 @@ connection = mysql.connector.connect(
 # open a cursor
 cursor = connection.cursor()
 
-# check tables
-cursor.execute("SHOW TABLES")
+# make migration
+if config['MIGRATE']:
+    with open('database/tables.sql', 'r') as file:
+        query = file.read()
+        cursor.execute(query)
 
-for x in cursor:
-  print(x)
+    print("Migrated!")

@@ -7,5 +7,6 @@ CREATE TABLE transactions (
     Date TIMESTAMP,
     SourceBank VARCHAR(100),
     DestinationBank VARCHAR(100),
-    Type VARCHAR(50) CHECK IN ("atm", "bank", "app"),
+    Type VARCHAR(50),
+    CHECK (Type IN ("atm", "bank", "app"))
 );

@@ -1,7 +1,7 @@
 {
-    "DB_HOST": "",
+    "DB_HOST": "127.0.0.1",
     "DB_PORT": 3306,
-    "DB_USER": "",
-    "DB_PASS": "",
-    "DB_NAME": ""
+    "DB_USER": "root",
+    "DB_PASS": "Amir2222",
+    "DB_NAME": "apt"
 }

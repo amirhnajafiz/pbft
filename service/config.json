@@ -5,5 +5,5 @@
     "DB_PASS": "Amir2222",
     "DB_NAME": "fraud",
     "MIGRATE": false,
-    "BATCH": 10
+    "BATCH": 2
 }

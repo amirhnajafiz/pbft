@@ -45,10 +45,10 @@ class Data(object):
         return random.randint(20, 9999999)
 
     def date(self):
-        return random_date("1/1/2021 00:00 AM", "1/1/2022 11:59 PM", random.random())
+        return random_date("1/1/2021 1:0 AM", "1/1/2022 11:59 PM", random.random())
     
     def bank(self):
         return random.choice(self.banks)
     
     def rtype(self):
-        return random.choice(self.type)
+        return random.choice(self.types)

@@ -22,20 +22,20 @@ connection = mysql.connector.connect(
   database=config['DB_NAME']
 )
 
-# open a cursor
-cursor = connection.cursor()
-
 # make migration
 if config['MIGRATE']:
-    with open('database/tables.sql', 'r') as file:
-        query = file.read()
-        cursor.execute(query)
+  # open a cursor
+  cursor = connection.cursor()
+  with open('database/tables.sql', 'r') as file:
+      query = file.read()
+      cursor.execute(query)
 
-    print("Migrated!")
+  print("Migrated!")
+  cursor.close()
 
 
 # create provider
 from provider import Provider
 
 p = Provider(config['BATCH'])
-p.generate()
+p.generate(connection)

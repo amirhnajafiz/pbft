@@ -12,7 +12,7 @@ class Transatcion(object):
         self.date = d.date()
         self.sbank = d.bank()
         self.dbank = d.bank()
-        self.type = d.types()
+        self.rtype = d.rtype()
     
     def list(self):
         return [
@@ -23,5 +23,5 @@ class Transatcion(object):
             self.date,
             self.sbank,
             self.dbank,
-            self.type
+            self.rtype
         ]

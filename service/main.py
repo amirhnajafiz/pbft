@@ -32,3 +32,10 @@ if config['MIGRATE']:
         cursor.execute(query)
 
     print("Migrated!")
+
+
+# create provider
+from provider import Provider
+
+p = Provider(config['BATCH'])
+p.generate()

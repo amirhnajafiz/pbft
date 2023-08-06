@@ -10,7 +10,7 @@ def str_time_prop(start, end, time_format, prop):
 
     ptime = stime + prop * (etime - stime)
 
-    return time.strftime(time_format, time.localtime(ptime))
+    return ptime
 
 
 def random_date(start, end, prop):

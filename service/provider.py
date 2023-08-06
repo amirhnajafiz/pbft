@@ -12,12 +12,11 @@ class Provider(object):
     
     def generate(self, db):
         for _ in range(0, self.batch):
-            # cursor = db.cursor()
+            cursor = db.cursor()
 
-            # cursor.execute(self.query, Transatcion().list())
-            # db.commit()
+            cursor.execute(self.query, Transatcion().list())
+            db.commit()
             
-            # print(cursor.rowcount, "record inserted.")
+            print(cursor.rowcount, "record inserted.")
             
-            # cursor.close()
-            print(Transatcion().list())
+            cursor.close()

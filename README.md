@@ -10,31 +10,37 @@ give us a report on them.
 
 ## Input data
 
-Each transaction comes with a data as bellow:
+Each transaction comes with a data structure in our system database as bellow:
 
-```json
-{
-  "id": 10,
-  "reference" : 10399301901,
-  "source account": "1910391i03",
-  "dest account": "193849018029840",
-  "amount" : 100,
-  "date": "Jan 12902",
-  "source bank": "Meli",
-  "dest bank": "Some place",
-  "type": "ATM/Bank/App"
-}
+```sql
+CREATE TABLE transactions (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Reference INT UNIQUE,
+    SourceAccount VARCHAR(100),
+    DestinationAccount VARCHAR(100),
+    Amount INT,
+    CreatedAt VARCHAR(100),
+    SourceBank VARCHAR(100),
+    DestinationBank VARCHAR(100),
+    Type VARCHAR(50),
+    CHECK (Type IN ("atm", "bank", "app"))
+);
 ```
+
+Transactions have a unique reference, source and dest account and banks, the amount of money for that transaction,
+the time of transaction and finally transaction type which is from ```ATM```, ```Bank```, or ```App```.
 
 ## Output
 
-By getting a list of transactions we need to return the ones that are possibly a fraud.
+By getting a list of transactions we need to return the ones that are possibly fraud ones. We don't
+need to specify the reason, we just need to find the fraud ones in order to get checked by the system
+administrators.
 
 ```json
 [
   {
     "transactions id": 10,
-    "fruad type": "robbery/fake/etc" 
+    "fruad type": true
   }
 ]
 ```

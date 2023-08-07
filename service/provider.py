@@ -11,12 +11,19 @@ class Provider(object):
             self.query = file.read()
     
     def generate(self, db):
+        # create a batch list
+        list = []
         for _ in range(0, self.batch):
-            cursor = db.cursor()
-
-            cursor.execute(self.query, Transatcion().list())
-            db.commit()
+            list.append(Transatcion().list())
             
-            print(cursor.rowcount, "record inserted.")
-            
-            cursor.close()
+        cursor = db.cursor()
+        
+        # insert many
+        cursor.executemany(self.query, list)
+        
+        print(cursor.rowcount, "record inserted.")
+        
+        db.commit()
+        
+        cursor.close()
+        db.close()

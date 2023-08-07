@@ -15,7 +15,7 @@ class Transatcion(object):
         self.rtype = d.rtype()
     
     def list(self):
-        return [
+        return (
             self.reference,
             self.source,
             self.dest,
@@ -24,4 +24,4 @@ class Transatcion(object):
             self.sbank,
             self.dbank,
             self.rtype
-        ]
+        )

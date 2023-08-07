@@ -10,11 +10,11 @@ def str_time_prop(start, end, time_format, prop):
 
     ptime = stime + prop * (etime - stime)
 
-    return ptime
+    return time.strftime(time_format, time.localtime(ptime))
 
 
 def random_date(start, end, prop):
-    return str_time_prop(start, end, '%m/%d/%Y %I:%M %p', prop)
+    return str_time_prop(start, end, '%m/%d/%Y %I:%M:%S %p', prop)
 
 
 class Data(object):
@@ -45,7 +45,7 @@ class Data(object):
         return random.randint(20, 9999999)
 
     def date(self):
-        return random_date("1/1/2021 1:0 AM", "1/1/2022 11:59 PM", random.random())
+        return random_date("1/1/2021 1:0:0 AM", "1/1/2022 11:59:59 PM", random.random())
     
     def bank(self):
         return random.choice(self.banks)

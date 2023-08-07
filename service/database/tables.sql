@@ -4,7 +4,7 @@ CREATE TABLE transactions (
     SourceAccount VARCHAR(100),
     DestinationAccount VARCHAR(100),
     Amount INT,
-    Date TIMESTAMP,
+    CreatedAt VARCHAR(100),
     SourceBank VARCHAR(100),
     DestinationBank VARCHAR(100),
     Type VARCHAR(50),

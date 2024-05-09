@@ -1,6 +1,8 @@
 \documentclass{article}
 
 % Packages for formatting
+\usepackage{parskip}
+\usepackage{graphicx}
 \usepackage{geometry}
 \usepackage{setspace}
 \usepackage{hyperref}
@@ -44,9 +46,27 @@
 % Set margins
 \geometry{a4paper}
 
+\usepackage{etoolbox}
+
+% Redefine abstract environment to make it left-aligned
+\renewenvironment{abstract}{%
+    \small
+    \begin{flushleft}%
+        \textbf{\abstractname}%
+        \vspace{-\baselineskip}%
+        \vspace{0.25\baselineskip}%
+    \end{flushleft}%
+    \list{}{%
+        \setlength{\leftmargin}{0.25cm}%
+        \setlength{\rightmargin}{\leftmargin}%
+    }%
+    \item\relax
+}{%
+    \endlist
+}
+
 % Title
-\title{Web Scraping from Wikipedia pages}
-\author{Amirhossein Najafizadeh}
+\title{Categorize Wikipedia pages}
 \date{\today}
 
 \begin{document}
@@ -54,29 +74,44 @@
 \maketitle
 
 \begin{abstract}
-This project aims to gather information from Wikipedia pages and analyze it. Specifically, we'll use web scraping to extract data from these pages. Then, we'll employ techniques to determine what is the page talking about based on its content.
-To put it in simple words, we want to categorise our pages.
+This project aims to gather information from Wikipedia pages and analyze its content to categorize them.
+Specifically, in this project we'll use web scraping to extract data from these pages. Then, we'll employ techniques to categorize them based on their content.
 \end{abstract}
 
 \section{Introduction}
 Our project focuses on extracting and analyzing data from Wikipedia pages using web scraping techniques. Moreover, we want
-to categorise our pages based on their content. For example, take a look at \href{https://en.wikipedia.org/wiki/Helium}{this page} in Wikipedia about Helium.
-As you can see, this page explains about Helium. What we need as our objective is to scrape this page data, and say that this page can be categoriesd as
-chemistry, periodic table, and elements.
+to categorize our pages based on their content. In order to explain our purpose, we are going to use a example.
+Let's take a look at \href{https://en.wikipedia.org/wiki/Helium}{this page} in Wikipedia which is about Helium.
+As you can see, it is an article about the chemical element Helium. It talks about the history and the origin of this element. Moreover, it explains its characteristics
+and its applications. What we want as our objective is to explore all these text data and categorize this page in chemistry, periodic table, and element categories.
 
 \section{Objectives}
 Our main objectives are to:
 \begin{itemize}
-    \item Gather data from Wikipedia pages.
-    \item Use web scraping techniques to extract relevant information.
-    \item Apply information retrieval techniques to identify page category based on their content.
+    \item Gather raw data from Wikipedia pages as HTML.
+    \item Use web scraping techniques to extract relevant information and remove unused data.
+    \item Apply information retrieval techniques to identify page category based on its content.
 \end{itemize}
 
 \section{Methodology}
-We'll begin by selecting Wikipedia pages for analysis. Then, we'll employ web scraping methods to extract data from these pages. Finally, we'll use information retrieval techniques to determine the appropriate titles for the extracted content.
+In this section we are going to talk about tools and techniques that we need for this project.
+We'll begin by fetching Wikipedia pages for analysis.
+Then, we'll employ web scraping methods using Python libraries to extract data from these pages.
+Finally, we'll use information retrieval techniques to determine the appropriate categories for the extracted content.
 
-\subsection{Gathering Data}
-Since our input is a web-page address, we need to open that link. Therefore, as our first step we are going to use Python \textbf{requests} library to get a Wikipedia page as a HTML data.
+\subsection{Gathering raw data}
+Since our input is a web-page address (aka URL), we need to fetch that page data by calling its address.
+Now, we don't have to manually copy and paste data from websites but a scraper can perform that task for us in a couple of seconds.
+In Figure~\ref{fig:webpages}, you can see the process of fetching data from web pages.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./pics/web.png}
+    \caption{Gathering data from webpages}
+    \label{fig:webpages}
+\end{figure}
+
+As our first step, we are going to use Python \textbf{requests} library to get a web page data as HTML format.
 
 \begin{lstlisting}[language=Python, caption=Example of getting a page content]
 import requests

@@ -8,6 +8,7 @@
 # Latex files
 *.aux
 *.log
+*.dvi
 
 # Test binary, built with `go test -c`
 *.test

@@ -11,6 +11,36 @@
     pdfborderstyle={/S/U/W 1} % Underline without border
 }
 
+% Package for code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Define colors for syntax highlighting
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Settings for Python code
+\lstset{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
 % Set margins
 \geometry{a4paper}
 
@@ -31,31 +61,44 @@ To put it in simple words, we want to categorise our pages.
 \section{Introduction}
 Our project focuses on extracting and analyzing data from Wikipedia pages using web scraping techniques. Moreover, we want
 to categorise our pages based on their content. For example, take a look at \href{https://en.wikipedia.org/wiki/Helium}{this page} in Wikipedia about Helium.
+As you can see, this page explains about Helium. What we need as our objective is to scrape this page data, and say that this page can be categoriesd as
+chemistry, periodic table, and elements.
 
 \section{Objectives}
 Our main objectives are to:
 \begin{itemize}
     \item Gather data from Wikipedia pages.
     \item Use web scraping techniques to extract relevant information.
-    \item Apply information retrieval techniques to identify page titles based on their content.
+    \item Apply information retrieval techniques to identify page category based on their content.
 \end{itemize}
 
 \section{Methodology}
 We'll begin by selecting Wikipedia pages for analysis. Then, we'll employ web scraping methods to extract data from these pages. Finally, we'll use information retrieval techniques to determine the appropriate titles for the extracted content.
 
-\section{Timeline}
-Our project will proceed according to the following timeline:
-\begin{itemize}
-    \item Month 1: Data gathering and initial web scraping.
-    \item Month 2: Refining web scraping techniques and beginning information retrieval analysis.
-    \item Month 3: Completing information retrieval analysis and finalizing project report.
-\end{itemize}
+\subsection{Gathering Data}
+Since our input is a web-page address, we need to open that link. Therefore, as our first step we are going to use Python \textbf{requests} library to get a Wikipedia page as a HTML data.
+
+\begin{lstlisting}[language=Python, caption=Example of getting a page content]
+import requests
+
+page = requests.get("https://en.wikipedia.org/wiki/Helium")
+print(page.content)
+\end{lstlisting}
+
+In the code above, we openend a link and extracted its content as a string. Now I want you to use this example
+in order to get an input link and extract its content into a string variable. Note that if the input link is incorrent, you will get
+an error. Make sure to handle these types of errors by using page \underline{status code} field.
+
+\subsection{Scraping Page Content}
+Now we need to use Python beautiful soup library in order to parse HTML content in to a list of paragraphs.
+
+\subsection{Creating Index Table}
 
 \section{Expected Outcomes}
 We anticipate achieving the following outcomes:
 \begin{itemize}
-    \item Successful extraction of data from Wikipedia pages.
-    \item Accurate determination of page titles based on content analysis.
+    \item Successful extraction of data from Wikipedia pages using \textbf{requests} module.
+    \item Accurate determination of page titles based on content analysis using \textbf{beautiful soup}.
     \item Contribution to the understanding of web scraping and information retrieval techniques.
 \end{itemize}
 

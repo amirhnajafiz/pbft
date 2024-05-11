@@ -23,6 +23,17 @@
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 
+% Define warning environment
+\newenvironment{warning}{
+    \par\medskip
+    \noindent
+    \begin{minipage}{\linewidth}
+    \color{red}
+    \textbf{Warning:}
+}{
+    \end{minipage}\par\medskip
+}
+
 % Settings for Python code
 \lstset{
     backgroundcolor=\color{backcolour},   
@@ -112,17 +123,30 @@ In Figure~\ref{fig:webpages}, you can see the process of fetching data from web 
 \end{figure}
 
 As our first step, we are going to use Python \textbf{requests} library to get a web page data as HTML format.
+The Python \textbf{requests}  library is a powerful library for making HTTP requests in Python.
+It simplifies the process of sending HTTP requests and receiving responses, making it easy to interact with web services and APIs (application programming interface).
+
+Here's a simple example of how to make a GET request using the \textbf{requests} library:
 
 \begin{lstlisting}[language=Python, caption=Example of getting a page content]
 import requests
 
-page = requests.get("https://en.wikipedia.org/wiki/Helium")
-print(page.content)
+# fetching data from a Wikipedia page
+response = requests.get("https://en.wikipedia.org/wiki/Helium")
+
+# using response object to get the fetched details
+print(response.status_code)
+print(response.text)
+print(response.content)
 \end{lstlisting}
 
-In the code above, we openend a link and extracted its content as a string. Now I want you to use this example
-in order to get an input link and extract its content into a string variable. Note that if the input link is incorrent, you will get
-an error. Make sure to handle these types of errors by using page \underline{status code} field.
+In the code above, we openend a link and extracted its content as a string.
+Now I want you to use this example in order to get an input link and extract its content into a string variable.
+
+\begin{warning}
+Remember that if the input link is incorrent or returns an error, your Python code may crash.
+Therefore, make sure to handle these types of errors by using page \underline{status code} field and Python try/exept feature.
+\end{warning}
 
 \subsection{Scraping Page Content}
 Now we need to use Python beautiful soup library in order to parse HTML content in to a list of paragraphs.

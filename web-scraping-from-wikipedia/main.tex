@@ -159,7 +159,23 @@ Python has several libraries to scrape web pages. Let's see the web scraping lib
     \item Scrapy for Web Scraping: The BOSS of all libraries, an entire web scraping framework which is asynchronous in its usage. This makes it blazing fast and increases efficiency.
 \end{itemize}
 
-Now we need to use Python beautiful soup library in order to parse HTML content in to a list of paragraphs.
+Now we are going to use Python beautiful soup library in order to parse HTML content in to a list of paragraphs.
+
+\begin{lstlisting}[language=Python, caption=Example of using BS4 library]
+# import required modules
+from bs4 import BeautifulSoup
+
+# scrape webpage
+soup = BeautifulSoup(response.content, 'html.parser')
+ 
+# find all occurrence of p in HTML
+# includes HTML tags
+print(soup.find_all('p'))
+\end{lstlisting}
+
+The example above gets all `p` tags that are paragraphs in a HTML page. Now I want you to migrate
+this example with your previous code in order to extract all paragraphs' contents from a Wikipedia page
+and save them into a text file.
 
 \subsection{Creating Index Table}
 

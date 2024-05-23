@@ -5,13 +5,6 @@
 \usepackage{graphicx}
 \usepackage{geometry}
 \usepackage{setspace}
-\usepackage{hyperref}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    urlcolor=blue,
-    pdfborderstyle={/S/U/W 1} % Underline without border
-}
 
 % Package for code listings
 \usepackage{listings}
@@ -22,13 +15,24 @@
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{lightblue}{rgb}{0.27,0.62,1}
+\definecolor{lightred}{rgb}{1,0.34,0.43}
+\definecolor{lightyellow}{rgb}{1,0.73,0.27}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=lightblue,
+    urlcolor=lightblue,
+    pdfborderstyle={/S/U/W 1} % Underline without border
+}
 
 % Define warning environment
 \newenvironment{warning}{
     \par\medskip
     \noindent
     \begin{minipage}{\linewidth}
-    \color{red}
+    \color{lightred}
     \textbf{Warning:}
 }{
     \end{minipage}\par\medskip
@@ -38,7 +42,7 @@
     \par\medskip
     \noindent
     \begin{minipage}{\linewidth}
-    \color{codegreen}
+    \color{lightyellow}
     \textbf{Note:}
 }{
     \end{minipage}\par\medskip
@@ -87,7 +91,7 @@
 }
 
 % Title
-\title{Categorize Wikipedia pages}
+\title{Data Analysis: Categorize Wikipedia Pages}
 \date{\today}
 
 \begin{document}
@@ -96,7 +100,7 @@
 
 \begin{abstract}
 This project aims to gather information from Wikipedia pages and analyze its content to categorize them.
-Specifically, in this project we'll use web scraping to extract data from these pages. Then, we'll employ techniques to categorize them based on their content.
+Specifically, in this project we'll use web scraping to extract data from these pages. Then, we'll employ information retrieval techniques to categorize them based on their content.
 \end{abstract}
 
 \section{Introduction}
@@ -112,6 +116,17 @@ Our main objectives are to:
     \item Gather raw data from Wikipedia pages as HTML.
     \item Use web scraping techniques to extract relevant information and remove unused data.
     \item Apply information retrieval techniques to identify page category based on its content.
+\end{itemize}
+
+In the end I expect you to learn:
+\begin{itemize}
+    \item Python setup and virtual env
+    \item Installing packages using pip
+    \item Managing versions using requirements.txt
+    \item Use `requests` and `beautiful soup` libraries
+    \item Understanding the concept of web-scraping
+    \item Getting familiar with data pipelines
+    \item Have a basic knowledge of information retrieval and inverted indexing
 \end{itemize}
 
 \section{Methodology}
@@ -230,7 +245,7 @@ We anticipate achieving the following outcomes:
 
 \section{References}
 \begin{itemize}
-    \item \href{https://www.geeksforgeeks.org/inverted-index/}{geeksforgeeks.org/inverted-index}.
+    \item \href{https://www.geeksforgeeks.org/inverted-index/}{geeksforgeeks.org/inverted-index}
     \item \href{https://www.geeksforgeeks.org/web-scraping-from-wikipedia-using-python-a-complete-guide/}{geeksforgeeks.org/web-scraping}
 \end{itemize}
 

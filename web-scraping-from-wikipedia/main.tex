@@ -34,6 +34,16 @@
     \end{minipage}\par\medskip
 }
 
+\newenvironment{suggestion}{
+    \par\medskip
+    \noindent
+    \begin{minipage}{\linewidth}
+    \color{codegreen}
+    \textbf{Note:}
+}{
+    \end{minipage}\par\medskip
+}
+
 % Settings for Python code
 \lstset{
     backgroundcolor=\color{backcolour},   
@@ -178,20 +188,50 @@ this example with your previous code in order to extract all paragraphs' content
 and save them into a text file.
 
 \subsection{Creating Index Table}
+In this section we are going to analyze our contents in order to categorize our Wikipedia pages. In order to do this,
+we are using a concept in Information Retrieval called Inverted Index.
+
+An Inverted Index is a data structure used in information retrieval systems to efficiently retrieve documents or web pages
+containing a specific term or set of terms.
+In an inverted index, the index is organized by terms (words), and each term points to a list of documents or web pages that contain that term.
+
+Generally there are three steps in building an inverted index:
+\begin{enumerate}
+    \item Fetch the Document: Removing of Stop Words: Stop words are the most occurring and useless words in documents like "I", "the", "we", "is", and "an".
+    \item Stemming of Root Word: Whenever I want to search for "cat", I want to see a document that has information about it. But the word present in the document is called "cats" or "catty" instead of "cat". To relate both words, I'll chop some part of every word I read so that I could get the "root word". There are standard tools for performing this like "Porter's Stemmer".
+    \item Record Document IDs: If the word is already present add a reference of the document to index else creates a new entry. Add additional information like the frequency of the word, location of the word, etc.
+\end{enumerate}
+
+In Figure~\ref{fig:invertindex} you can see the process of creating an inverted index from one or more documents.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./pics/invert-index.png}
+    \caption{Inverted Index}
+    \label{fig:invertindex}
+\end{figure}
+
+Now I want you to read the text files from previous section, and create an inverted index for each of them. You don't need
+to merge all files; just create an inverted index for each Wikipedia page content. Finally, with an inverted index you can categorize your documents by analyzing the most words in their text. Make sure to
+suggest at least three categories for each Wikipedia page.
+
+\begin{suggestion}
+There are some most used english words like `is`, `the`, etc. which are used alot in a paragraph. These words cannot be returned
+as a page categories since they are not an entity. Search through the internet to find how you can fix this issue.
+\end{suggestion}
 
 \section{Expected Outcomes}
 We anticipate achieving the following outcomes:
 \begin{itemize}
     \item Successful extraction of data from Wikipedia pages using \textbf{requests} module.
     \item Accurate determination of page titles based on content analysis using \textbf{beautiful soup}.
-    \item Contribution to the understanding of web scraping and information retrieval techniques.
+    \item Contribution to the understanding of web scraping and information retrieval inverted index technique.
 \end{itemize}
 
-\section{Conclusion}
-In conclusion, this project aims to extract and analyze data from Wikipedia pages using web scraping and information retrieval techniques. By achieving our objectives, we hope to contribute valuable insights to the field of data analysis.
-
-% References (if applicable)
-% \bibliographystyle{plain}
-% \bibliography{references}
+\section{References}
+\begin{itemize}
+    \item \href{https://www.geeksforgeeks.org/inverted-index/}{geeksforgeeks.org/inverted-index}.
+    \item \href{https://www.geeksforgeeks.org/web-scraping-from-wikipedia-using-python-a-complete-guide/}{geeksforgeeks.org/web-scraping}
+\end{itemize}
 
 \end{document}

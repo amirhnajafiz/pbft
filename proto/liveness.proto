@@ -1,0 +1,19 @@
+syntax = "proto3";
+package liveness;
+
+option go_package = "./rpc/liveness";
+
+// this service is for node's liveness status handling.
+service Liveness {
+  rpc Ping(LivePingMessage) returns (LivePingMessage) {}
+  rpc ChangeStatus(LiveChangeStatusMessage) returns (LiveChangeStatusMessage) {}
+}
+
+// liveness messages
+message LivePingMessage {
+
+}
+
+message LiveChangeStatusMessage {
+  bool status = 1;
+}

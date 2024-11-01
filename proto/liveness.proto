@@ -9,6 +9,7 @@ option go_package = "./rpc/liveness";
 service Liveness {
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc ChangeStatus(StatusMsg) returns (google.protobuf.Empty) {}
+  rpc Flush(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 // liveness service messages

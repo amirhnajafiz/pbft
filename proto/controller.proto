@@ -1,0 +1,42 @@
+syntax = "proto3";
+package controller;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./rpc/controller";
+
+// this service is for controller calls to the system.
+service Liveness {
+  rpc Transaction(TransactionMsg) returns (google.protobuf.Empty) {}
+  rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
+  rpc PrintDB(google.protobuf.Empty) returns (stream DBRsp) {}
+  rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
+  rpc PrintView(google.protobuf.Empty) returns (ViewRsp) {}
+}
+
+// controller service messages
+message TransactionMsg {
+  string sender = 1;
+  string receiver = 2;
+  int64 amount = 3;
+}
+
+message StatusMsg {
+  int64 sequence_number = 1;
+}
+
+message LogRsp {
+
+}
+
+message DBRsp {
+
+}
+
+message StatusRsp {
+
+}
+
+message ViewRsp {
+
+}

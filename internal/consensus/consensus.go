@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/f24-cse535/pbft/internal/storage/local"
+
 	"go.uber.org/zap"
 )
 

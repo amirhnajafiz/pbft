@@ -3,7 +3,9 @@ package client
 import (
 	"context"
 
+	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.uber.org/zap"
 )
@@ -101,4 +103,129 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) {
 	if _, err := pbft.NewPBFTClient(conn).Request(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call request RPC", zap.String("address", address), zap.Error(err))
 	}
+}
+
+// PrintDB gets a target datastore.
+func (c *Client) PrintDB(target string) []*pbft.TransactionMsg {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return nil
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+
+		return nil
+	}
+
+	// server is ok
+	return nil
+}
+
+// Ping is used to send a ping request to a server. If the server is available, it returns true.
+func (c *Client) PrintLog(target string) bool {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+
+	// server is ok
+	return true
+}
+
+// Ping is used to send a ping request to a server. If the server is available, it returns true.
+func (c *Client) PrintStatus(target string) bool {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+
+	// server is ok
+	return true
+}
+
+// Ping is used to send a ping request to a server. If the server is available, it returns true.
+func (c *Client) PrintView(target string) bool {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+
+	// server is ok
+	return true
+}
+
+// Ping is used to send a ping request to a server. If the server is available, it returns true.
+func (c *Client) Transaction(target string) bool {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+	defer conn.Close()
+
+	// call ping RPC
+	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+
+		return false
+	}
+
+	// server is ok
+	return true
 }

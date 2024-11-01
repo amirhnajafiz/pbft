@@ -6,7 +6,6 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc/services"
-	"github.com/f24-cse535/pbft/pkg/rpc/controller"
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -44,10 +43,6 @@ func (b *Bootstrap) ListenAnsServer() error {
 	pbft.RegisterPBFTServer(server, &services.PBFT{
 		Consensus: b.Consensus,
 		Logger:    b.Logger.Named("pbft"),
-	})
-	controller.RegisterControllerServer(server, &services.Controller{
-		Consensus: b.Consensus,
-		Logger:    b.Logger.Named("controller"),
 	})
 
 	// starting the server

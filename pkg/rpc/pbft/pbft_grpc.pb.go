@@ -20,11 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PBFT_Request_FullMethodName    = "/apaxos.PBFT/Request"
-	PBFT_PrePrepare_FullMethodName = "/apaxos.PBFT/PrePrepare"
-	PBFT_Prepare_FullMethodName    = "/apaxos.PBFT/Prepare"
-	PBFT_Commit_FullMethodName     = "/apaxos.PBFT/Commit"
-	PBFT_Reply_FullMethodName      = "/apaxos.PBFT/Reply"
+	PBFT_Request_FullMethodName     = "/apaxos.PBFT/Request"
+	PBFT_PrePrepare_FullMethodName  = "/apaxos.PBFT/PrePrepare"
+	PBFT_Prepare_FullMethodName     = "/apaxos.PBFT/Prepare"
+	PBFT_Commit_FullMethodName      = "/apaxos.PBFT/Commit"
+	PBFT_Reply_FullMethodName       = "/apaxos.PBFT/Reply"
+	PBFT_Transaction_FullMethodName = "/apaxos.PBFT/Transaction"
+	PBFT_PrintLog_FullMethodName    = "/apaxos.PBFT/PrintLog"
+	PBFT_PrintDB_FullMethodName     = "/apaxos.PBFT/PrintDB"
+	PBFT_PrintStatus_FullMethodName = "/apaxos.PBFT/PrintStatus"
+	PBFT_PrintView_FullMethodName   = "/apaxos.PBFT/PrintView"
 )
 
 // PBFTClient is the client API for PBFT service.
@@ -39,6 +44,11 @@ type PBFTClient interface {
 	Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
+	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
+	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DBRsp], error)
+	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
+	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error)
 }
 
 type pBFTClient struct {
@@ -99,6 +109,74 @@ func (c *pBFTClient) Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallO
 	return out, nil
 }
 
+func (c *pBFTClient) Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TransactionRsp)
+	err := c.cc.Invoke(ctx, PBFT_Transaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[0], PBFT_PrintLog_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, LogRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintLogClient = grpc.ServerStreamingClient[LogRsp]
+
+func (c *pBFTClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DBRsp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[1], PBFT_PrintDB_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, DBRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintDBClient = grpc.ServerStreamingClient[DBRsp]
+
+func (c *pBFTClient) PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusRsp)
+	err := c.cc.Invoke(ctx, PBFT_PrintStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ViewRsp)
+	err := c.cc.Invoke(ctx, PBFT_PrintView_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PBFTServer is the server API for PBFT service.
 // All implementations must embed UnimplementedPBFTServer
 // for forward compatibility.
@@ -111,6 +189,11 @@ type PBFTServer interface {
 	Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
 	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
+	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
+	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
+	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[DBRsp]) error
+	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
+	PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error)
 	mustEmbedUnimplementedPBFTServer()
 }
 
@@ -135,6 +218,21 @@ func (UnimplementedPBFTServer) Commit(context.Context, *CommitMsg) (*emptypb.Emp
 }
 func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Reply not implemented")
+}
+func (UnimplementedPBFTServer) Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Transaction not implemented")
+}
+func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
+}
+func (UnimplementedPBFTServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[DBRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintDB not implemented")
+}
+func (UnimplementedPBFTServer) PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrintStatus not implemented")
+}
+func (UnimplementedPBFTServer) PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrintView not implemented")
 }
 func (UnimplementedPBFTServer) mustEmbedUnimplementedPBFTServer() {}
 func (UnimplementedPBFTServer) testEmbeddedByValue()              {}
@@ -247,6 +345,82 @@ func _PBFT_Reply_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PBFT_Transaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransactionMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Transaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Transaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Transaction(ctx, req.(*TransactionMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PBFTServer).PrintLog(m, &grpc.GenericServerStream[emptypb.Empty, LogRsp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintLogServer = grpc.ServerStreamingServer[LogRsp]
+
+func _PBFT_PrintDB_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PBFTServer).PrintDB(m, &grpc.GenericServerStream[emptypb.Empty, DBRsp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintDBServer = grpc.ServerStreamingServer[DBRsp]
+
+func _PBFT_PrintStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).PrintStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_PrintStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).PrintStatus(ctx, req.(*StatusMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_PrintView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).PrintView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_PrintView_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).PrintView(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PBFT_ServiceDesc is the grpc.ServiceDesc for PBFT service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,7 +448,30 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Reply",
 			Handler:    _PBFT_Reply_Handler,
 		},
+		{
+			MethodName: "Transaction",
+			Handler:    _PBFT_Transaction_Handler,
+		},
+		{
+			MethodName: "PrintStatus",
+			Handler:    _PBFT_PrintStatus_Handler,
+		},
+		{
+			MethodName: "PrintView",
+			Handler:    _PBFT_PrintView_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "PrintLog",
+			Handler:       _PBFT_PrintLog_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PrintDB",
+			Handler:       _PBFT_PrintDB_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "pbft.proto",
 }

@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
+	"io"
+	"time"
 
-	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -106,7 +107,85 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) {
 }
 
 // PrintDB gets a target datastore.
-func (c *Client) PrintDB(target string) []*pbft.TransactionMsg {
+func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
+	address := c.nodes[target]
+	list := make([]*pbft.RequestMsg, 0)
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return list
+	}
+	defer conn.Close()
+
+	// open a stream on print db rpc
+	stream, err := pbft.NewPBFTClient(conn).PrintDB(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call PrintDB RPC", zap.String("address", address), zap.Error(err))
+
+		return list
+	}
+
+	for {
+		// get requests one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				stream.CloseSend()
+				break
+			}
+		}
+
+		// append to the list of requests
+		list = append(list, in)
+	}
+
+	return list
+}
+
+// PrintLog gets a target logs.
+func (c *Client) PrintLog(target string) []*pbft.RequestMsg {
+	address := c.nodes[target]
+	list := make([]*pbft.RequestMsg, 0)
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+
+		return list
+	}
+	defer conn.Close()
+
+	// open a stream on print log rpc
+	stream, err := pbft.NewPBFTClient(conn).PrintLog(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call PrintLog RPC", zap.String("address", address), zap.Error(err))
+
+		return list
+	}
+
+	for {
+		// get requests one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				stream.CloseSend()
+				break
+			}
+		}
+
+		// append to the list of requests
+		list = append(list, in)
+	}
+
+	return list
+}
+
+// PrintStatus gets a target and a sequence number to get an specific request status.
+func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 	address := c.nodes[target]
 
 	// base connection
@@ -114,118 +193,66 @@ func (c *Client) PrintDB(target string) []*pbft.TransactionMsg {
 	if err != nil {
 		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
 
-		return nil
+		return err.Error()
 	}
 	defer conn.Close()
 
-	// call ping RPC
-	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	// call print status RPC
+	resp, err := pbft.NewPBFTClient(conn).PrintStatus(context.Background(), &pbft.StatusMsg{
+		SequenceNumber: int64(sequenceNumber),
+	})
 	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call print status RPC", zap.String("address", address), zap.Error(err))
 
-		return nil
+		return err.Error()
 	}
 
-	// server is ok
-	return nil
+	// convert status enum to string
+	switch resp.GetStatus() {
+	case pbft.RequestStatus_REQUEST_STATUS_PP:
+		return "preprepared"
+	case pbft.RequestStatus_REQUEST_STATUS_P:
+		return "prepared"
+	case pbft.RequestStatus_REQUEST_STATUS_C:
+		return "committed"
+	case pbft.RequestStatus_REQUEST_STATUS_E:
+		return "executed"
+	default:
+		return "no status"
+	}
 }
 
-// Ping is used to send a ping request to a server. If the server is available, it returns true.
-func (c *Client) PrintLog(target string) bool {
-	address := c.nodes[target]
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-	defer conn.Close()
-
-	// call ping RPC
-	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-
-	// server is ok
-	return true
-}
-
-// Ping is used to send a ping request to a server. If the server is available, it returns true.
-func (c *Client) PrintStatus(target string) bool {
-	address := c.nodes[target]
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-	defer conn.Close()
-
-	// call ping RPC
-	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-
-	// server is ok
-	return true
-}
-
-// Ping is used to send a ping request to a server. If the server is available, it returns true.
+// TODO: print view
 func (c *Client) PrintView(target string) bool {
-	address := c.nodes[target]
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-	defer conn.Close()
-
-	// call ping RPC
-	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
-
-		return false
-	}
-
-	// server is ok
-	return true
+	return false
 }
 
-// Ping is used to send a ping request to a server. If the server is available, it returns true.
-func (c *Client) Transaction(target string) bool {
-	address := c.nodes[target]
+// Transaction sends a transaction to one client.
+func (c *Client) Transaction(sender, reseiver string, amount int) string {
+	address := c.clients[sender]
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
 		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
 
-		return false
+		return err.Error()
 	}
 	defer conn.Close()
 
-	// call ping RPC
-	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
+	// call transaction RPC
+	resp, err := pbft.NewPBFTClient(conn).Transaction(context.Background(), &pbft.TransactionMsg{
+		Sender:    sender,
+		Reciever:  reseiver,
+		Amount:    int64(amount),
+		Timestamp: time.Now().Unix(),
+	})
 	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call transaction RPC", zap.String("address", address), zap.Error(err))
 
-		return false
+		return err.Error()
 	}
 
-	// server is ok
-	return true
+	// extract and return message
+	return resp.GetText()
 }

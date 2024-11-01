@@ -4,13 +4,15 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Ping is used to send a ping request to a server. If the server is available, it returns true.
-func (c *Client) Ping(address string) bool {
+func (c *Client) Ping(target string) bool {
+	address := c.nodes[target]
+
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
@@ -20,7 +22,7 @@ func (c *Client) Ping(address string) bool {
 	}
 	defer conn.Close()
 
-	// call RPC of ping
+	// call ping RPC
 	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
@@ -33,8 +35,9 @@ func (c *Client) Ping(address string) bool {
 }
 
 // ChangeState is used to modify the state of a gRPC server.
-// if the state is true, then the server is alive, else the server will be blocked.
-func (c *Client) ChangeState(address string, state, byzantine bool) {
+func (c *Client) ChangeState(target string, state, byzantine bool) {
+	address := c.nodes[target]
+
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
@@ -42,7 +45,7 @@ func (c *Client) ChangeState(address string, state, byzantine bool) {
 	}
 	defer conn.Close()
 
-	// call RPC of change status
+	// call change status RPC
 	_, err = liveness.NewLivenessClient(conn).ChangeStatus(context.Background(), &liveness.StatusMsg{
 		Status:    state,
 		Byzantine: byzantine,

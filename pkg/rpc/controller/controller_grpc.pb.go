@@ -20,47 +20,47 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Liveness_Transaction_FullMethodName = "/controller.Liveness/Transaction"
-	Liveness_PrintLog_FullMethodName    = "/controller.Liveness/PrintLog"
-	Liveness_PrintDB_FullMethodName     = "/controller.Liveness/PrintDB"
-	Liveness_PrintStatus_FullMethodName = "/controller.Liveness/PrintStatus"
-	Liveness_PrintView_FullMethodName   = "/controller.Liveness/PrintView"
+	Controller_Transaction_FullMethodName = "/controller.Controller/Transaction"
+	Controller_PrintLog_FullMethodName    = "/controller.Controller/PrintLog"
+	Controller_PrintDB_FullMethodName     = "/controller.Controller/PrintDB"
+	Controller_PrintStatus_FullMethodName = "/controller.Controller/PrintStatus"
+	Controller_PrintView_FullMethodName   = "/controller.Controller/PrintView"
 )
 
-// LivenessClient is the client API for Liveness service.
+// ControllerClient is the client API for Controller service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // this service is for controller calls to the system.
-type LivenessClient interface {
-	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+type ControllerClient interface {
+	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DBRsp], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
 	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error)
 }
 
-type livenessClient struct {
+type controllerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewLivenessClient(cc grpc.ClientConnInterface) LivenessClient {
-	return &livenessClient{cc}
+func NewControllerClient(cc grpc.ClientConnInterface) ControllerClient {
+	return &controllerClient{cc}
 }
 
-func (c *livenessClient) Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *controllerClient) Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Liveness_Transaction_FullMethodName, in, out, cOpts...)
+	out := new(TransactionRsp)
+	err := c.cc.Invoke(ctx, Controller_Transaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *livenessClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
+func (c *controllerClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Liveness_ServiceDesc.Streams[0], Liveness_PrintLog_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Controller_ServiceDesc.Streams[0], Controller_PrintLog_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +75,11 @@ func (c *livenessClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts .
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Liveness_PrintLogClient = grpc.ServerStreamingClient[LogRsp]
+type Controller_PrintLogClient = grpc.ServerStreamingClient[LogRsp]
 
-func (c *livenessClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DBRsp], error) {
+func (c *controllerClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DBRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Liveness_ServiceDesc.Streams[1], Liveness_PrintDB_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Controller_ServiceDesc.Streams[1], Controller_PrintDB_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,190 +94,190 @@ func (c *livenessClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ..
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Liveness_PrintDBClient = grpc.ServerStreamingClient[DBRsp]
+type Controller_PrintDBClient = grpc.ServerStreamingClient[DBRsp]
 
-func (c *livenessClient) PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error) {
+func (c *controllerClient) PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StatusRsp)
-	err := c.cc.Invoke(ctx, Liveness_PrintStatus_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Controller_PrintStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *livenessClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error) {
+func (c *controllerClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ViewRsp)
-	err := c.cc.Invoke(ctx, Liveness_PrintView_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Controller_PrintView_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// LivenessServer is the server API for Liveness service.
-// All implementations must embed UnimplementedLivenessServer
+// ControllerServer is the server API for Controller service.
+// All implementations must embed UnimplementedControllerServer
 // for forward compatibility.
 //
 // this service is for controller calls to the system.
-type LivenessServer interface {
-	Transaction(context.Context, *TransactionMsg) (*emptypb.Empty, error)
+type ControllerServer interface {
+	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[DBRsp]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
 	PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error)
-	mustEmbedUnimplementedLivenessServer()
+	mustEmbedUnimplementedControllerServer()
 }
 
-// UnimplementedLivenessServer must be embedded to have
+// UnimplementedControllerServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedLivenessServer struct{}
+type UnimplementedControllerServer struct{}
 
-func (UnimplementedLivenessServer) Transaction(context.Context, *TransactionMsg) (*emptypb.Empty, error) {
+func (UnimplementedControllerServer) Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transaction not implemented")
 }
-func (UnimplementedLivenessServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
+func (UnimplementedControllerServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
 }
-func (UnimplementedLivenessServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[DBRsp]) error {
+func (UnimplementedControllerServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[DBRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintDB not implemented")
 }
-func (UnimplementedLivenessServer) PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error) {
+func (UnimplementedControllerServer) PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintStatus not implemented")
 }
-func (UnimplementedLivenessServer) PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error) {
+func (UnimplementedControllerServer) PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintView not implemented")
 }
-func (UnimplementedLivenessServer) mustEmbedUnimplementedLivenessServer() {}
-func (UnimplementedLivenessServer) testEmbeddedByValue()                  {}
+func (UnimplementedControllerServer) mustEmbedUnimplementedControllerServer() {}
+func (UnimplementedControllerServer) testEmbeddedByValue()                    {}
 
-// UnsafeLivenessServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to LivenessServer will
+// UnsafeControllerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ControllerServer will
 // result in compilation errors.
-type UnsafeLivenessServer interface {
-	mustEmbedUnimplementedLivenessServer()
+type UnsafeControllerServer interface {
+	mustEmbedUnimplementedControllerServer()
 }
 
-func RegisterLivenessServer(s grpc.ServiceRegistrar, srv LivenessServer) {
-	// If the following call pancis, it indicates UnimplementedLivenessServer was
+func RegisterControllerServer(s grpc.ServiceRegistrar, srv ControllerServer) {
+	// If the following call pancis, it indicates UnimplementedControllerServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&Liveness_ServiceDesc, srv)
+	s.RegisterService(&Controller_ServiceDesc, srv)
 }
 
-func _Liveness_Transaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Controller_Transaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TransactionMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LivenessServer).Transaction(ctx, in)
+		return srv.(ControllerServer).Transaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Liveness_Transaction_FullMethodName,
+		FullMethod: Controller_Transaction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LivenessServer).Transaction(ctx, req.(*TransactionMsg))
+		return srv.(ControllerServer).Transaction(ctx, req.(*TransactionMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Liveness_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Controller_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(LivenessServer).PrintLog(m, &grpc.GenericServerStream[emptypb.Empty, LogRsp]{ServerStream: stream})
+	return srv.(ControllerServer).PrintLog(m, &grpc.GenericServerStream[emptypb.Empty, LogRsp]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Liveness_PrintLogServer = grpc.ServerStreamingServer[LogRsp]
+type Controller_PrintLogServer = grpc.ServerStreamingServer[LogRsp]
 
-func _Liveness_PrintDB_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Controller_PrintDB_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(LivenessServer).PrintDB(m, &grpc.GenericServerStream[emptypb.Empty, DBRsp]{ServerStream: stream})
+	return srv.(ControllerServer).PrintDB(m, &grpc.GenericServerStream[emptypb.Empty, DBRsp]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Liveness_PrintDBServer = grpc.ServerStreamingServer[DBRsp]
+type Controller_PrintDBServer = grpc.ServerStreamingServer[DBRsp]
 
-func _Liveness_PrintStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Controller_PrintStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LivenessServer).PrintStatus(ctx, in)
+		return srv.(ControllerServer).PrintStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Liveness_PrintStatus_FullMethodName,
+		FullMethod: Controller_PrintStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LivenessServer).PrintStatus(ctx, req.(*StatusMsg))
+		return srv.(ControllerServer).PrintStatus(ctx, req.(*StatusMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Liveness_PrintView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Controller_PrintView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LivenessServer).PrintView(ctx, in)
+		return srv.(ControllerServer).PrintView(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Liveness_PrintView_FullMethodName,
+		FullMethod: Controller_PrintView_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LivenessServer).PrintView(ctx, req.(*emptypb.Empty))
+		return srv.(ControllerServer).PrintView(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Liveness_ServiceDesc is the grpc.ServiceDesc for Liveness service.
+// Controller_ServiceDesc is the grpc.ServiceDesc for Controller service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Liveness_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "controller.Liveness",
-	HandlerType: (*LivenessServer)(nil),
+var Controller_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "controller.Controller",
+	HandlerType: (*ControllerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Transaction",
-			Handler:    _Liveness_Transaction_Handler,
+			Handler:    _Controller_Transaction_Handler,
 		},
 		{
 			MethodName: "PrintStatus",
-			Handler:    _Liveness_PrintStatus_Handler,
+			Handler:    _Controller_PrintStatus_Handler,
 		},
 		{
 			MethodName: "PrintView",
-			Handler:    _Liveness_PrintView_Handler,
+			Handler:    _Controller_PrintView_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "PrintLog",
-			Handler:       _Liveness_PrintLog_Handler,
+			Handler:       _Controller_PrintLog_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "PrintDB",
-			Handler:       _Liveness_PrintDB_Handler,
+			Handler:       _Controller_PrintDB_Handler,
 			ServerStreams: true,
 		},
 	},

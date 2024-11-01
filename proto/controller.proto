@@ -6,8 +6,8 @@ import "google/protobuf/empty.proto";
 option go_package = "./rpc/controller";
 
 // this service is for controller calls to the system.
-service Liveness {
-  rpc Transaction(TransactionMsg) returns (google.protobuf.Empty) {}
+service Controller {
+  rpc Transaction(TransactionMsg) returns (TransactionRsp) {}
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream DBRsp) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
@@ -38,5 +38,9 @@ message StatusRsp {
 }
 
 message ViewRsp {
+
+}
+
+message TransactionRsp {
 
 }

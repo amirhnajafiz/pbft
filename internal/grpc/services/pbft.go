@@ -18,22 +18,22 @@ type PBFT struct {
 	Logger    *zap.Logger
 }
 
-func (p *PBFT) Commit(context.Context, *pbft.CommitMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
-func (p *PBFT) PrePrepare(context.Context, *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
+func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
-func (p *PBFT) Prepare(context.Context, *pbft.PrepareMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
-func (p *PBFT) Reply(context.Context, *pbft.ReplyMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
-func (p *PBFT) Request(context.Context, *pbft.RequestMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }

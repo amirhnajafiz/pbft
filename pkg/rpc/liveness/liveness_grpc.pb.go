@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Liveness_Ping_FullMethodName         = "/liveness.Liveness/Ping"
 	Liveness_ChangeStatus_FullMethodName = "/liveness.Liveness/ChangeStatus"
+	Liveness_Flush_FullMethodName        = "/liveness.Liveness/Flush"
 )
 
 // LivenessClient is the client API for Liveness service.
@@ -32,6 +33,7 @@ const (
 type LivenessClient interface {
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ChangeStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Flush(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type livenessClient struct {
@@ -62,6 +64,16 @@ func (c *livenessClient) ChangeStatus(ctx context.Context, in *StatusMsg, opts .
 	return out, nil
 }
 
+func (c *livenessClient) Flush(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Liveness_Flush_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LivenessServer is the server API for Liveness service.
 // All implementations must embed UnimplementedLivenessServer
 // for forward compatibility.
@@ -70,6 +82,7 @@ func (c *livenessClient) ChangeStatus(ctx context.Context, in *StatusMsg, opts .
 type LivenessServer interface {
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	ChangeStatus(context.Context, *StatusMsg) (*emptypb.Empty, error)
+	Flush(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLivenessServer()
 }
 
@@ -85,6 +98,9 @@ func (UnimplementedLivenessServer) Ping(context.Context, *emptypb.Empty) (*empty
 }
 func (UnimplementedLivenessServer) ChangeStatus(context.Context, *StatusMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeStatus not implemented")
+}
+func (UnimplementedLivenessServer) Flush(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Flush not implemented")
 }
 func (UnimplementedLivenessServer) mustEmbedUnimplementedLivenessServer() {}
 func (UnimplementedLivenessServer) testEmbeddedByValue()                  {}
@@ -143,6 +159,24 @@ func _Liveness_ChangeStatus_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Liveness_Flush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LivenessServer).Flush(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Liveness_Flush_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LivenessServer).Flush(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Liveness_ServiceDesc is the grpc.ServiceDesc for Liveness service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -157,6 +191,10 @@ var Liveness_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ChangeStatus",
 			Handler:    _Liveness_ChangeStatus_Handler,
+		},
+		{
+			MethodName: "Flush",
+			Handler:    _Liveness_Flush_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

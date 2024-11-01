@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/f24-cse535/pbft/internal/config/controller"
 	"github.com/f24-cse535/pbft/internal/config/node"
+	"github.com/f24-cse535/pbft/internal/config/node/bft"
 )
 
 // Default return default configuration.
@@ -16,6 +17,11 @@ func Default() Config {
 			Port:     80,
 			NodeId:   "unique",
 			LogLevel: "debug",
+			BFT: bft.Config{
+				Total:     0,
+				Majority:  0,
+				Responses: 0,
+			},
 		},
 		IPTable: IPTable{
 			Nodes:   make([]Pair, 0),

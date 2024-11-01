@@ -10,7 +10,7 @@ func Default() Config {
 	return Config{
 		LogLevel: "debug",
 		Controller: controller.Config{
-			CSV: "testcase.csv",
+			CSV: "tests/case.csv",
 		},
 		Node: node.Config{
 			Port:     80,

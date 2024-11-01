@@ -1,0 +1,6 @@
+# exported files
+main
+main~
+
+# build files
+vendor/

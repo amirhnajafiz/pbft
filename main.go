@@ -6,7 +6,7 @@ import (
 
 	"github.com/f24-cse535/pbft/cmd"
 	"github.com/f24-cse535/pbft/internal/config"
-	"github.com/f24-cse535/pbft/internal/monitoring/logger"
+	"github.com/f24-cse535/pbft/pkg/logger"
 
 	"go.uber.org/zap"
 )
@@ -20,12 +20,12 @@ const (
 func main() {
 	// get argument variables
 	argv := os.Args
-	if len(argv) < 3 {
-		panic("you did not provide enough arguments to run! (./main <command> <configpath>)")
+	if len(argv) < 2 {
+		panic("you did not provide enough arguments to run! (./main <command>)")
 	}
 
 	// load configs into a config struct
-	cfg := config.New(argv[2])
+	cfg := config.New(argv[1])
 
 	// create a new zap logger instance
 	logr := logger.NewLogger(cfg.LogLevel)
@@ -33,8 +33,7 @@ func main() {
 	// create cmd instances and pass needed parameters
 	commands := map[string]cmd.CMD{
 		ControllerCmdName: cmd.Controller{
-			Cfg:    cfg,
-			Logger: logr.Named("controller"),
+			Cfg: cfg,
 		},
 		NodeCmdName: cmd.Node{
 			Cfg:    cfg,

@@ -7,13 +7,25 @@
 package pbft
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
+
+const (
+	PBFT_Request_FullMethodName    = "/apaxos.PBFT/Request"
+	PBFT_PrePrepare_FullMethodName = "/apaxos.PBFT/PrePrepare"
+	PBFT_Prepare_FullMethodName    = "/apaxos.PBFT/Prepare"
+	PBFT_Commit_FullMethodName     = "/apaxos.PBFT/Commit"
+	PBFT_Reply_FullMethodName      = "/apaxos.PBFT/Reply"
+)
 
 // PBFTClient is the client API for PBFT service.
 //
@@ -22,6 +34,11 @@ const _ = grpc.SupportPackageIsVersion9
 // creating rpc services for transactions and pbft.
 // this service is for handling internal node calls for performing pbft.
 type PBFTClient interface {
+	Request(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PrePrepare(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type pBFTClient struct {
@@ -32,6 +49,56 @@ func NewPBFTClient(cc grpc.ClientConnInterface) PBFTClient {
 	return &pBFTClient{cc}
 }
 
+func (c *pBFTClient) Request(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_Request_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) PrePrepare(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_PrePrepare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_Prepare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_Commit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_Reply_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PBFTServer is the server API for PBFT service.
 // All implementations must embed UnimplementedPBFTServer
 // for forward compatibility.
@@ -39,6 +106,11 @@ func NewPBFTClient(cc grpc.ClientConnInterface) PBFTClient {
 // creating rpc services for transactions and pbft.
 // this service is for handling internal node calls for performing pbft.
 type PBFTServer interface {
+	Request(context.Context, *RequestMsg) (*emptypb.Empty, error)
+	PrePrepare(context.Context, *PrePrepareMsg) (*emptypb.Empty, error)
+	Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error)
+	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
+	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPBFTServer()
 }
 
@@ -49,6 +121,21 @@ type PBFTServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPBFTServer struct{}
 
+func (UnimplementedPBFTServer) Request(context.Context, *RequestMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Request not implemented")
+}
+func (UnimplementedPBFTServer) PrePrepare(context.Context, *PrePrepareMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrePrepare not implemented")
+}
+func (UnimplementedPBFTServer) Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Prepare not implemented")
+}
+func (UnimplementedPBFTServer) Commit(context.Context, *CommitMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
+}
+func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Reply not implemented")
+}
 func (UnimplementedPBFTServer) mustEmbedUnimplementedPBFTServer() {}
 func (UnimplementedPBFTServer) testEmbeddedByValue()              {}
 
@@ -70,13 +157,124 @@ func RegisterPBFTServer(s grpc.ServiceRegistrar, srv PBFTServer) {
 	s.RegisterService(&PBFT_ServiceDesc, srv)
 }
 
+func _PBFT_Request_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Request(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Request_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Request(ctx, req.(*RequestMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_PrePrepare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrePrepareMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).PrePrepare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_PrePrepare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).PrePrepare(ctx, req.(*PrePrepareMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_Prepare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Prepare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Prepare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Prepare(ctx, req.(*PrepareMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_Commit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Commit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Commit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Commit(ctx, req.(*CommitMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PBFT_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplyMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Reply(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Reply_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Reply(ctx, req.(*ReplyMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PBFT_ServiceDesc is the grpc.ServiceDesc for PBFT service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PBFT_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "apaxos.PBFT",
 	HandlerType: (*PBFTServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "pbft.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Request",
+			Handler:    _PBFT_Request_Handler,
+		},
+		{
+			MethodName: "PrePrepare",
+			Handler:    _PBFT_PrePrepare_Handler,
+		},
+		{
+			MethodName: "Prepare",
+			Handler:    _PBFT_Prepare_Handler,
+		},
+		{
+			MethodName: "Commit",
+			Handler:    _PBFT_Commit_Handler,
+		},
+		{
+			MethodName: "Reply",
+			Handler:    _PBFT_Reply_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "pbft.proto",
 }

@@ -8,7 +8,7 @@ option go_package = "./rpc/pbft";
 // creating rpc services for transactions and pbft.
 // this service is for handling internal node calls for performing pbft.
 service PBFT {
-  rpc Request(ReplyMsg) returns (google.protobuf.Empty) {}
+  rpc Request(RequestMsg) returns (google.protobuf.Empty) {}
   rpc PrePrepare(PrePrepareMsg) returns (google.protobuf.Empty) {}
   rpc Prepare(PrepareMsg) returns (google.protobuf.Empty) {}
   rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
@@ -16,7 +16,6 @@ service PBFT {
 }
 
 // defining messages that are used in PBFT service
-
 message Transaction {
   string sender = 1;
   string reciever = 2;

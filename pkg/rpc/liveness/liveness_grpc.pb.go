@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -29,8 +30,8 @@ const (
 //
 // this service is for node's liveness status handling.
 type LivenessClient interface {
-	Ping(ctx context.Context, in *LivePingMessage, opts ...grpc.CallOption) (*LivePingMessage, error)
-	ChangeStatus(ctx context.Context, in *LiveChangeStatusMessage, opts ...grpc.CallOption) (*LiveChangeStatusMessage, error)
+	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ChangeStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type livenessClient struct {
@@ -41,9 +42,9 @@ func NewLivenessClient(cc grpc.ClientConnInterface) LivenessClient {
 	return &livenessClient{cc}
 }
 
-func (c *livenessClient) Ping(ctx context.Context, in *LivePingMessage, opts ...grpc.CallOption) (*LivePingMessage, error) {
+func (c *livenessClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LivePingMessage)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Liveness_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,9 +52,9 @@ func (c *livenessClient) Ping(ctx context.Context, in *LivePingMessage, opts ...
 	return out, nil
 }
 
-func (c *livenessClient) ChangeStatus(ctx context.Context, in *LiveChangeStatusMessage, opts ...grpc.CallOption) (*LiveChangeStatusMessage, error) {
+func (c *livenessClient) ChangeStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LiveChangeStatusMessage)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Liveness_ChangeStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -67,8 +68,8 @@ func (c *livenessClient) ChangeStatus(ctx context.Context, in *LiveChangeStatusM
 //
 // this service is for node's liveness status handling.
 type LivenessServer interface {
-	Ping(context.Context, *LivePingMessage) (*LivePingMessage, error)
-	ChangeStatus(context.Context, *LiveChangeStatusMessage) (*LiveChangeStatusMessage, error)
+	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	ChangeStatus(context.Context, *StatusMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLivenessServer()
 }
 
@@ -79,10 +80,10 @@ type LivenessServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLivenessServer struct{}
 
-func (UnimplementedLivenessServer) Ping(context.Context, *LivePingMessage) (*LivePingMessage, error) {
+func (UnimplementedLivenessServer) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedLivenessServer) ChangeStatus(context.Context, *LiveChangeStatusMessage) (*LiveChangeStatusMessage, error) {
+func (UnimplementedLivenessServer) ChangeStatus(context.Context, *StatusMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeStatus not implemented")
 }
 func (UnimplementedLivenessServer) mustEmbedUnimplementedLivenessServer() {}
@@ -107,7 +108,7 @@ func RegisterLivenessServer(s grpc.ServiceRegistrar, srv LivenessServer) {
 }
 
 func _Liveness_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LivePingMessage)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -119,13 +120,13 @@ func _Liveness_Ping_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: Liveness_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LivenessServer).Ping(ctx, req.(*LivePingMessage))
+		return srv.(LivenessServer).Ping(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Liveness_ChangeStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LiveChangeStatusMessage)
+	in := new(StatusMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func _Liveness_ChangeStatus_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: Liveness_ChangeStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LivenessServer).ChangeStatus(ctx, req.(*LiveChangeStatusMessage))
+		return srv.(LivenessServer).ChangeStatus(ctx, req.(*StatusMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }

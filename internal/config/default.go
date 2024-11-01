@@ -13,7 +13,9 @@ func Default() Config {
 			CSV: "testcase.csv",
 		},
 		Node: node.Config{
-			NodeId: "unique",
+			Port:     80,
+			NodeId:   "unique",
+			LogLevel: "debug",
 		},
 	}
 }

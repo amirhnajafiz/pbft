@@ -19,7 +19,7 @@ func (b *Bootstrap) allStreamInterceptor(
 	handler grpc.StreamHandler,
 ) error {
 	// log the method being called
-	b.Logger.Info("stream rpc called", zap.String("method", info.FullMethod))
+	b.Logger.Info("stream RPC called", zap.String("method", info.FullMethod))
 
 	// proceed to the actual handler
 	return handler(srv, ss)
@@ -34,13 +34,13 @@ func (b *Bootstrap) allUnaryInterceptor(
 ) (interface{}, error) {
 	// if status is true, allow all services to proceed
 	if b.Consensus.Memory.GetStatus() {
-		b.Logger.Info("rpc called", zap.String("method", info.FullMethod))
+		b.Logger.Info("RPC called", zap.String("method", info.FullMethod))
 		return handler(ctx, req)
 	}
 
 	// if status is false, only allow services in the liveness package
 	if len(info.FullMethod) > len(livenessServicePrefix) && info.FullMethod[:len(livenessServicePrefix)] == livenessServicePrefix {
-		b.Logger.Info("rpc called", zap.String("method", info.FullMethod))
+		b.Logger.Info("RPC called", zap.String("method", info.FullMethod))
 		return handler(ctx, req) // allow liveness service to proceed
 	}
 

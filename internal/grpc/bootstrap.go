@@ -28,7 +28,7 @@ func (b *Bootstrap) ListenAnsServer() error {
 	// on the local network, listen to a port
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", b.Port))
 	if err != nil {
-		return fmt.Errorf("failed to start the listener server: %v", err)
+		return fmt.Errorf("failed to start the core listener server: %v", err)
 	}
 
 	// create a new grpc instance
@@ -49,9 +49,9 @@ func (b *Bootstrap) ListenAnsServer() error {
 	})
 
 	// starting the server
-	b.Logger.Info("grpc server started", zap.Int("port", b.Port))
+	b.Logger.Info("gRPC server started", zap.Int("port", b.Port))
 	if err := server.Serve(listener); err != nil {
-		return fmt.Errorf("failed to start the server: %v", err)
+		return fmt.Errorf("failed to start servers: %v", err)
 	}
 
 	return nil

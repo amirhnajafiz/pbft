@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
-	"github.com/f24-cse535/pbft/internal/monitoring/metrics"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
@@ -17,7 +16,6 @@ type PBFT struct {
 
 	Consensus *consensus.Consensus
 	Logger    *zap.Logger
-	Metrics   *metrics.Metrics
 }
 
 func (p *PBFT) Commit(context.Context, *pbft.CommitMsg) (*emptypb.Empty, error) {

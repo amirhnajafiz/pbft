@@ -6,7 +6,6 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc/services"
-	"github.com/f24-cse535/pbft/internal/monitoring/metrics"
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -20,7 +19,6 @@ type Bootstrap struct {
 
 	Consensus *consensus.Consensus // consensus module is the core module
 	Logger    *zap.Logger          // logger is needed for tracing
-	Metrics   *metrics.Metrics     // metrics is needed for monitoring
 }
 
 // ListenAnsServer creates a new gRPC instance with all services.
@@ -45,7 +43,6 @@ func (b *Bootstrap) ListenAnsServer() error {
 	pbft.RegisterPBFTServer(server, &services.PBFT{
 		Consensus: b.Consensus,
 		Logger:    b.Logger.Named("pbft"),
-		Metrics:   b.Metrics,
 	})
 
 	// starting the server

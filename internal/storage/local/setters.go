@@ -4,3 +4,8 @@ package local
 func (m *Memory) SetStatus(in bool) {
 	m.status = in
 }
+
+// SetByzantine sets the byzantine behaviour.
+func (m *Memory) SetByzantine(in bool) {
+	m.byzantine = in
+}

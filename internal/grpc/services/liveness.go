@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // liveness server handles the running state of the gRPC server.
@@ -19,17 +20,18 @@ type Liveness struct {
 }
 
 // Ping RPC is used to check if a server is alive and can process or not.
-func (l *Liveness) Ping(ctx context.Context, input *liveness.LivePingMessage) (*liveness.LivePingMessage, error) {
+func (l *Liveness) Ping(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if !l.Consensus.Memory.GetStatus() {
 		return nil, status.Error(13, "service is not responding")
 	}
 
-	return &liveness.LivePingMessage{}, nil
+	return &emptypb.Empty{}, nil
 }
 
-// ChangeStatus is used to update the liveness of the gRPC server.
-func (l *Liveness) ChangeStatus(ctx context.Context, input *liveness.LiveChangeStatusMessage) (*liveness.LiveChangeStatusMessage, error) {
+// ChangeStatus is used to update the liveness fields of the gRPC server.
+func (l *Liveness) ChangeStatus(ctx context.Context, input *liveness.StatusMsg) (*emptypb.Empty, error) {
 	l.Consensus.Memory.SetStatus(input.GetStatus())
+	l.Consensus.Memory.SetByzantine(input.GetByzantine())
 
-	return &liveness.LiveChangeStatusMessage{Status: l.Consensus.Memory.GetStatus()}, nil
+	return &emptypb.Empty{}, nil
 }

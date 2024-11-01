@@ -24,6 +24,7 @@ type Config struct {
 	LogLevel   string            `koanf:"log_level"`  // node logging level (debug, info, warn, error, panic, fatal)
 	Controller controller.Config `koanf:"controller"` // controller app configs
 	Node       node.Config       `koanf:"node"`       // node app configs
+	IPTable    IPTable           `koanf:"iptable"`    // system IP addresses
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.

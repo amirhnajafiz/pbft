@@ -17,5 +17,9 @@ func Default() Config {
 			NodeId:   "unique",
 			LogLevel: "debug",
 		},
+		IPTable: IPTable{
+			Nodes:   make([]Pair, 0),
+			Clients: make([]Pair, 0),
+		},
 	}
 }

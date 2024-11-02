@@ -8,9 +8,9 @@ import (
 
 // waitForPrePrepareds takes interrupts from the handler channel and waits
 // until it gets 2f+1 matching preprepared messages.
-func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) {
+func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 	// create a list of messages
-	messages := make(map[string][]*pbft.PrePreparedMsg)
+	messages := make(map[string]int)
 
 	for {
 		// get raw interrupts
@@ -21,19 +21,18 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) {
 			continue
 		}
 
-		// extract the payload
-		payload := intr.Payload.(*pbft.PrePreparedMsg)
-		if _, ok := messages[payload.GetDigest()]; !ok { // build an array of map
-			messages[payload.GetDigest()] = make([]*pbft.PrePreparedMsg, 0)
+		// extract the digest to count the messages
+		digest := intr.Payload.(*pbft.PrePreparedMsg).GetDigest()
+		if _, ok := messages[digest]; !ok {
+			messages[digest] = 1
+		} else {
+			messages[digest]++
 		}
 
-		// append the payload
-		messages[payload.GetDigest()] = append(messages[payload.GetDigest()], payload)
-
-		// check for 2f+1 messages
+		// check for having 2f+1 match messages
 		for _, value := range messages {
-			if len(value) >= c.BFTCfg.Responses {
-				return
+			if value >= c.BFTCfg.Responses {
+				return value
 			}
 		}
 	}

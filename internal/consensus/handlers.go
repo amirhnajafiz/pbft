@@ -49,9 +49,25 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PrePreparedMsg)
 
+	// get the message from our logs
+	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	if message == nil {
+		c.Logger.Info(
+			"message not found",
+			zap.Int("sequence number", int(msg.GetSequenceNumber())),
+		)
+		return
+	}
+
+	// set the digest message
+	msg.Digest = hashing.MD5(message.Request)
+
 	// validate the message
 	if !c.validatePrePreparedMsg(msg) {
-		c.Logger.Info("preprepared message is not valid")
+		c.Logger.Info(
+			"preprepared message is not valid",
+			zap.Int("sequence number", int(msg.GetSequenceNumber())),
+		)
 		return
 	}
 
@@ -117,7 +133,9 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		})
 
 		// wait for 2f+1 preprepared messages
-		c.waitForPrePrepareds(c.channels[sequence])
+		count := c.waitForPrePrepareds(c.channels[sequence])
+
+		c.Logger.Info("received preprepared messages", zap.Int("messages", count))
 
 		// broadcast to all using prepare
 		// wait for 2f+1

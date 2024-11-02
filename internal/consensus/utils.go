@@ -29,18 +29,9 @@ func (c *Consensus) validatePrePreparedMsg(msg *pbft.PrePreparedMsg) bool {
 		return false
 	}
 
-	// get the message from logs
-	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
-	if message == nil {
+	if msg.GetDigest() != hashing.MD5(msg.GetRequest()) { // not the same digest
 		return false
 	}
-
-	digest := hashing.MD5(message.Request)
-	if digest != hashing.MD5(msg.GetRequest()) { // not the same digest
-		return false
-	}
-
-	msg.Digest = digest
 
 	return true
 }

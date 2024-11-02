@@ -4,7 +4,9 @@ import (
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc"
+	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
+	"github.com/f24-cse535/pbft/internal/storage/logs"
 
 	"go.uber.org/zap"
 )
@@ -19,9 +21,22 @@ func (n Node) Main() error {
 	// create a local storage (aka memory)
 	mem := local.NewMemory()
 
+	// create a datalog instance
+	datalog := logs.NewLogs()
+
+	// create a new client.go
+	cli := client.NewClient(
+		n.Logger.Named("client.go"),
+		n.Cfg.Node.NodeId,
+		n.Cfg.IPTable.GetNodes(),
+		n.Cfg.IPTable.GetClients(),
+	)
+
 	// create a new consensus module
 	instance := consensus.Consensus{
+		Client: cli,
 		Memory: mem,
+		Logs:   datalog,
 		Logger: n.Logger.Named("consensus"),
 	}
 

@@ -17,8 +17,8 @@ func (i IPTable) GetNodes() map[string]string {
 	return hashMap
 }
 
-// GetCleints returns a map of clients and their IP addresses.
-func (i IPTable) GetCleints() map[string]string {
+// GetClients returns a map of clients and their IP addresses.
+func (i IPTable) GetClients() map[string]string {
 	hashMap := make(map[string]string)
 
 	for _, pair := range i.Clients {

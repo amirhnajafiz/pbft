@@ -70,6 +70,18 @@ func (p *PBFT) PrintView(ctx context.Context, msg *emptypb.Empty) (*pbft.ViewRsp
 	return nil, nil
 }
 
+// Transaction RPC calls signal and wait on consensus and waits for a response.
 func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft.TransactionRsp, error) {
-	return nil, nil
+	resp := pbft.TransactionRsp{}
+
+	// call signal and wait
+	ch := p.Consensus.SignalAndWait(msg)
+	if ch != nil { // if the channel is returned, wait for response
+		text := <-ch
+		resp.Text = text.(string)
+	} else { // the channel is not returned, it means it is in progress
+		resp.Text = "server is busy with processing another transaction"
+	}
+
+	return &resp, nil
 }

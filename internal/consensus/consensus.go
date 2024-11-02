@@ -24,6 +24,27 @@ func (c *Consensus) Signal(target enums.ChannelType, pkt interface{}) {
 	c.channels[target] <- pkt
 }
 
+// SignalAndWait is used inside clients nodes to start a transaction.
+func (c *Consensus) SignalAndWait(pkt interface{}) chan interface{} {
+	// if the client is busy, it will return nil
+	if c.channels[enums.ChTransactions] != nil {
+		return nil
+	}
+
+	// create transactions channel
+	c.channels[enums.ChTransactions] = make(chan interface{})
+
+	// create out communication channels
+	out := make(chan interface{})
+
+	// start a transaction handler
+	go c.handleTransaction(out)
+	c.channels[enums.ChTransactions] <- pkt
+
+	// return the out channel for user
+	return out
+}
+
 // Start will initialize all channels and all handlers.
 func (c *Consensus) Start() {
 	// loop over all channels and create them

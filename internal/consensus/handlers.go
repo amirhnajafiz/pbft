@@ -33,3 +33,14 @@ func (c *Consensus) handleReply() {
 		<-c.channels[enums.ChReplys]
 	}
 }
+
+func (c *Consensus) handleTransaction(_ chan interface{}) {
+	defer func() {
+		// reset the channel
+		c.channels[enums.ChTransactions] = nil
+	}()
+
+	for {
+		<-c.channels[enums.ChTransactions]
+	}
+}

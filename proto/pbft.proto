@@ -14,7 +14,6 @@ service PBFT {
   rpc Prepare(PrepareMsg) returns (google.protobuf.Empty) {}
   rpc Prepared(PreparedMsg) returns (google.protobuf.Empty) {}
   rpc Commit(CommitMsg) returns (google.protobuf.Empty) {}
-  rpc Committed(CommittedMsg) returns (google.protobuf.Empty) {}
   rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
   
   rpc Transaction(TransactionMsg) returns (TransactionRsp) {}
@@ -80,13 +79,6 @@ message PreparedMsg {
 }
 
 message CommitMsg {
-  int64 sequence_number = 1;
-  int64 view = 2;
-  string digest = 3;
-  string node_id = 4;
-}
-
-message CommittedMsg {
   int64 sequence_number = 1;
   int64 view = 2;
   string digest = 3;

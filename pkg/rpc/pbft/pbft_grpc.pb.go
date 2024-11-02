@@ -26,7 +26,6 @@ const (
 	PBFT_Prepare_FullMethodName     = "/apaxos.PBFT/Prepare"
 	PBFT_Prepared_FullMethodName    = "/apaxos.PBFT/Prepared"
 	PBFT_Commit_FullMethodName      = "/apaxos.PBFT/Commit"
-	PBFT_Committed_FullMethodName   = "/apaxos.PBFT/Committed"
 	PBFT_Reply_FullMethodName       = "/apaxos.PBFT/Reply"
 	PBFT_Transaction_FullMethodName = "/apaxos.PBFT/Transaction"
 	PBFT_PrintLog_FullMethodName    = "/apaxos.PBFT/PrintLog"
@@ -48,7 +47,6 @@ type PBFTClient interface {
 	Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Prepared(ctx context.Context, in *PreparedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Committed(ctx context.Context, in *CommittedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
@@ -119,16 +117,6 @@ func (c *pBFTClient) Commit(ctx context.Context, in *CommitMsg, opts ...grpc.Cal
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_Commit_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pBFTClient) Committed(ctx context.Context, in *CommittedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, PBFT_Committed_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +214,6 @@ type PBFTServer interface {
 	Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error)
 	Prepared(context.Context, *PreparedMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
-	Committed(context.Context, *CommittedMsg) (*emptypb.Empty, error)
 	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
 	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
@@ -260,9 +247,6 @@ func (UnimplementedPBFTServer) Prepared(context.Context, *PreparedMsg) (*emptypb
 }
 func (UnimplementedPBFTServer) Commit(context.Context, *CommitMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
-}
-func (UnimplementedPBFTServer) Committed(context.Context, *CommittedMsg) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Committed not implemented")
 }
 func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Reply not implemented")
@@ -411,24 +395,6 @@ func _PBFT_Commit_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PBFT_Committed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CommittedMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PBFTServer).Committed(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PBFT_Committed_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Committed(ctx, req.(*CommittedMsg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _PBFT_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReplyMsg)
 	if err := dec(in); err != nil {
@@ -553,10 +519,6 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Commit",
 			Handler:    _PBFT_Commit_Handler,
-		},
-		{
-			MethodName: "Committed",
-			Handler:    _PBFT_Committed_Handler,
 		},
 		{
 			MethodName: "Reply",

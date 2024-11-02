@@ -30,25 +30,6 @@ func (c *Client) Commit(target string, msg *pbft.CommitMsg) {
 	}
 }
 
-// Committed calls the Committed RPC on the target machine (nodes to nodes).
-func (c *Client) Committed(target string, msg *pbft.CommittedMsg) {
-	address := c.nodes[target]
-	msg.NodeId = c.nodeId
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
-	}
-	defer conn.Close()
-
-	// call committed RPC
-	if _, err := pbft.NewPBFTClient(conn).Committed(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Committed RPC", zap.String("address", address), zap.Error(err))
-	}
-}
-
 // PrePrepare calls the PrePrepare RPC on the target machine (nodes to nodes).
 func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 	address := c.nodes[target]

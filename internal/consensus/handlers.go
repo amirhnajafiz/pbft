@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+
 	"go.uber.org/zap"
 )
 

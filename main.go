@@ -33,7 +33,8 @@ func main() {
 	// create cmd instances and pass needed parameters
 	commands := map[string]cmd.CMD{
 		ControllerCmdName: cmd.Controller{
-			Cfg: cfg,
+			Cfg:    cfg,
+			Logger: logr.Named("controller"),
 		},
 		NodeCmdName: cmd.Node{
 			Cfg:    cfg,

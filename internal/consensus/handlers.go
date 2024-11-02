@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+	"go.uber.org/zap"
 )
 
 func (c *Consensus) handleCommit(pkt interface{}) {
@@ -65,8 +66,27 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 		c.inTransactionChannel = nil
 	}()
 
+	// parse the input message
+	msg := pkt.(*pbft.TransactionMsg)
+
 	// get the current leader
-	// send request
+	id := c.GetCurrentLeader()
+
+	c.Logger.Debug("current leader", zap.String("id", id))
+
+	// send the transaction request to the leader
+	c.Client.Request(id, &pbft.RequestMsg{
+		Transaction: msg,
+	})
+
+	c.Logger.Info(
+		"request is send",
+		zap.Int("timestamp", int(msg.GetTimestamp())),
+		zap.String("sender", msg.GetSender()),
+		zap.String("receiver", msg.GetReciever()),
+		zap.Int64("amount", msg.GetAmount()),
+	)
+
 	// wait for f+1 matching reply or timeout request (+ timer)
 	// on the timeout, reset yourself
 	// on the f+1 reply, send over channel

@@ -17,6 +17,7 @@ func Default() Config {
 			Port:     80,
 			NodeId:   "unique",
 			LogLevel: "debug",
+			IsClient: false,
 			BFT: bft.Config{
 				Total:     0,
 				Majority:  0,

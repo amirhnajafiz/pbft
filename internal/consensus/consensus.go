@@ -46,16 +46,25 @@ func (c *Consensus) SignalAndWait(pkt interface{}) chan interface{} {
 }
 
 // Start will initialize all channels and all handlers.
-func (c *Consensus) Start() {
-	// loop over all channels and create them
-	for _, ct := range enums.ListChannelTypes() {
-		c.channels[ct] = make(chan interface{})
-	}
+func (c *Consensus) Start(isClient bool) {
+	if !isClient {
+		// loop over all channels and create them
+		for _, ct := range enums.ListNodeChannels() {
+			c.channels[ct] = make(chan interface{})
+		}
 
-	// start all handlers in go-routines
-	go c.handleCommit()
-	go c.handlePrePrepare()
-	go c.handlePrepare()
-	go c.handleRequest()
-	go c.handleReply()
+		// start all handlers in go-routines
+		go c.handleCommit()
+		go c.handlePrePrepare()
+		go c.handlePrepare()
+		go c.handleRequest()
+	} else {
+		// loop over all channels and create them
+		for _, ct := range enums.ListClientChannels() {
+			c.channels[ct] = make(chan interface{})
+		}
+
+		// start all handlers in go-routines
+		go c.handleReply()
+	}
 }

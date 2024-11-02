@@ -39,7 +39,7 @@ func (n Node) Main() error {
 		Logs:   datalog,
 		Logger: n.Logger.Named("consensus"),
 	}
-	instance.Start()
+	instance.Start(n.Cfg.Node.IsClient)
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{

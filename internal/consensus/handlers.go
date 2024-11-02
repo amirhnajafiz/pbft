@@ -40,7 +40,14 @@ func (c *Consensus) handleRequest() {
 	// broadcast to all using commit
 	// execute message if possible
 	for {
-		<-c.channels[enums.ChRequests]
+		select {
+		case <-c.channels[enums.ChRequests]:
+			return
+		case <-c.channels[enums.ChPrePrepareds]:
+			return
+		case <-c.channels[enums.ChPrepareds]:
+			return
+		}
 	}
 }
 

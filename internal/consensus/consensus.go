@@ -4,7 +4,8 @@ import (
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
-	"github.com/f24-cse535/pbft/pkg/enums"
+	"github.com/f24-cse535/pbft/pkg/enum"
+	"github.com/f24-cse535/pbft/pkg/models"
 
 	"go.uber.org/zap"
 )
@@ -16,55 +17,57 @@ type Consensus struct {
 	Memory *local.Memory  // memory is needed to update the node state
 	Logger *zap.Logger    // logger is needed for tracing
 
-	channels map[enums.ChannelType]chan interface{}
+	interrupts     chan *models.InterruptMsg // interrupts is an internal channel for dispatching gRPC level packets
+	interruptTable map[enum.Interrupt]func(interface{})
 }
 
-// Signal sends a packet from gRPC level to handlers.
-func (c *Consensus) Signal(target enums.ChannelType, pkt interface{}) {
-	c.channels[target] <- pkt
+// Signal sends a packet from gRPC level to handlers without waiting for a response.
+func (c *Consensus) Signal(target enum.Interrupt, pkt interface{}) {
+	c.interrupts <- &models.InterruptMsg{
+		Type:    target,
+		Payload: pkt,
+	}
 }
 
-// SignalAndWait is used inside clients nodes to start a transaction.
-func (c *Consensus) SignalAndWait(pkt interface{}) chan interface{} {
-	// if the client is busy, it will return nil
-	if c.channels[enums.ChTransactions] != nil {
-		return nil
+// SignalAndWait sends a packet from gRPC level to handlers and sends a channel to get the response.
+func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan interface{} {
+	// the main two signal and wait procedures are request and transaction
+	if target == enum.IntrTransaction {
+		// todo: call the proper transaction handler and return the channel
+	} else if target == enum.IntrRequest {
+		// todo: call the proper request handler but no need to return the channel
 	}
 
-	// create transactions channel
-	c.channels[enums.ChTransactions] = make(chan interface{})
-
-	// create out communication channels
-	out := make(chan interface{})
-
-	// start a transaction handler
-	go c.handleTransaction(out)
-	c.channels[enums.ChTransactions] <- pkt
-
-	// return the out channel for user
-	return out
+	return nil
 }
 
-// Start will initialize all channels and all handlers.
-func (c *Consensus) Start(isClient bool) {
-	if !isClient {
-		// loop over all channels and create them
-		for _, ct := range enums.ListNodeChannels() {
-			c.channels[ct] = make(chan interface{})
-		}
+// Start consensus captures all gRPC level interrupts and dispatchs them to handlers.
+func (c *Consensus) Start() {
+	// create the interrupts channel
+	c.interrupts = make(chan *models.InterruptMsg)
 
-		// start all handlers in go-routines
-		go c.handleCommit()
-		go c.handlePrePrepare()
-		go c.handlePrepare()
-		go c.handleRequest()
-	} else {
-		// loop over all channels and create them
-		for _, ct := range enums.ListClientChannels() {
-			c.channels[ct] = make(chan interface{})
-		}
-
-		// start all handlers in go-routines
-		go c.handleReply()
+	// create a map of interrupts and handlers (interrupt table)
+	c.interruptTable = map[enum.Interrupt]func(interface{}){
+		enum.IntrCommit:      c.handleCommit,
+		enum.IntrPrePrepare:  c.handlePrePrepare,
+		enum.IntrPrePrepared: c.handlePrePrepared,
+		enum.IntrPrepare:     c.handlePrepare,
+		enum.IntrPrepared:    c.handlePrepared,
+		enum.IntrReply:       c.handleReply,
+		enum.IntrRequest:     c.handleRequest,
+		enum.IntrTransaction: c.handleTransaction,
 	}
+
+	// consensus loop
+	go func() {
+		for {
+			intr := <-c.interrupts // capture interrupts
+
+			// call the proper interrupt handler
+			c.interruptTable[intr.Type](intr.Payload)
+
+			// note: in this table, we expect to not get request and transaction interrupts
+			// cause they need a signal and wait procedure.
+		}
+	}()
 }

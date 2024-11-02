@@ -25,7 +25,7 @@ func (c *Client) Ping(target string) bool {
 	// call ping RPC
 	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		c.logger.Debug("failed to call ping RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Ping RPC", zap.String("address", address), zap.Error(err))
 
 		return false
 	}
@@ -52,6 +52,26 @@ func (c *Client) ChangeState(target string, state, byzantine bool) {
 	})
 	if err != nil {
 		c.logger.Debug("failed to call ChangeState RPC", zap.String("address", address), zap.Error(err))
+
+		return
+	}
+}
+
+// Flush calls the Flush RPC on a target node.
+func (c *Client) Flush(target string) {
+	address := c.nodes[target]
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+	}
+	defer conn.Close()
+
+	// call flush RPC
+	_, err = liveness.NewLivenessClient(conn).Flush(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		c.logger.Debug("failed to call Flush RPC", zap.String("address", address), zap.Error(err))
 
 		return
 	}

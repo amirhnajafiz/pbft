@@ -26,7 +26,7 @@ func (c *Client) Commit(target string, msg *pbft.CommitMsg) {
 
 	// call commit RPC
 	if _, err := pbft.NewPBFTClient(conn).Commit(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call commit RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Commit RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 
@@ -45,7 +45,7 @@ func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 
 	// call preprepare RPC
 	if _, err := pbft.NewPBFTClient(conn).PrePrepare(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call preprepare RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Preprepare RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 
@@ -64,7 +64,7 @@ func (c *Client) Prepare(target string, msg *pbft.PrepareMsg) {
 
 	// call prepare RPC
 	if _, err := pbft.NewPBFTClient(conn).Prepare(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call prepare RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Prepare RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 
@@ -83,7 +83,7 @@ func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
 
 	// call reply RPC
 	if _, err := pbft.NewPBFTClient(conn).Reply(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call reply RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Reply RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 
@@ -102,7 +102,7 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) {
 
 	// call request RPC
 	if _, err := pbft.NewPBFTClient(conn).Request(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call request RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Request RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 
@@ -202,7 +202,7 @@ func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 		SequenceNumber: int64(sequenceNumber),
 	})
 	if err != nil {
-		c.logger.Debug("failed to call print status RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call PrintStatus RPC", zap.String("address", address), zap.Error(err))
 
 		return err.Error()
 	}
@@ -248,7 +248,7 @@ func (c *Client) Transaction(sender, reseiver string, amount int) string {
 		Timestamp: time.Now().Unix(),
 	})
 	if err != nil {
-		c.logger.Debug("failed to call transaction RPC", zap.String("address", address), zap.Error(err))
+		c.logger.Debug("failed to call Transaction RPC", zap.String("address", address), zap.Error(err))
 
 		return err.Error()
 	}

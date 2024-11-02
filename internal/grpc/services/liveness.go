@@ -35,3 +35,11 @@ func (l *Liveness) ChangeStatus(ctx context.Context, input *liveness.StatusMsg) 
 
 	return &emptypb.Empty{}, nil
 }
+
+// Flush is used to remove everything from the node's memory.
+func (l *Liveness) Flush(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	l.Consensus.Memory.Reset()
+	l.Consensus.Logs.Reset()
+
+	return &emptypb.Empty{}, nil
+}

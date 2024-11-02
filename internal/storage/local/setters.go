@@ -9,3 +9,9 @@ func (m *Memory) SetStatus(in bool) {
 func (m *Memory) SetByzantine(in bool) {
 	m.byzantine = in
 }
+
+// Reset turns the values back to initial state.
+func (m *Memory) Reset() {
+	m.status = true
+	m.byzantine = false
+}

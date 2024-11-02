@@ -9,3 +9,8 @@ func (m *Memory) GetStatus() bool {
 func (m *Memory) GetByzantine() bool {
 	return m.byzantine
 }
+
+// GetNodeId returns the node id.
+func (m *Memory) GetNodeId() string {
+	return m.nodeId
+}

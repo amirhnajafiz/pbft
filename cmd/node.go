@@ -19,7 +19,7 @@ type Node struct {
 
 func (n Node) Main() error {
 	// create a local storage (aka memory)
-	mem := local.NewMemory()
+	mem := local.NewMemory(n.Cfg.Node.NodeId)
 
 	// create a datalog instance
 	datalog := logs.NewLogs()

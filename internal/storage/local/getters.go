@@ -19,3 +19,8 @@ func (m *Memory) GetNodeId() string {
 func (m *Memory) GetView() int {
 	return m.view
 }
+
+// GetNodeByIndex returns the node name by index.
+func (m *Memory) GetNodeByIndex(index int) string {
+	return m.nodes[index]
+}

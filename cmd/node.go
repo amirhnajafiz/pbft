@@ -19,7 +19,9 @@ type Node struct {
 
 func (n Node) Main() error {
 	// create a local storage (aka memory)
-	mem := local.NewMemory(n.Cfg.Node.NodeId)
+	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total)
+	mem.SetBalances(n.Cfg.IPTable.GetClientsMeta())
+	mem.SetNodes(n.Cfg.IPTable.GetNodesMeta())
 
 	// create a datalog instance
 	datalog := logs.NewLogs()

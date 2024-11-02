@@ -1,0 +1,18 @@
+# log level can be (debug, info, warn, error, panic, fatal)
+log_level: "debug"
+
+# iptable maps all clients and nodes to their ip and metadata
+iptable:
+  nodes:
+  - key: "S1"
+    value: "127.0.0.1:5001"
+    metadata: 0
+  clients:
+  - key: "A"
+    value: "127.0.0.1:6001"
+    metadata: 10
+
+# node app configs
+node:
+  port: 5001
+  node_id: S1

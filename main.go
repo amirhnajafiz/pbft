@@ -20,12 +20,12 @@ const (
 func main() {
 	// get argument variables
 	argv := os.Args
-	if len(argv) < 2 {
-		panic("you did not provide enough arguments to run! (./main <command>)")
+	if len(argv) < 3 {
+		panic("you did not provide enough arguments to run! (./main <command> <config-path>)")
 	}
 
 	// load configs into a config struct
-	cfg := config.New(argv[1])
+	cfg := config.New(argv[2])
 
 	// create a new zap logger instance
 	logr := logger.NewLogger(cfg.LogLevel)

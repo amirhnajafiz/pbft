@@ -46,14 +46,17 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
 
-	// update the request meta-data
-	// broadcast to all using preprepare
-	// wait for 2f+1
-	// broadcast to all using prepare
-	// wait for 2f+1
-	// broadcast to all using commit
-	// execute message if possible
-	// send the reply
+	// need to create a go-routine to not block the request
+	go func() {
+		// update the request meta-data
+		// broadcast to all using preprepare
+		// wait for 2f+1
+		// broadcast to all using prepare
+		// wait for 2f+1
+		// broadcast to all using commit
+		// execute message if possible
+		// send the reply
+	}()
 }
 
 func (c *Consensus) handleTransaction(pkt interface{}) {

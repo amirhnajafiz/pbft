@@ -49,12 +49,9 @@ func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan i
 		c.outTransactionChannel = make(chan interface{})
 
 		// call the proper transaction handler and return the channel
-		go c.handleTransaction(pkt)
+		go c.interruptTable[target](pkt)
 
 		return c.outTransactionChannel
-	} else if target == enum.IntrRequest {
-		// call the proper request handler but no need to return the channel
-		go c.handleRequest(pkt)
 	}
 
 	return nil

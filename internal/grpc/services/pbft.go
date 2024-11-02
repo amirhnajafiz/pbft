@@ -63,7 +63,7 @@ func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, e
 
 // Request RPC forwards a request message into consensus.handleRequest
 func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
-	p.Consensus.SignalAndWait(enum.IntrRequest, msg)
+	p.Consensus.Signal(enum.IntrRequest, msg)
 
 	return &emptypb.Empty{}, nil
 }
@@ -90,10 +90,11 @@ func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft
 
 	// call signal and wait
 	ch := p.Consensus.SignalAndWait(enum.IntrTransaction, msg)
-	if ch != nil { // if the channel is returned, wait for response
+	if ch != nil {
 		text := <-ch
 		resp.Text = text.(string)
-	} else { // the channel is not returned, it means it is in progress
+	} else {
+		// the channel is not returned, it means it is in progress
 		resp.Text = "server is busy with processing another transaction"
 	}
 

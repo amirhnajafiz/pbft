@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -42,8 +43,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.RequestMsg)
 
-	// store the log
-	seqn := c.Logs.InitLog(msg)
+	// store the log place
+	seqn := c.Logs.InitLog()
 
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
@@ -55,10 +56,23 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 			delete(c.channels, sequence)
 		}()
 
-		c.Logger.Info("new request", zap.Int("sequence number", sequence))
+		// update request metadata
+		message.SequenceNumber = int64(sequence)
 
-		// update the request meta-data
+		c.Logger.Info(
+			"new request received",
+			zap.Int("sequence number", int(message.GetSequenceNumber())),
+			zap.Int("timestamp", int(message.GetTransaction().GetTimestamp())),
+		)
+
 		// broadcast to all using preprepare
+		c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
+			Request:        message,
+			SequenceNumber: int64(sequence),
+			View:           int64(c.Memory.GetView()),
+			Digest:         hashing.MD5(message),
+		})
+
 		// wait for 2f+1
 		// broadcast to all using prepare
 		// wait for 2f+1
@@ -88,7 +102,7 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	})
 
 	c.Logger.Info(
-		"request is send",
+		"request is sent",
 		zap.Int("timestamp", int(msg.GetTimestamp())),
 		zap.String("sender", msg.GetSender()),
 		zap.String("receiver", msg.GetReciever()),

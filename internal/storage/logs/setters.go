@@ -6,17 +6,9 @@ import (
 )
 
 // InitLog places a new log at the end of logs.
-func (l *Logs) InitLog(req *pbft.RequestMsg) int {
+func (l *Logs) InitLog() int {
 	index := l.index
 	l.index++
-
-	req.SequenceNumber = int64(index)
-
-	l.logs[index] = &models.Log{
-		Request:      req,
-		PrePrepareds: make([]*pbft.PrePreparedMsg, 0),
-		Prepareds:    make([]*pbft.PreparedMsg, 0),
-	}
 
 	return index
 }

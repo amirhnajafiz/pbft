@@ -16,12 +16,7 @@ const (
 
 // ListNodeChannels returns a list of available channels for a node, it does not include Transactions channel.
 func ListNodeChannels() []ChannelType {
-	return []ChannelType{ChCommits, ChPrePrepares, ChPrepares, ChRequests}
-}
-
-// ListRequestChannels returns a list of available channels for a request, it does not include Transactions channel.
-func ListRequestChannels() []ChannelType {
-	return []ChannelType{ChPrePrepareds, ChPrepares}
+	return []ChannelType{ChCommits, ChPrePrepares, ChPrepares, ChRequests, ChPrePrepareds, ChPrepareds}
 }
 
 // ListClientChannels returns a list of available channels for a client, it does not include Transactions channel.

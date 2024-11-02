@@ -14,3 +14,8 @@ func (m *Memory) GetByzantine() bool {
 func (m *Memory) GetNodeId() string {
 	return m.nodeId
 }
+
+// GetView returns the current view of this node.
+func (m *Memory) GetView() int {
+	return m.view
+}

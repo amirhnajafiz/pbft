@@ -15,3 +15,8 @@ func (m *Memory) Reset() {
 	m.status = true
 	m.byzantine = false
 }
+
+// IncView updates view on unit.
+func (m *Memory) IncView() {
+	m.view++
+}

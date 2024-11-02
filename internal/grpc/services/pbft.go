@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
+	"github.com/f24-cse535/pbft/pkg/enums"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
@@ -18,23 +19,38 @@ type PBFT struct {
 	Logger    *zap.Logger
 }
 
+// Commit RPC forwards a commit message into consensus.handleCommit
 func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty, error) {
+	p.Consensus.Signal(enums.ChCommits, msg)
+
 	return &emptypb.Empty{}, nil
 }
 
+// PrePrepare RPC forwards a preprepare message into consensus.handlePrePrepare
 func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
+	p.Consensus.Signal(enums.ChPrePrepares, msg)
+
 	return &emptypb.Empty{}, nil
 }
 
+// Prepare RPC forwards a prepare message into consensus.handlePrepare
 func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empty, error) {
+	p.Consensus.Signal(enums.ChPrepares, msg)
+
 	return &emptypb.Empty{}, nil
 }
 
+// Reply RPC forwards a reply message into consensus.handleReply
 func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
+	p.Consensus.Signal(enums.ChReplys, msg)
+
 	return &emptypb.Empty{}, nil
 }
 
+// Request RPC forwards a request message into consensus.handleRequest
 func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
+	p.Consensus.Signal(enums.ChRequests, msg)
+
 	return &emptypb.Empty{}, nil
 }
 

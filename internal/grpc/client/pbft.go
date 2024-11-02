@@ -30,6 +30,25 @@ func (c *Client) Commit(target string, msg *pbft.CommitMsg) {
 	}
 }
 
+// Committed calls the Committed RPC on the target machine (nodes to nodes).
+func (c *Client) Committed(target string, msg *pbft.CommittedMsg) {
+	address := c.nodes[target]
+	msg.NodeId = c.nodeId
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+		return
+	}
+	defer conn.Close()
+
+	// call committed RPC
+	if _, err := pbft.NewPBFTClient(conn).Committed(context.Background(), msg); err != nil {
+		c.logger.Debug("failed to call Committed RPC", zap.String("address", address), zap.Error(err))
+	}
+}
+
 // PrePrepare calls the PrePrepare RPC on the target machine (nodes to nodes).
 func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 	address := c.nodes[target]
@@ -49,6 +68,25 @@ func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 	}
 }
 
+// PrePrepared calls the PrePrepared RPC on the target machine (nodes to nodes).
+func (c *Client) PrePrepared(target string, msg *pbft.PrePreparedMsg) {
+	address := c.nodes[target]
+	msg.NodeId = c.nodeId
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+		return
+	}
+	defer conn.Close()
+
+	// call preprepare RPC
+	if _, err := pbft.NewPBFTClient(conn).PrePrepared(context.Background(), msg); err != nil {
+		c.logger.Debug("failed to call Preprepared RPC", zap.String("address", address), zap.Error(err))
+	}
+}
+
 // Prepare calls the Prepare RPC on the target machine (nodes to nodes).
 func (c *Client) Prepare(target string, msg *pbft.PrepareMsg) {
 	address := c.nodes[target]
@@ -65,6 +103,25 @@ func (c *Client) Prepare(target string, msg *pbft.PrepareMsg) {
 	// call prepare RPC
 	if _, err := pbft.NewPBFTClient(conn).Prepare(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Prepare RPC", zap.String("address", address), zap.Error(err))
+	}
+}
+
+// Prepared calls the Prepared RPC on the target machine (nodes to nodes).
+func (c *Client) Prepared(target string, msg *pbft.PreparedMsg) {
+	address := c.nodes[target]
+	msg.NodeId = c.nodeId
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+		return
+	}
+	defer conn.Close()
+
+	// call prepare RPC
+	if _, err := pbft.NewPBFTClient(conn).Prepared(context.Background(), msg); err != nil {
+		c.logger.Debug("failed to call Prepared RPC", zap.String("address", address), zap.Error(err))
 	}
 }
 

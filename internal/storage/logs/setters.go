@@ -10,6 +10,8 @@ func (l *Logs) InitLog(req *pbft.RequestMsg) int {
 	index := l.index
 	l.index++
 
+	req.SequenceNumber = int64(index)
+
 	l.logs[index] = &models.Log{
 		Request:      req,
 		PrePrepareds: make([]*pbft.PrePreparedMsg, 0),

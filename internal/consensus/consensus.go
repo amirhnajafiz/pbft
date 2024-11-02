@@ -17,8 +17,14 @@ type Consensus struct {
 	Memory *local.Memory  // memory is needed to update the node state
 	Logger *zap.Logger    // logger is needed for tracing
 
-	interrupts     chan *models.InterruptMsg // interrupts is an internal channel for dispatching gRPC level packets
-	interruptTable map[enum.Interrupt]func(interface{})
+	interrupts     chan *models.InterruptMsg            // interrupts is an internal channel for dispatching gRPC level packets
+	interruptTable map[enum.Interrupt]func(interface{}) // interrupt table is a map for interrupts and their handlers
+
+	channels map[int]chan *models.InterruptMsg // the channels is used for communication between consensus sub-processes
+
+	// these channels will be used by the client node to handle the user's transactions
+	inTransactionChannel  chan *models.InterruptMsg
+	outTransactionChannel chan interface{}
 }
 
 // Signal sends a packet from gRPC level to handlers without waiting for a response.
@@ -33,9 +39,22 @@ func (c *Consensus) Signal(target enum.Interrupt, pkt interface{}) {
 func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan interface{} {
 	// the main two signal and wait procedures are request and transaction
 	if target == enum.IntrTransaction {
-		// todo: call the proper transaction handler and return the channel
+		// check to see if a transaction is in process or not
+		if c.inTransactionChannel != nil {
+			return nil
+		}
+
+		// create input channels
+		c.inTransactionChannel = make(chan *models.InterruptMsg)
+		c.outTransactionChannel = make(chan interface{})
+
+		// call the proper transaction handler and return the channel
+		go c.handleTransaction(pkt)
+
+		return c.outTransactionChannel
 	} else if target == enum.IntrRequest {
-		// todo: call the proper request handler but no need to return the channel
+		// call the proper request handler but no need to return the channel
+		go c.handleRequest(pkt)
 	}
 
 	return nil
@@ -45,6 +64,7 @@ func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan i
 func (c *Consensus) Start() {
 	// create the interrupts channel
 	c.interrupts = make(chan *models.InterruptMsg)
+	c.channels = make(map[int]chan *models.InterruptMsg)
 
 	// create a map of interrupts and handlers (interrupt table)
 	c.interruptTable = map[enum.Interrupt]func(interface{}){

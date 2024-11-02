@@ -1,5 +1,5 @@
 syntax = "proto3";
-package apaxos;
+package pbft;
 
 import "google/protobuf/empty.proto";
 

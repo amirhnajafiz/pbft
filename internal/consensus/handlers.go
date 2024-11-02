@@ -71,6 +71,12 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 		return
 	}
 
+	c.Logger.Debug(
+		"preprepared received",
+		zap.Int("sequence number", int(msg.GetSequenceNumber())),
+		zap.Int("timestamp", int(msg.GetRequest().GetTransaction().GetTimestamp())),
+	)
+
 	// publish over correct request handler
 	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
 		Type:    enum.IntrPrePrepared,
@@ -88,9 +94,21 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 
 }
 
+// handleReply gets a reply message and passes it to the right request handler.
 func (c *Consensus) handleReply(pkt interface{}) {
-	// update the memory
-	// notify the transaction handler
+	// parse the input message
+	msg := pkt.(*pbft.ReplyMsg)
+
+	// ignore the messages that are not for this node
+	if msg.GetClientId() != c.Memory.GetNodeId() {
+		return
+	}
+
+	// publish over correct request handler
+	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
+		Type:    enum.IntrPrePrepared,
+		Payload: msg,
+	}
 }
 
 // handle request accepts a new request and creates a go-routine
@@ -141,7 +159,21 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		// wait for 2f+1
 		// broadcast to all using commit
 		// execute message if possible
+
+		c.Logger.Info("reply sent",
+			zap.String("client", message.GetClientId()),
+			zap.Int("sequence number", int(message.GetSequenceNumber())),
+			zap.Int("timestamp", int(message.GetTransaction().GetTimestamp())),
+		)
+
 		// send the reply
+		c.Client.Reply(message.GetClientId(), &pbft.ReplyMsg{
+			SequenceNumber: message.GetSequenceNumber(),
+			View:           int64(c.Memory.GetView()),
+			Timestamp:      message.GetTransaction().GetTimestamp(),
+			ClientId:       message.GetClientId(),
+			Response:       "received",
+		})
 	}(seqn, msg)
 }
 
@@ -174,9 +206,9 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 		zap.Int64("amount", msg.GetAmount()),
 	)
 
-	// wait for f+1 matching reply or timeout request (+ timer)
-	// on the timeout, reset yourself
-	// on the f+1 reply, send over channel
+	// wait for f+1 matching reply or timeout request
+	resp := c.waitReplys(c.inTransactionChannel)
 
-	c.outTransactionChannel <- "received"
+	// return the response in channel
+	c.outTransactionChannel <- resp.GetResponse()
 }

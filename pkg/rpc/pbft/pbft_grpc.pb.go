@@ -20,18 +20,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PBFT_Request_FullMethodName     = "/apaxos.PBFT/Request"
-	PBFT_PrePrepare_FullMethodName  = "/apaxos.PBFT/PrePrepare"
-	PBFT_PrePrepared_FullMethodName = "/apaxos.PBFT/PrePrepared"
-	PBFT_Prepare_FullMethodName     = "/apaxos.PBFT/Prepare"
-	PBFT_Prepared_FullMethodName    = "/apaxos.PBFT/Prepared"
-	PBFT_Commit_FullMethodName      = "/apaxos.PBFT/Commit"
-	PBFT_Reply_FullMethodName       = "/apaxos.PBFT/Reply"
-	PBFT_Transaction_FullMethodName = "/apaxos.PBFT/Transaction"
-	PBFT_PrintLog_FullMethodName    = "/apaxos.PBFT/PrintLog"
-	PBFT_PrintDB_FullMethodName     = "/apaxos.PBFT/PrintDB"
-	PBFT_PrintStatus_FullMethodName = "/apaxos.PBFT/PrintStatus"
-	PBFT_PrintView_FullMethodName   = "/apaxos.PBFT/PrintView"
+	PBFT_Request_FullMethodName     = "/pbft.PBFT/Request"
+	PBFT_PrePrepare_FullMethodName  = "/pbft.PBFT/PrePrepare"
+	PBFT_PrePrepared_FullMethodName = "/pbft.PBFT/PrePrepared"
+	PBFT_Prepare_FullMethodName     = "/pbft.PBFT/Prepare"
+	PBFT_Prepared_FullMethodName    = "/pbft.PBFT/Prepared"
+	PBFT_Commit_FullMethodName      = "/pbft.PBFT/Commit"
+	PBFT_Reply_FullMethodName       = "/pbft.PBFT/Reply"
+	PBFT_Transaction_FullMethodName = "/pbft.PBFT/Transaction"
+	PBFT_PrintLog_FullMethodName    = "/pbft.PBFT/PrintLog"
+	PBFT_PrintDB_FullMethodName     = "/pbft.PBFT/PrintDB"
+	PBFT_PrintStatus_FullMethodName = "/pbft.PBFT/PrintStatus"
+	PBFT_PrintView_FullMethodName   = "/pbft.PBFT/PrintView"
 )
 
 // PBFTClient is the client API for PBFT service.
@@ -493,7 +493,7 @@ func _PBFT_PrintView_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PBFT_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "apaxos.PBFT",
+	ServiceName: "pbft.PBFT",
 	HandlerType: (*PBFTServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

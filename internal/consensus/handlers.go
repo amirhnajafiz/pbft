@@ -48,7 +48,14 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	c.channels[seqn] = make(chan *models.InterruptMsg)
 
 	// need to create a go-routine to not block the request
-	go func() {
+	go func(sequence int, message *pbft.RequestMsg) {
+		defer func() {
+			// reset our channel
+			delete(c.channels, sequence)
+		}()
+
+		c.Logger.Info("new request", zap.Int("sequence number", sequence))
+
 		// update the request meta-data
 		// broadcast to all using preprepare
 		// wait for 2f+1
@@ -57,7 +64,7 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		// broadcast to all using commit
 		// execute message if possible
 		// send the reply
-	}()
+	}(seqn, msg)
 }
 
 func (c *Consensus) handleTransaction(pkt interface{}) {
@@ -90,4 +97,6 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// wait for f+1 matching reply or timeout request (+ timer)
 	// on the timeout, reset yourself
 	// on the f+1 reply, send over channel
+
+	c.outTransactionChannel <- "received"
 }

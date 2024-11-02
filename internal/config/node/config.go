@@ -6,5 +6,5 @@ import "github.com/f24-cse535/pbft/internal/config/node/bft"
 type Config struct {
 	Port   int        `koanf:"port"`    // gRPC server port
 	NodeId string     `koanf:"node_id"` // a unique id for the node
-	BFT    bft.Config `koanf:"bfp"`     // node PBFT config values
+	BFT    bft.Config `koanf:"bft"`     // node PBFT config values
 }

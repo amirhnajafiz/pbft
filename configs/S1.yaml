@@ -16,3 +16,7 @@ iptable:
 node:
   port: 5001
   node_id: S1
+  bft: # pbft configs
+    total: 1
+    majority: 1
+    responses: 1

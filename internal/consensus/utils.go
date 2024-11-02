@@ -5,13 +5,13 @@ import (
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
-// GetCurrentLeader returns the current leader id.
-func (c *Consensus) GetCurrentLeader() string {
+// getCurrentLeader returns the current leader id.
+func (c *Consensus) getCurrentLeader() string {
 	return c.Memory.GetNodeByIndex(c.Memory.GetView())
 }
 
-// ValidatePrePrepareMsg checks the view and digest of a preprepare message.
-func (c *Consensus) ValidatePrePrepareMsg(msg *pbft.PrePrepareMsg) bool {
+// validatePrePrepareMsg checks the view and digest of a preprepare message.
+func (c *Consensus) validatePrePrepareMsg(msg *pbft.PrePrepareMsg) bool {
 	if msg.GetView() != int64(c.Memory.GetView()) { // not the same view
 		return false
 	}
@@ -23,8 +23,8 @@ func (c *Consensus) ValidatePrePrepareMsg(msg *pbft.PrePrepareMsg) bool {
 	return true
 }
 
-// ValidatePrePreparedMsg checks the view and digest of a preprepared message.
-func (c *Consensus) ValidatePrePreparedMsg(msg *pbft.PrePreparedMsg) bool {
+// validatePrePreparedMsg checks the view and digest of a preprepared message.
+func (c *Consensus) validatePrePreparedMsg(msg *pbft.PrePreparedMsg) bool {
 	if msg.GetView() != int64(c.Memory.GetView()) { // not the same view
 		return false
 	}
@@ -35,9 +35,12 @@ func (c *Consensus) ValidatePrePreparedMsg(msg *pbft.PrePreparedMsg) bool {
 		return false
 	}
 
-	if hashing.MD5(message.Request) != hashing.MD5(msg.GetRequest()) { // not the same digest
+	digest := hashing.MD5(message.Request)
+	if digest != hashing.MD5(msg.GetRequest()) { // not the same digest
 		return false
 	}
+
+	msg.Digest = digest
 
 	return true
 }

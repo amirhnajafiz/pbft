@@ -61,7 +61,8 @@ message PrePreparedMsg {
   RequestMsg request = 1;
   int64 sequence_number = 2;
   int64 view = 3;
-  string node_id = 4;
+  string digest = 4;
+  string node_id = 5;
 }
 
 message PrepareMsg {

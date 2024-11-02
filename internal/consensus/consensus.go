@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/f24-cse535/pbft/internal/config/node/bft"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
@@ -16,6 +17,8 @@ type Consensus struct {
 	Logs   *logs.Logs     // data log is used to store and retrive logs
 	Memory *local.Memory  // memory is needed to update the node state
 	Logger *zap.Logger    // logger is needed for tracing
+
+	BFTCfg bft.Config // bft config is used inside consensus handlers
 
 	interrupts     chan *models.InterruptMsg            // interrupts is an internal channel for dispatching gRPC level packets
 	interruptTable map[enum.Interrupt]func(interface{}) // interrupt table is a map for interrupts and their handlers

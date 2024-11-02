@@ -36,6 +36,7 @@ func (n Node) Main() error {
 
 	// create a new consensus module
 	instance := consensus.Consensus{
+		BFTCfg: n.Cfg.Node.BFT,
 		Client: cli,
 		Memory: mem,
 		Logs:   datalog,

@@ -21,7 +21,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	msg := pkt.(*pbft.PrePrepareMsg)
 
 	// validate the message
-	if !c.ValidatePrePrepareMsg(msg) {
+	if !c.validatePrePrepareMsg(msg) {
 		c.Logger.Info("preprepared message is not valid")
 		return
 	}
@@ -50,7 +50,7 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	msg := pkt.(*pbft.PrePreparedMsg)
 
 	// validate the message
-	if !c.ValidatePrePreparedMsg(msg) {
+	if !c.validatePrePreparedMsg(msg) {
 		c.Logger.Info("preprepared message is not valid")
 		return
 	}
@@ -116,7 +116,9 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 			Digest:         hashing.MD5(message),
 		})
 
-		// wait for 2f+1
+		// wait for 2f+1 preprepared messages
+		c.waitForPrePrepareds(c.channels[sequence])
+
 		// broadcast to all using prepare
 		// wait for 2f+1
 		// broadcast to all using commit
@@ -137,7 +139,7 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	msg := pkt.(*pbft.TransactionMsg)
 
 	// get the current leader
-	id := c.GetCurrentLeader()
+	id := c.getCurrentLeader()
 
 	c.Logger.Debug("current leader", zap.String("id", id))
 

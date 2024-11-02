@@ -28,7 +28,7 @@ func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty,
 
 // Commited RPC forwards a committed message into consensus.handleCommitted
 func (p *PBFT) Committed(ctx context.Context, msg *pbft.CommittedMsg) (*emptypb.Empty, error) {
-	p.Consensus.Signal(enums.ChCommits, msg)
+	p.Consensus.Signal(enums.ChCommitteds, msg)
 
 	return &emptypb.Empty{}, nil
 }
@@ -42,7 +42,7 @@ func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptyp
 
 // PrePrepared RPC forwards a preprepared message into consensus.handlePrePrepared
 func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.PrePreparedMsg) (*emptypb.Empty, error) {
-	p.Consensus.Signal(enums.ChPrePrepares, msg)
+	p.Consensus.Signal(enums.ChPrePrepareds, msg)
 
 	return &emptypb.Empty{}, nil
 }
@@ -56,7 +56,7 @@ func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empt
 
 // Prepared RPC forwards a prepared message into consensus.handlePrepared
 func (p *PBFT) Prepared(ctx context.Context, msg *pbft.PreparedMsg) (*emptypb.Empty, error) {
-	p.Consensus.Signal(enums.ChPrepares, msg)
+	p.Consensus.Signal(enums.ChPrepareds, msg)
 
 	return &emptypb.Empty{}, nil
 }

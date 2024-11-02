@@ -32,6 +32,11 @@ func (c *Consensus) handlePrepare() {
 }
 
 func (c *Consensus) handleRequest() {
+	// create other requests channels
+	for _, ct := range enums.ListRequestChannels() {
+		c.channels[ct] = make(chan interface{})
+	}
+
 	// update the request meta-data
 	// broadcast to all
 	// set the status of initlog

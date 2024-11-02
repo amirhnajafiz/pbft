@@ -33,8 +33,12 @@ func (c *Consensus) handlePrepare() {
 
 func (c *Consensus) handleRequest() {
 	// update the request meta-data
-	// broadcast to all
-	// set the status of initlog
+	// broadcast to all using preprepare
+	// wait for 2f+1
+	// broadcast to all using prepare
+	// wait for 2f+1
+	// broadcast to all using commit
+	// execute message if possible
 	for {
 		<-c.channels[enums.ChRequests]
 	}

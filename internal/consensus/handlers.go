@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
+	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -14,14 +15,51 @@ func (c *Consensus) handleCommit(pkt interface{}) {
 	// do execution
 }
 
+// handle preprepare accepts a preprepare message and validates it to call preprepared RPC.
 func (c *Consensus) handlePrePrepare(pkt interface{}) {
-	// check the message
-	// update log
-	// return with preprepared message
+	// parse the input message
+	msg := pkt.(*pbft.PrePrepareMsg)
+
+	// validate the message
+	if !c.ValidatePrePrepareMsg(msg) {
+		c.Logger.Info("preprepared message is not valid")
+		return
+	}
+
+	// update the log and set the status of preprepared
+	msg.GetRequest().Status = pbft.RequestStatus_REQUEST_STATUS_PP
+	c.Logs.SetLog(int(msg.GetSequenceNumber()), msg.GetRequest())
+
+	c.Logger.Info(
+		"preprepared a message",
+		zap.Int("sequence number", int(msg.GetSequenceNumber())),
+		zap.Int("timestamp", int(msg.GetRequest().GetTransaction().GetTimestamp())),
+	)
+
+	// call preprepared message
+	c.Client.PrePrepared(msg.GetNodeId(), &pbft.PrePreparedMsg{
+		Request:        msg.GetRequest(),
+		View:           int64(c.Memory.GetView()),
+		SequenceNumber: msg.GetSequenceNumber(),
+	})
 }
 
+// handlePrePrepared gets preprepared message and passes it to the correct request handler.
 func (c *Consensus) handlePrePrepared(pkt interface{}) {
+	// parse the input message
+	msg := pkt.(*pbft.PrePreparedMsg)
 
+	// validate the message
+	if !c.ValidatePrePreparedMsg(msg) {
+		c.Logger.Info("preprepared message is not valid")
+		return
+	}
+
+	// publish over correct request handler
+	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
+		Type:    enum.IntrPrePrepared,
+		Payload: msg,
+	}
 }
 
 func (c *Consensus) handlePrepare(pkt interface{}) {
@@ -39,6 +77,8 @@ func (c *Consensus) handleReply(pkt interface{}) {
 	// notify the transaction handler
 }
 
+// handle request accepts a new request and creates a go-routine
+// to collect all preprepared and prepared messages.
 func (c *Consensus) handleRequest(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.RequestMsg)
@@ -59,6 +99,9 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		// update request metadata
 		message.SequenceNumber = int64(sequence)
 
+		// store it into logs
+		c.Logs.SetLog(sequence, msg)
+
 		c.Logger.Info(
 			"new request received",
 			zap.Int("sequence number", int(message.GetSequenceNumber())),
@@ -66,7 +109,7 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		)
 
 		// broadcast to all using preprepare
-		c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
+		go c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
 			Request:        message,
 			SequenceNumber: int64(sequence),
 			View:           int64(c.Memory.GetView()),
@@ -82,6 +125,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	}(seqn, msg)
 }
 
+// handle transaction accepts a new transaction and calls
+// the request RPC on the current leader.
 func (c *Consensus) handleTransaction(pkt interface{}) {
 	defer func() {
 		// reset the channel when transaction is done

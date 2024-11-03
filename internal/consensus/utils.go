@@ -15,7 +15,7 @@ func (c *Consensus) getCurrentLeader() string {
 func (c *Consensus) canExecute(sequence int) bool {
 	// loop from the first sequence and check the execution status
 	for i := 0; i < sequence; i++ {
-		if tmp := c.Logs.GetLog(i); tmp != nil && tmp.Request.Status != pbft.RequestStatus_REQUEST_STATUS_E {
+		if tmp := c.Logs.GetLog(i); tmp != nil && tmp.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
 			return false
 		}
 	}

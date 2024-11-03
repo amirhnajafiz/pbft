@@ -23,27 +23,27 @@ func (c *Consensus) handleExecute(sequence int) {
 	// follow sequence until one is not committed, execute them
 	index := sequence
 	for {
-		if tmp := c.Logs.GetLog(index); tmp != nil && tmp.Request.Status == pbft.RequestStatus_REQUEST_STATUS_C {
+		if msg := c.Logs.GetLog(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
 			// execute request
-			c.executeRequest(tmp.Request)
+			c.executeRequest(msg)
 
 			// update the log and set the status of prepare
 			c.Logs.SetLogStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
 			// send the reply message
-			c.Client.Reply(tmp.Request.GetClientId(), &pbft.ReplyMsg{
-				SequenceNumber: tmp.Request.GetSequenceNumber(),
+			c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
+				SequenceNumber: msg.GetSequenceNumber(),
 				View:           int64(c.Memory.GetView()),
-				Timestamp:      tmp.Request.GetTransaction().GetTimestamp(),
-				ClientId:       tmp.Request.GetClientId(),
-				Response:       tmp.Request.GetResponse().GetText(),
+				Timestamp:      msg.GetTransaction().GetTimestamp(),
+				ClientId:       msg.GetClientId(),
+				Response:       msg.GetResponse().GetText(),
 			})
 
 			c.Logger.Info(
 				"message executed and reply sent",
-				zap.String("client", tmp.Request.GetClientId()),
-				zap.Int64("sequence number", tmp.Request.GetSequenceNumber()),
-				zap.Int64("timestamp", tmp.Request.GetTransaction().GetTimestamp()),
+				zap.String("client", msg.GetClientId()),
+				zap.Int64("sequence number", msg.GetSequenceNumber()),
+				zap.Int64("timestamp", msg.GetTransaction().GetTimestamp()),
 			)
 		} else {
 			break
@@ -121,7 +121,7 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	}
 
 	// set the digest message
-	msg.Digest = hashing.MD5(message.Request)
+	msg.Digest = hashing.MD5(message)
 
 	// validate the message
 	if !c.validatePrePreparedMsg(msg) {
@@ -135,8 +135,8 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 
 	c.Logger.Debug(
 		"preprepared received",
-		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
-		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+		zap.Int64("sequence number", message.GetSequenceNumber()),
+		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 	)
 
 	// publish over correct request handler
@@ -162,7 +162,7 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 	}
 
 	// get digest message
-	digest := hashing.MD5(message.Request)
+	digest := hashing.MD5(message)
 
 	// validate the message
 	if !c.validatePrepareMsg(digest, msg) {
@@ -178,8 +178,8 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 
 	c.Logger.Debug(
 		"prepared a message",
-		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
-		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+		zap.Int64("sequence number", message.GetSequenceNumber()),
+		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 	)
 
 	// call prepared message
@@ -206,7 +206,7 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 	}
 
 	// get digest message
-	digest := hashing.MD5(message.Request)
+	digest := hashing.MD5(message)
 
 	// validate the message
 	if !c.validatePreparedMsg(digest, msg) {
@@ -219,8 +219,8 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 
 	c.Logger.Debug(
 		"prepared received",
-		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
-		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+		zap.Int64("sequence number", message.GetSequenceNumber()),
+		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 	)
 
 	// publish over correct request handler

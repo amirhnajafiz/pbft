@@ -103,8 +103,10 @@ func (c Controller) Main() error {
 				)
 			}
 		case "printstatus":
-			seq, _ := strconv.Atoi(parts[2])
-			fmt.Println(c.client.PrintStatus(parts[1], seq))
+			seq, _ := strconv.Atoi(parts[1])
+			for key := range c.Cfg.IPTable.GetNodes() {
+				fmt.Printf("%s : %s", key, c.client.PrintStatus(key, seq))
+			}
 		default:
 			fmt.Printf("command `%s` not found.\n", parts[1])
 		}

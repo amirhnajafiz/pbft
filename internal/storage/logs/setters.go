@@ -1,6 +1,8 @@
 package logs
 
 import (
+	"fmt"
+
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
@@ -21,8 +23,8 @@ func (l *Logs) SetRequest(index int, req *pbft.RequestMsg) {
 }
 
 // AppendLog adds a new log entry to the logs.
-func (l *Logs) AppendLog(log string) {
-	l.logs = append(l.logs, log)
+func (l *Logs) AppendLog(prefix, log string) {
+	l.logs = append(l.logs, fmt.Sprintf("[%s] %s", prefix, log))
 }
 
 // Reset turns the values back to initial state.

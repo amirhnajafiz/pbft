@@ -22,6 +22,7 @@ type PBFT struct {
 
 // Commit RPC forwards a commit message into consensus.handleCommit
 func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Commit", msg.String())
 	p.Consensus.Signal(enum.IntrCommit, msg)
 
 	return &emptypb.Empty{}, nil
@@ -29,6 +30,7 @@ func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty,
 
 // PrePrepare RPC forwards a preprepare message into consensus.handlePrePrepare
 func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("PrePrepare", msg.String())
 	p.Consensus.Signal(enum.IntrPrePrepare, msg)
 
 	return &emptypb.Empty{}, nil
@@ -36,6 +38,7 @@ func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptyp
 
 // PrePrepared RPC forwards a preprepared message into consensus.handlePrePrepared
 func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.PrePreparedMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("PrePrepared", msg.String())
 	p.Consensus.Signal(enum.IntrPrePrepared, msg)
 
 	return &emptypb.Empty{}, nil
@@ -43,6 +46,7 @@ func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.PrePreparedMsg) (*empt
 
 // Prepare RPC forwards a prepare message into consensus.handlePrepare
 func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Prepare", msg.String())
 	p.Consensus.Signal(enum.IntrPrepare, msg)
 
 	return &emptypb.Empty{}, nil
@@ -50,6 +54,7 @@ func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empt
 
 // Prepared RPC forwards a prepared message into consensus.handlePrepared
 func (p *PBFT) Prepared(ctx context.Context, msg *pbft.PreparedMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Prepared", msg.String())
 	p.Consensus.Signal(enum.IntrPrepared, msg)
 
 	return &emptypb.Empty{}, nil
@@ -57,6 +62,7 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.PreparedMsg) (*emptypb.Em
 
 // Reply RPC forwards a reply message into consensus.handleReply
 func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Reply", msg.String())
 	p.Consensus.Signal(enum.IntrReply, msg)
 
 	return &emptypb.Empty{}, nil
@@ -64,6 +70,7 @@ func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, e
 
 // Request RPC forwards a request message into consensus.handleRequest
 func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Request", msg.String())
 	p.Consensus.Signal(enum.IntrRequest, msg)
 
 	return &emptypb.Empty{}, nil

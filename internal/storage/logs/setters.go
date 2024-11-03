@@ -29,7 +29,7 @@ func (l *Logs) Reset() {
 
 // SetLogStatus accepts an index and status, and updates it if the new status is higher than what it is.
 func (l *Logs) SetLogStatus(index int, status pbft.RequestStatus) {
-	if l.logs[index].GetStatus() > status {
+	if l.logs[index].GetStatus().Number() < status.Number() {
 		l.logs[index].Status = status
 	}
 }

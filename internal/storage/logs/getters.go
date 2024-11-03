@@ -11,6 +11,13 @@ func (l *Logs) GetLog(index int) *pbft.RequestMsg {
 	return nil
 }
 
+// GetAllLogs returns an array of the node logs.
 func (l *Logs) GetAllLogs() []*pbft.RequestMsg {
-	return nil
+	list := make([]*pbft.RequestMsg, len(l.logs))
+
+	for key, value := range l.logs {
+		list[key] = value
+	}
+
+	return list
 }

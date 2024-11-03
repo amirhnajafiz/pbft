@@ -86,6 +86,18 @@ func (c Controller) Main() error {
 				// increase index
 				c.index++
 			}
+		case "printlog":
+			for _, item := range c.client.PrintLog(parts[1]) {
+				fmt.Printf(
+					"%d : %d (%s, %s, %d) : %s\n",
+					item.GetSequenceNumber(),
+					item.GetTransaction().GetTimestamp(),
+					item.GetTransaction().GetSender(),
+					item.GetTransaction().GetReciever(),
+					item.GetTransaction().GetAmount(),
+					item.GetResponse().GetText(),
+				)
+			}
 		}
 	}
 }

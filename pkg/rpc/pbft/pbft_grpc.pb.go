@@ -49,7 +49,7 @@ type PBFTClient interface {
 	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
-	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
+	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
 	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error)
@@ -143,13 +143,13 @@ func (c *pBFTClient) Transaction(ctx context.Context, in *TransactionMsg, opts .
 	return out, nil
 }
 
-func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error) {
+func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[0], PBFT_PrintLog_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[emptypb.Empty, RequestMsg]{ClientStream: stream}
+	x := &grpc.GenericClientStream[emptypb.Empty, LogRsp]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...gr
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type PBFT_PrintLogClient = grpc.ServerStreamingClient[RequestMsg]
+type PBFT_PrintLogClient = grpc.ServerStreamingClient[LogRsp]
 
 func (c *pBFTClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -216,7 +216,7 @@ type PBFTServer interface {
 	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
 	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
 	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
-	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
+	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
 	PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error)
@@ -254,7 +254,7 @@ func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty
 func (UnimplementedPBFTServer) Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transaction not implemented")
 }
-func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error {
+func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
 }
 func (UnimplementedPBFTServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error {
@@ -436,11 +436,11 @@ func _PBFT_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(PBFTServer).PrintLog(m, &grpc.GenericServerStream[emptypb.Empty, RequestMsg]{ServerStream: stream})
+	return srv.(PBFTServer).PrintLog(m, &grpc.GenericServerStream[emptypb.Empty, LogRsp]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type PBFT_PrintLogServer = grpc.ServerStreamingServer[RequestMsg]
+type PBFT_PrintLogServer = grpc.ServerStreamingServer[LogRsp]
 
 func _PBFT_PrintDB_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)

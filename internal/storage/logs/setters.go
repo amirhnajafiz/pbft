@@ -20,10 +20,15 @@ func (l *Logs) SetRequest(index int, req *pbft.RequestMsg) {
 	l.datastore[index] = req
 }
 
+// AppendLog adds a new log entry to the logs.
+func (l *Logs) AppendLog(log string) {
+	l.logs = append(l.logs, log)
+}
+
 // Reset turns the values back to initial state.
 func (l *Logs) Reset() {
 	l.datastore = make(map[int]*pbft.RequestMsg)
-	l.logs = make(map[int]*pbft.RequestMsg)
+	l.logs = make([]string, 0)
 	l.index = 0
 }
 

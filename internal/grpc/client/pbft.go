@@ -185,9 +185,9 @@ func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
 }
 
 // PrintLog gets a target logs.
-func (c *Client) PrintLog(target string) []*pbft.RequestMsg {
+func (c *Client) PrintLog(target string) []string {
 	address := c.nodes[target]
-	list := make([]*pbft.RequestMsg, 0)
+	list := make([]string, 0)
 
 	// base connection
 	conn, err := c.connect(address)
@@ -217,7 +217,7 @@ func (c *Client) PrintLog(target string) []*pbft.RequestMsg {
 		}
 
 		// append to the list of requests
-		list = append(list, in)
+		list = append(list, in.GetText())
 	}
 
 	return list

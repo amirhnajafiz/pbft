@@ -17,7 +17,7 @@ service PBFT {
   rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
   
   rpc Transaction(TransactionMsg) returns (TransactionRsp) {}
-  rpc PrintLog(google.protobuf.Empty) returns (stream RequestMsg) {}
+  rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
   rpc PrintView(google.protobuf.Empty) returns (ViewRsp) {}
@@ -97,6 +97,10 @@ message ReplyMsg {
 
 message StatusMsg {
   int64 sequence_number = 1;
+}
+
+message LogRsp {
+  string text = 1;
 }
 
 message StatusRsp {

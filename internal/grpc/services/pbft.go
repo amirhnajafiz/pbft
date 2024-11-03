@@ -85,6 +85,17 @@ func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 
 // PrintLog returns the datalog of this node.
 func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error {
+	logs := p.Consensus.Logs.GetLogs()
+
+	// publish logs one by one
+	for _, block := range logs {
+		if err := stream.Send(&pbft.LogRsp{
+			Text: block,
+		}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

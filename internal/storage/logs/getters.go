@@ -21,3 +21,8 @@ func (l *Logs) GetAllRequests() []*pbft.RequestMsg {
 
 	return list
 }
+
+// GetLogs returns the node datalog.
+func (l *Logs) GetLogs() []string {
+	return l.logs
+}

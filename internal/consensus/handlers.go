@@ -335,10 +335,15 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	c.Logger.Debug("current leader", zap.String("id", id))
 
 	// send the transaction request to the leader
-	c.Client.Request(id, &pbft.RequestMsg{
+	if err := c.Client.Request(id, &pbft.RequestMsg{
 		Transaction: msg,
 		Response:    &pbft.TransactionRsp{},
-	})
+	}); err != nil {
+		c.Logger.Debug("leader failed", zap.Error(err))
+		c.outTransactionChannel <- "leader is not responding"
+
+		return
+	}
 
 	c.Logger.Info(
 		"request is sent",
@@ -350,12 +355,21 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 
 	// wait for f+1 matching reply or timeout request
 	resp := c.waitReplys(c.inTransactionChannel)
+	if resp == nil { // timeout is hit
+		c.Logger.Debug("request timeout")
+		c.outTransactionChannel <- "timeout"
+
+		return
+	}
 
 	c.Logger.Info(
 		"received reply message",
 		zap.Int64("timestamp", resp.GetTimestamp()),
 		zap.Int64("sequence number", resp.GetSequenceNumber()),
 	)
+
+	// reset the view
+	c.Memory.SetView(int(resp.GetView()))
 
 	// return the response in channel
 	c.outTransactionChannel <- resp.GetResponse()

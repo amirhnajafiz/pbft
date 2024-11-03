@@ -16,9 +16,14 @@ func (m *Memory) Reset() {
 	m.byzantine = false
 }
 
-// IncView updates view on unit.
+// IncView increases the view one unit.
 func (m *Memory) IncView() {
 	m.view = (m.view + 1) % m.totalNodes
+}
+
+// SetView updates the view value.
+func (m *Memory) SetView(in int) {
+	m.view = in
 }
 
 // SetBalances is used to set clients balances.

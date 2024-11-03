@@ -126,7 +126,7 @@ func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
 }
 
 // Request calls the Request RPC on the target machine (clients to nodes).
-func (c *Client) Request(target string, msg *pbft.RequestMsg) {
+func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 	msg.ClientId = c.nodeId
@@ -135,14 +135,17 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) {
 	conn, err := c.connect(address)
 	if err != nil {
 		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call request RPC
 	if _, err := pbft.NewPBFTClient(conn).Request(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Request RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
+
+	return nil
 }
 
 // PrintDB gets a target datastore.

@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
@@ -77,31 +79,37 @@ func (c *Consensus) waitReplys(channel chan *models.InterruptMsg) *pbft.ReplyMsg
 	messages := make(map[int64]int)
 	replys := make(map[int64]*pbft.ReplyMsg)
 
+	// create a new timer
+	timer := time.NewTimer(time.Duration(c.BFTCfg.RequestTimeout) * time.Millisecond)
+	defer timer.Stop()
+
 	for {
-		// get raw interrupts
-		intr := <-channel
-
-		// ignore messages that are not preprepared
-		if intr.Type != enum.IntrReply {
-			continue
-		}
-
-		// extract the digest to count the messages
-		payload := intr.Payload.(*pbft.ReplyMsg)
-		ts := payload.GetTimestamp()
-
-		if _, ok := messages[ts]; !ok {
-			messages[ts] = 1
-			replys[ts] = payload
-		} else {
-			messages[ts]++
-		}
-
-		// check for having f+1 match messages
-		for key, value := range messages {
-			if value >= c.BFTCfg.Responses {
-				return replys[key]
+		select {
+		case intr := <-channel:
+			// ignore messages that are not preprepared
+			if intr.Type != enum.IntrReply {
+				continue
 			}
+
+			// extract the digest to count the messages
+			payload := intr.Payload.(*pbft.ReplyMsg)
+			ts := payload.GetTimestamp()
+
+			if _, ok := messages[ts]; !ok {
+				messages[ts] = 1
+				replys[ts] = payload
+			} else {
+				messages[ts]++
+			}
+
+			// check for having f+1 match messages
+			for key, value := range messages {
+				if value >= c.BFTCfg.Responses {
+					return replys[key]
+				}
+			}
+		case <-timer.C: // timeout
+			return nil
 		}
 	}
 }

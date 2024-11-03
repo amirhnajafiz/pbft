@@ -7,10 +7,13 @@ import (
 
 // InitLog places a new log at the end of logs.
 func (l *Logs) InitLog() int {
-	index := l.index
-	l.index++
-
-	return index
+	for {
+		index := l.index
+		l.index++
+		if l.GetLog(index) == nil {
+			return index
+		}
+	}
 }
 
 // SetLog adds a new log into the logs.
@@ -27,4 +30,11 @@ func (l *Logs) Reset() {
 	l.datastore = make(map[int]*pbft.RequestMsg)
 	l.logs = make(map[int]*models.Log)
 	l.index = 0
+}
+
+// SetLogStatus accepts an index and status, and updates it if the new status is higher than what it is.
+func (l *Logs) SetLogStatus(index int, status pbft.RequestStatus) {
+	if l.logs[index].Request.Status > status {
+		l.logs[index].Request.Status = status
+	}
 }

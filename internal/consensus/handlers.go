@@ -37,7 +37,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	)
 
 	// call preprepared message
-	c.Client.PrePrepared(msg.GetNodeId(), &pbft.PrePreparedMsg{
+	go c.Client.PrePrepared(msg.GetNodeId(), &pbft.PrePreparedMsg{
 		Request:        msg.GetRequest(),
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
@@ -101,12 +101,17 @@ func (c *Consensus) handleReply(pkt interface{}) {
 
 	// ignore the messages that are not for this node
 	if msg.GetClientId() != c.Memory.GetNodeId() {
+		c.Logger.Debug(
+			"reply dropped",
+			zap.String("to", msg.GetClientId()),
+			zap.String("whoami", c.Memory.GetNodeId()),
+		)
 		return
 	}
 
 	// publish over correct request handler
-	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
-		Type:    enum.IntrPrePrepared,
+	c.inTransactionChannel <- &models.InterruptMsg{
+		Type:    enum.IntrReply,
 		Payload: msg,
 	}
 }
@@ -138,8 +143,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 		c.Logger.Info(
 			"new request received",
-			zap.Int("sequence number", int(message.GetSequenceNumber())),
-			zap.Int("timestamp", int(message.GetTransaction().GetTimestamp())),
+			zap.Int64("sequence number", message.GetSequenceNumber()),
+			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 		)
 
 		// broadcast to all using preprepare
@@ -162,8 +167,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 		c.Logger.Info("reply sent",
 			zap.String("client", message.GetClientId()),
-			zap.Int("sequence number", int(message.GetSequenceNumber())),
-			zap.Int("timestamp", int(message.GetTransaction().GetTimestamp())),
+			zap.Int64("sequence number", message.GetSequenceNumber()),
+			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 		)
 
 		// send the reply
@@ -200,7 +205,7 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 
 	c.Logger.Info(
 		"request is sent",
-		zap.Int("timestamp", int(msg.GetTimestamp())),
+		zap.Int64("timestamp", msg.GetTimestamp()),
 		zap.String("sender", msg.GetSender()),
 		zap.String("receiver", msg.GetReciever()),
 		zap.Int64("amount", msg.GetAmount()),
@@ -208,6 +213,12 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 
 	// wait for f+1 matching reply or timeout request
 	resp := c.waitReplys(c.inTransactionChannel)
+
+	c.Logger.Info(
+		"received reply message",
+		zap.Int64("timestamp", resp.GetTimestamp()),
+		zap.Int64("sequence number", resp.GetSequenceNumber()),
+	)
 
 	// return the response in channel
 	c.outTransactionChannel <- resp.GetResponse()

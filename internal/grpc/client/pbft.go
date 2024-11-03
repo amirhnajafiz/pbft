@@ -129,6 +129,7 @@ func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
 func (c *Client) Request(target string, msg *pbft.RequestMsg) {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
+	msg.ClientId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)

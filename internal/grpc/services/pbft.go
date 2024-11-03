@@ -8,6 +8,7 @@ import (
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -86,8 +87,15 @@ func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error
 	return nil
 }
 
+// PrintStatus gets a sequence number and returns the status of its log.
 func (p *PBFT) PrintStatus(ctx context.Context, msg *pbft.StatusMsg) (*pbft.StatusRsp, error) {
-	return nil, nil
+	if value := p.Consensus.Logs.GetLog(int(msg.GetSequenceNumber())); value != nil {
+		return &pbft.StatusRsp{
+			Status: value.GetStatus(),
+		}, nil
+	}
+
+	return nil, status.Error(5, "item not found")
 }
 
 func (p *PBFT) PrintView(ctx context.Context, msg *emptypb.Empty) (*pbft.ViewRsp, error) {

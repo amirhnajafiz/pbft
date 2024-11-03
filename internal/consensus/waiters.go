@@ -24,7 +24,7 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 		}
 
 		// extract the digest to count the messages
-		digest := intr.Payload.(*pbft.PrePreparedMsg).GetDigest()
+		digest := intr.Payload.(*pbft.AckMsg).GetDigest()
 		if _, ok := messages[digest]; !ok {
 			messages[digest] = 1
 		} else {
@@ -56,7 +56,7 @@ func (c *Consensus) waitForPrepareds(channel chan *models.InterruptMsg) int {
 		}
 
 		// extract the digest to count the messages
-		digest := intr.Payload.(*pbft.PreparedMsg).GetDigest()
+		digest := intr.Payload.(*pbft.AckMsg).GetDigest()
 		if _, ok := messages[digest]; !ok {
 			messages[digest] = 1
 		} else {

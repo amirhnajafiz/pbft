@@ -12,7 +12,7 @@ import (
 )
 
 // Commit calls the Commit RPC on the target machine (nodes to nodes).
-func (c *Client) Commit(target string, msg *pbft.CommitMsg) {
+func (c *Client) Commit(target string, msg *pbft.AckMsg) {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
@@ -50,7 +50,7 @@ func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 }
 
 // PrePrepared calls the PrePrepared RPC on the target machine (nodes to nodes).
-func (c *Client) PrePrepared(target string, msg *pbft.PrePreparedMsg) {
+func (c *Client) PrePrepared(target string, msg *pbft.AckMsg) {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
@@ -69,7 +69,7 @@ func (c *Client) PrePrepared(target string, msg *pbft.PrePreparedMsg) {
 }
 
 // Prepare calls the Prepare RPC on the target machine (nodes to nodes).
-func (c *Client) Prepare(target string, msg *pbft.PrepareMsg) {
+func (c *Client) Prepare(target string, msg *pbft.AckMsg) {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
@@ -88,7 +88,7 @@ func (c *Client) Prepare(target string, msg *pbft.PrepareMsg) {
 }
 
 // Prepared calls the Prepared RPC on the target machine (nodes to nodes).
-func (c *Client) Prepared(target string, msg *pbft.PreparedMsg) {
+func (c *Client) Prepared(target string, msg *pbft.AckMsg) {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 

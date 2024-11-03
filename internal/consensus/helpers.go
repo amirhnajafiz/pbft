@@ -95,7 +95,7 @@ func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMs
 	c.Logger.Debug("received preprepared messages", zap.Int("messages", count))
 
 	// broadcast to all using prepare
-	go c.Client.BroadcastPrepare(&pbft.PrepareMsg{
+	go c.Client.BroadcastPrepare(&pbft.AckMsg{
 		SequenceNumber: int64(sequence),
 		View:           int64(c.Memory.GetView()),
 		Digest:         hashing.MD5(message),
@@ -106,7 +106,7 @@ func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMs
 	c.Logger.Debug("received prepared messages", zap.Int("messages", count))
 
 	// broadcast to all using commit
-	go c.Client.BroadcastCommit(&pbft.CommitMsg{
+	go c.Client.BroadcastCommit(&pbft.AckMsg{
 		SequenceNumber: int64(sequence),
 		View:           int64(c.Memory.GetView()),
 		Digest:         hashing.MD5(message),

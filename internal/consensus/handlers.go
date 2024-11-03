@@ -48,7 +48,7 @@ func (c *Consensus) handleExecute(sequence int) {
 // handleCommit gets a commit message, changes it status and calls the handleExecute.
 func (c *Consensus) handleCommit(pkt interface{}) {
 	// parse the input message
-	msg := pkt.(*pbft.CommitMsg)
+	msg := pkt.(*pbft.AckMsg)
 	sequence := int(msg.GetSequenceNumber())
 
 	// update the request and set the status of prepare
@@ -69,8 +69,11 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PrePrepareMsg)
 
+	// get the digest of input request
+	digest := hashing.MD5(msg.GetRequest())
+
 	// validate the message
-	if !c.validatePrePrepareMsg(msg) {
+	if !c.validatePrePrepareMsg(msg, digest) {
 		c.Logger.Info(
 			"preprepare message is not valid",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
@@ -89,8 +92,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	)
 
 	// call preprepared message
-	go c.Client.PrePrepared(msg.GetNodeId(), &pbft.PrePreparedMsg{
-		Request:        msg.GetRequest(),
+	go c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
 	})
@@ -99,7 +101,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 // handlePrePrepared gets preprepared message and passes it to the correct request handler.
 func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	// parse the input message
-	msg := pkt.(*pbft.PrePreparedMsg)
+	msg := pkt.(*pbft.AckMsg)
 
 	// get the message from our datastore
 	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
@@ -107,20 +109,18 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 		c.Logger.Info(
 			"request not found",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
-			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
 		return
 	}
 
-	// set the digest message
-	msg.Digest = hashing.MD5(message)
+	// get the digest of input request
+	digest := hashing.MD5(message)
 
 	// validate the message
-	if !c.validatePrePreparedMsg(msg) {
+	if !c.validateAckMessage(msg, digest) {
 		c.Logger.Info(
 			"preprepared message is not valid",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
-			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
 		return
 	}
@@ -141,7 +141,7 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 // handlePrepare gets a prepare message and updates a log status.
 func (c *Consensus) handlePrepare(pkt interface{}) {
 	// parse the input message
-	msg := pkt.(*pbft.PrepareMsg)
+	msg := pkt.(*pbft.AckMsg)
 
 	// get the message from our datastore
 	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
@@ -153,12 +153,12 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 		return
 	}
 
-	// get digest message
+	// get the digest of input request
 	digest := hashing.MD5(message)
 
 	if !c.Memory.GetByzantine() { // byzantine nodes don't prepare messages
 		// validate the message
-		if !c.validatePrepareMsg(digest, msg) {
+		if !c.validateAckMessage(msg, digest) {
 			c.Logger.Info(
 				"prepare message is not valid",
 				zap.Int64("sequence number", msg.GetSequenceNumber()),
@@ -177,7 +177,7 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 	}
 
 	// call prepared message
-	go c.Client.Prepared(msg.GetNodeId(), &pbft.PreparedMsg{
+	go c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
 		Digest:         digest,
@@ -187,7 +187,7 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 // handlePrepared gets a prepared message and sends it to the gith request handler.
 func (c *Consensus) handlePrepared(pkt interface{}) {
 	// parse the input message
-	msg := pkt.(*pbft.PreparedMsg)
+	msg := pkt.(*pbft.AckMsg)
 
 	// get the message from our datastore
 	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
@@ -199,11 +199,11 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 		return
 	}
 
-	// get digest message
+	// get the digest of input request
 	digest := hashing.MD5(message)
 
 	// validate the message
-	if !c.validatePreparedMsg(digest, msg) {
+	if !c.validateAckMessage(msg, digest) {
 		c.Logger.Info(
 			"prepared message is not valid",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),

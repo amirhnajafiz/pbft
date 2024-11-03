@@ -43,10 +43,10 @@ const (
 type PBFTClient interface {
 	Request(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrePrepare(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	PrePrepared(ctx context.Context, in *PrePreparedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Prepared(ctx context.Context, in *PreparedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PrePrepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Prepare(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Prepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
@@ -83,7 +83,7 @@ func (c *pBFTClient) PrePrepare(ctx context.Context, in *PrePrepareMsg, opts ...
 	return out, nil
 }
 
-func (c *pBFTClient) PrePrepared(ctx context.Context, in *PrePreparedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *pBFTClient) PrePrepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_PrePrepared_FullMethodName, in, out, cOpts...)
@@ -93,7 +93,7 @@ func (c *pBFTClient) PrePrepared(ctx context.Context, in *PrePreparedMsg, opts .
 	return out, nil
 }
 
-func (c *pBFTClient) Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *pBFTClient) Prepare(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_Prepare_FullMethodName, in, out, cOpts...)
@@ -103,7 +103,7 @@ func (c *pBFTClient) Prepare(ctx context.Context, in *PrepareMsg, opts ...grpc.C
 	return out, nil
 }
 
-func (c *pBFTClient) Prepared(ctx context.Context, in *PreparedMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *pBFTClient) Prepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_Prepared_FullMethodName, in, out, cOpts...)
@@ -113,7 +113,7 @@ func (c *pBFTClient) Prepared(ctx context.Context, in *PreparedMsg, opts ...grpc
 	return out, nil
 }
 
-func (c *pBFTClient) Commit(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *pBFTClient) Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_Commit_FullMethodName, in, out, cOpts...)
@@ -210,10 +210,10 @@ func (c *pBFTClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...g
 type PBFTServer interface {
 	Request(context.Context, *RequestMsg) (*emptypb.Empty, error)
 	PrePrepare(context.Context, *PrePrepareMsg) (*emptypb.Empty, error)
-	PrePrepared(context.Context, *PrePreparedMsg) (*emptypb.Empty, error)
-	Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error)
-	Prepared(context.Context, *PreparedMsg) (*emptypb.Empty, error)
-	Commit(context.Context, *CommitMsg) (*emptypb.Empty, error)
+	PrePrepared(context.Context, *AckMsg) (*emptypb.Empty, error)
+	Prepare(context.Context, *AckMsg) (*emptypb.Empty, error)
+	Prepared(context.Context, *AckMsg) (*emptypb.Empty, error)
+	Commit(context.Context, *AckMsg) (*emptypb.Empty, error)
 	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
 	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
@@ -236,16 +236,16 @@ func (UnimplementedPBFTServer) Request(context.Context, *RequestMsg) (*emptypb.E
 func (UnimplementedPBFTServer) PrePrepare(context.Context, *PrePrepareMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrePrepare not implemented")
 }
-func (UnimplementedPBFTServer) PrePrepared(context.Context, *PrePreparedMsg) (*emptypb.Empty, error) {
+func (UnimplementedPBFTServer) PrePrepared(context.Context, *AckMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrePrepared not implemented")
 }
-func (UnimplementedPBFTServer) Prepare(context.Context, *PrepareMsg) (*emptypb.Empty, error) {
+func (UnimplementedPBFTServer) Prepare(context.Context, *AckMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Prepare not implemented")
 }
-func (UnimplementedPBFTServer) Prepared(context.Context, *PreparedMsg) (*emptypb.Empty, error) {
+func (UnimplementedPBFTServer) Prepared(context.Context, *AckMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Prepared not implemented")
 }
-func (UnimplementedPBFTServer) Commit(context.Context, *CommitMsg) (*emptypb.Empty, error) {
+func (UnimplementedPBFTServer) Commit(context.Context, *AckMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
 }
 func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error) {
@@ -324,7 +324,7 @@ func _PBFT_PrePrepare_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _PBFT_PrePrepared_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrePreparedMsg)
+	in := new(AckMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -336,13 +336,13 @@ func _PBFT_PrePrepared_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: PBFT_PrePrepared_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).PrePrepared(ctx, req.(*PrePreparedMsg))
+		return srv.(PBFTServer).PrePrepared(ctx, req.(*AckMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PBFT_Prepare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrepareMsg)
+	in := new(AckMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -354,13 +354,13 @@ func _PBFT_Prepare_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: PBFT_Prepare_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Prepare(ctx, req.(*PrepareMsg))
+		return srv.(PBFTServer).Prepare(ctx, req.(*AckMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PBFT_Prepared_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PreparedMsg)
+	in := new(AckMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -372,13 +372,13 @@ func _PBFT_Prepared_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: PBFT_Prepared_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Prepared(ctx, req.(*PreparedMsg))
+		return srv.(PBFTServer).Prepared(ctx, req.(*AckMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PBFT_Commit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CommitMsg)
+	in := new(AckMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -390,7 +390,7 @@ func _PBFT_Commit_Handler(srv interface{}, ctx context.Context, dec func(interfa
 		FullMethod: PBFT_Commit_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Commit(ctx, req.(*CommitMsg))
+		return srv.(PBFTServer).Commit(ctx, req.(*AckMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }

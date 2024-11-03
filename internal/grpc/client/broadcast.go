@@ -20,14 +20,14 @@ func (c *Client) BroadcastPrePrepare(msg *pbft.PrePrepareMsg) {
 }
 
 // BroadcastPrepare sends a prepare message to all nodes.
-func (c *Client) BroadcastPrepare(msg *pbft.PrepareMsg) {
+func (c *Client) BroadcastPrepare(msg *pbft.AckMsg) {
 	for key := range c.nodes {
 		c.Prepare(key, msg)
 	}
 }
 
 // BroadcastCommit sends a commit message to all nodes.
-func (c *Client) BroadcastCommit(msg *pbft.CommitMsg) {
+func (c *Client) BroadcastCommit(msg *pbft.AckMsg) {
 	for key := range c.nodes {
 		c.Commit(key, msg)
 	}

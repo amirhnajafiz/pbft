@@ -21,7 +21,7 @@ type PBFT struct {
 }
 
 // Commit RPC forwards a commit message into consensus.handleCommit
-func (p *PBFT) Commit(ctx context.Context, msg *pbft.CommitMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Commit", msg.String())
 	p.Consensus.Signal(enum.IntrCommit, msg)
 
@@ -37,7 +37,7 @@ func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptyp
 }
 
 // PrePrepared RPC forwards a preprepared message into consensus.handlePrePrepared
-func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.PrePreparedMsg) (*emptypb.Empty, error) {
+func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("PrePrepared", msg.String())
 	p.Consensus.Signal(enum.IntrPrePrepared, msg)
 
@@ -45,7 +45,7 @@ func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.PrePreparedMsg) (*empt
 }
 
 // Prepare RPC forwards a prepare message into consensus.handlePrepare
-func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Prepare(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Prepare", msg.String())
 	p.Consensus.Signal(enum.IntrPrepare, msg)
 
@@ -53,7 +53,7 @@ func (p *PBFT) Prepare(ctx context.Context, msg *pbft.PrepareMsg) (*emptypb.Empt
 }
 
 // Prepared RPC forwards a prepared message into consensus.handlePrepared
-func (p *PBFT) Prepared(ctx context.Context, msg *pbft.PreparedMsg) (*emptypb.Empty, error) {
+func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Prepared", msg.String())
 	p.Consensus.Signal(enum.IntrPrepared, msg)
 

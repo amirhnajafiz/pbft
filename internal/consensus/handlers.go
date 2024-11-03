@@ -10,27 +10,48 @@ import (
 )
 
 // handleExecute gets a sequence and message and does the execution.
-func (c *Consensus) handleExecute(sequence int, message *models.Log) {
-	// check previous messages execution
+func (c *Consensus) handleExecute(sequence int) {
+	// check if this sequence is executable
 	if !c.canExecute(sequence) {
 		c.Logger.Debug(
 			"request cannot get executed yet",
-			zap.Int64("sequence number", message.Request.GetSequenceNumber()),
-			zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+			zap.Int("sequence number", sequence),
 		)
 		return
 	}
 
-	c.Logger.Info("message executed",
-		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
-		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
-	)
+	// follow sequence until one is not committed, execute them
+	index := sequence
+	for {
+		if tmp := c.Logs.GetLog(index); tmp != nil && tmp.Request.Status == pbft.RequestStatus_REQUEST_STATUS_C {
+			// execute request
+			c.executeRequest(tmp.Request)
 
-	// execute the request
-	c.executeRequest(sequence, message.Request)
+			// update the log and set the status of prepare
+			tmp.Request.Status = pbft.RequestStatus_REQUEST_STATUS_E
+			c.Logs.SetLog(sequence, tmp.Request)
 
-	// check for logs requests
-	go c.checkLogsForPossibleExecution(sequence)
+			// send the reply message
+			c.Client.Reply(tmp.Request.GetClientId(), &pbft.ReplyMsg{
+				SequenceNumber: tmp.Request.GetSequenceNumber(),
+				View:           int64(c.Memory.GetView()),
+				Timestamp:      tmp.Request.GetTransaction().GetTimestamp(),
+				ClientId:       tmp.Request.GetClientId(),
+				Response:       tmp.Request.GetResponse().GetText(),
+			})
+
+			c.Logger.Info(
+				"message executed and reply sent",
+				zap.String("client", tmp.Request.GetClientId()),
+				zap.Int64("sequence number", tmp.Request.GetSequenceNumber()),
+				zap.Int64("timestamp", tmp.Request.GetTransaction().GetTimestamp()),
+			)
+		} else {
+			break
+		}
+
+		index++
+	}
 }
 
 // handleCommit gets a commit message, changes it status and calls the handleExecute.
@@ -53,13 +74,14 @@ func (c *Consensus) handleCommit(pkt interface{}) {
 	c.Logs.SetLog(int(msg.GetSequenceNumber()), message.Request)
 
 	// message committed
-	c.Logger.Info("message committed",
+	c.Logger.Info(
+		"message committed",
 		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
 		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
 	)
 
 	// call execute handler
-	c.handleExecute(int(msg.GetSequenceNumber()), message)
+	c.handleExecute(int(msg.GetSequenceNumber()))
 }
 
 // handle preprepare accepts a preprepare message and validates it to call preprepared RPC.

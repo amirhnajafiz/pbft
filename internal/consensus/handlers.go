@@ -83,6 +83,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	}
 
 	// update the request and set the status of preprepared
+	c.Logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
 	c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
 
 	c.Logger.Debug(
@@ -95,6 +96,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	go c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
+		Digest:         msg.GetDigest(),
 	})
 }
 

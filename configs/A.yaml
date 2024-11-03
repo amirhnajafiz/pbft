@@ -20,3 +20,4 @@ node:
     total: 1
     majority: 1
     responses: 1
+    request_timeout: 1000 # in milliseconds

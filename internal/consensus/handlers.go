@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -260,6 +262,20 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.RequestMsg)
 
+	// check if we had a request with the given timestamp
+	if rsp := c.isRequestExecuted(msg.GetTransaction().GetTimestamp()); rsp != nil {
+		// send the reply message
+		c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
+			SequenceNumber: rsp.GetSequenceNumber(),
+			View:           int64(c.Memory.GetView()),
+			Timestamp:      rsp.GetTransaction().GetTimestamp(),
+			ClientId:       rsp.GetClientId(),
+			Response:       rsp.GetResponse().GetText(),
+		})
+
+		return
+	}
+
 	// store the log place
 	seqn := c.Logs.InitRequest()
 
@@ -329,20 +345,26 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.TransactionMsg)
 
-	// get the current leader
-	id := c.getCurrentLeader()
+	// in a loop, try to send your request to a leader
+	for {
+		// get the current leader id
+		id := c.getCurrentLeader()
 
-	c.Logger.Debug("current leader", zap.String("id", id))
+		c.Logger.Debug("current leader", zap.String("id", id))
 
-	// send the transaction request to the leader
-	if err := c.Client.Request(id, &pbft.RequestMsg{
-		Transaction: msg,
-		Response:    &pbft.TransactionRsp{},
-	}); err != nil {
-		c.Logger.Debug("leader failed", zap.Error(err))
-		c.outTransactionChannel <- "leader is not responding"
+		// send the transaction request to the leader
+		if err := c.Client.Request(id, &pbft.RequestMsg{
+			Transaction: msg,
+			Response:    &pbft.TransactionRsp{},
+		}); err != nil {
+			// if the leader failed, increament the view, and wait 1 second before resending your request
+			c.Logger.Debug("leader failed", zap.Error(err))
+			c.Memory.IncView()
 
-		return
+			time.Sleep(1 * time.Second)
+		} else {
+			break
+		}
 	}
 
 	c.Logger.Info(

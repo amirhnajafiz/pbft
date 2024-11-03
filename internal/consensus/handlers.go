@@ -30,20 +30,12 @@ func (c *Consensus) handleExecute(sequence int) {
 			// update the request and set the status of prepare
 			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-			// send the reply message
-			c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
-				SequenceNumber: msg.GetSequenceNumber(),
-				View:           int64(c.Memory.GetView()),
-				Timestamp:      msg.GetTransaction().GetTimestamp(),
-				ClientId:       msg.GetClientId(),
-				Response:       msg.GetResponse().GetText(),
-			})
+			// send the reply message using helper functions
+			c.helpSendReply(msg)
 
 			c.Logger.Info(
-				"request executed and reply sent",
-				zap.String("client", msg.GetClientId()),
+				"request executed",
 				zap.Int64("sequence number", msg.GetSequenceNumber()),
-				zap.Int64("timestamp", msg.GetTransaction().GetTimestamp()),
 			)
 		} else {
 			break
@@ -262,15 +254,7 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 	// check if we had a request with the given timestamp
 	if rsp := c.isRequestExecuted(msg.GetTransaction().GetTimestamp()); rsp != nil {
-		// send the reply message
-		c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
-			SequenceNumber: rsp.GetSequenceNumber(),
-			View:           int64(c.Memory.GetView()),
-			Timestamp:      rsp.GetTransaction().GetTimestamp(),
-			ClientId:       rsp.GetClientId(),
-			Response:       rsp.GetResponse().GetText(),
-		})
-
+		c.helpSendReply(rsp) // send the reply message using helper function
 		return
 	}
 
@@ -280,56 +264,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
 
-	// need to create a go-routine to not block the request
-	go func(sequence int, message *pbft.RequestMsg) {
-		defer func() {
-			// reset our channel
-			delete(c.channels, sequence)
-		}()
-
-		// update request metadata
-		message.SequenceNumber = int64(sequence)
-		message.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
-
-		// store it into datastore
-		c.Logs.SetRequest(sequence, message)
-
-		c.Logger.Debug(
-			"new request received",
-			zap.Int64("sequence number", message.GetSequenceNumber()),
-			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-		)
-
-		// broadcast to all using preprepare
-		go c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
-			Request:        message,
-			SequenceNumber: int64(sequence),
-			View:           int64(c.Memory.GetView()),
-			Digest:         hashing.MD5(message),
-		})
-
-		// wait for 2f+1 preprepared messages
-		count := c.waitForPrePrepareds(c.channels[sequence])
-		c.Logger.Debug("received preprepared messages", zap.Int("messages", count))
-
-		// broadcast to all using prepare
-		go c.Client.BroadcastPrepare(&pbft.PrepareMsg{
-			SequenceNumber: int64(sequence),
-			View:           int64(c.Memory.GetView()),
-			Digest:         hashing.MD5(message),
-		})
-
-		// wait for 2f+1 prepared messages
-		count = c.waitForPrepareds(c.channels[sequence])
-		c.Logger.Debug("received prepared messages", zap.Int("messages", count))
-
-		// broadcast to all using commit
-		go c.Client.BroadcastCommit(&pbft.CommitMsg{
-			SequenceNumber: int64(sequence),
-			View:           int64(c.Memory.GetView()),
-			Digest:         hashing.MD5(message),
-		})
-	}(seqn, msg)
+	// need to create a go-routine to not block the request and call helper functions
+	go c.helpProcessTransaction(seqn, msg)
 }
 
 // handle transaction checks a new transaction to call request RPC.

@@ -47,6 +47,7 @@ func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
 	if amount <= int64(senderBalance) {
 		c.Memory.SetBalance(msg.GetTransaction().GetSender(), senderBalance-int(amount))
 		c.Memory.SetBalance(msg.GetTransaction().GetReciever(), receiverBalance+int(amount))
+
 		msg.GetResponse().Text = enum.RespSuccess
 	}
 }

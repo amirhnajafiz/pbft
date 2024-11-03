@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -358,9 +360,20 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	resp := c.waitReplys(c.inTransactionChannel)
 	if resp == nil { // timeout is hit
 		c.Logger.Debug("request timeout")
-		c.outTransactionChannel <- "timeout"
 
-		return
+		for {
+			// send message to all nodes
+			c.Client.BroadcastRequest(msg)
+
+			// wait for f+1 matching reply or timeout request
+			resp = c.waitReplys(c.inTransactionChannel)
+			if resp != nil {
+				break
+			}
+
+			// sleep one second before resending the request
+			time.Sleep(1 * time.Second)
+		}
 	}
 
 	c.Logger.Info(

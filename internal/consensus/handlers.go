@@ -164,23 +164,25 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 	// get digest message
 	digest := hashing.MD5(message)
 
-	// validate the message
-	if !c.validatePrepareMsg(digest, msg) {
-		c.Logger.Info(
-			"prepare message is not valid",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
+	if !c.Memory.GetByzantine() { // byzantine nodes don't prepare messages
+		// validate the message
+		if !c.validatePrepareMsg(digest, msg) {
+			c.Logger.Info(
+				"prepare message is not valid",
+				zap.Int64("sequence number", msg.GetSequenceNumber()),
+			)
+			return
+		}
+
+		// update the request and set the status of prepare
+		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
+
+		c.Logger.Debug(
+			"prepared a message",
+			zap.Int64("sequence number", message.GetSequenceNumber()),
+			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 		)
-		return
 	}
-
-	// update the request and set the status of prepare
-	c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
-
-	c.Logger.Debug(
-		"prepared a message",
-		zap.Int64("sequence number", message.GetSequenceNumber()),
-		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-	)
 
 	// call prepared message
 	go c.Client.Prepared(msg.GetNodeId(), &pbft.PreparedMsg{

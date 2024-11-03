@@ -21,27 +21,16 @@ func (c *Consensus) handleExecute(sequence int, message *models.Log) {
 		return
 	}
 
-	// execute the request
-	c.executeRequest(message.Request)
-
-	// update the log and set the status of prepare
-	message.Request.Status = pbft.RequestStatus_REQUEST_STATUS_E
-	c.Logs.SetLog(sequence, message.Request)
-
-	c.Logger.Info("reply sent",
-		zap.String("client", message.Request.GetClientId()),
+	c.Logger.Info("message executed",
 		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
 		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
 	)
 
-	// send the reply message
-	go c.Client.Reply(message.Request.GetClientId(), &pbft.ReplyMsg{
-		SequenceNumber: message.Request.GetSequenceNumber(),
-		View:           int64(c.Memory.GetView()),
-		Timestamp:      message.Request.GetTransaction().GetTimestamp(),
-		ClientId:       message.Request.GetClientId(),
-		Response:       message.Request.GetResponse().GetText(),
-	})
+	// execute the request
+	c.executeRequest(sequence, message.Request)
+
+	// check for logs requests
+	go c.checkLogsForPossibleExecution(sequence)
 }
 
 // handleCommit gets a commit message, changes it status and calls the handleExecute.
@@ -338,6 +327,7 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// send the transaction request to the leader
 	c.Client.Request(id, &pbft.RequestMsg{
 		Transaction: msg,
+		Response:    &pbft.TransactionRsp{},
 	})
 
 	c.Logger.Info(

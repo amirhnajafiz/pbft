@@ -3,6 +3,8 @@ package consensus
 import (
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+
+	"go.uber.org/zap"
 )
 
 // getCurrentLeader returns the current leader id.
@@ -23,7 +25,7 @@ func (c *Consensus) canExecute(sequence int) bool {
 }
 
 // executeRequest takes a request message and executes its transaction.
-func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
+func (c *Consensus) executeRequest(sequence int, msg *pbft.RequestMsg) {
 	senderBalance := c.Memory.GetBalance(msg.GetTransaction().GetSender())
 	receiverBalance := c.Memory.GetBalance(msg.GetTransaction().GetReciever())
 	amount := msg.GetTransaction().GetAmount()
@@ -34,6 +36,39 @@ func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
 		c.Memory.SetBalance(msg.GetTransaction().GetSender(), senderBalance-int(amount))
 		c.Memory.SetBalance(msg.GetTransaction().GetReciever(), receiverBalance+int(amount))
 		msg.GetResponse().Text = "submitted"
+	}
+
+	// update the log and set the status of prepare
+	msg.Status = pbft.RequestStatus_REQUEST_STATUS_E
+	c.Logs.SetLog(sequence, msg)
+
+	// send the reply message
+	c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
+		SequenceNumber: msg.GetSequenceNumber(),
+		View:           int64(c.Memory.GetView()),
+		Timestamp:      msg.GetTransaction().GetTimestamp(),
+		ClientId:       msg.GetClientId(),
+		Response:       msg.GetResponse().GetText(),
+	})
+
+	c.Logger.Info("reply sent",
+		zap.String("client", msg.GetClientId()),
+		zap.Int64("sequence number", msg.GetSequenceNumber()),
+		zap.Int64("timestamp", msg.GetTransaction().GetTimestamp()),
+	)
+}
+
+// checkLogsForPossibleExecution executes all available requests that are after this sequence.
+func (c *Consensus) checkLogsForPossibleExecution(sequence int) {
+	index := sequence + 1
+	for {
+		if tmp := c.Logs.GetLog(index); tmp != nil && tmp.Request.Status == pbft.RequestStatus_REQUEST_STATUS_C {
+			c.executeRequest(index, tmp.Request)
+		} else {
+			break
+		}
+
+		index++
 	}
 }
 

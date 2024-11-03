@@ -31,3 +31,22 @@ func (c *Consensus) helpSendRequest(msg *pbft.TransactionMsg) {
 		}
 	}
 }
+
+// helpReceiveResponse in a loop trys to get a response for user request.
+func (c *Consensus) helpReceiveResponse(msg *pbft.TransactionMsg) *pbft.ReplyMsg {
+	for {
+		// wait for f+1 matching reply or timeout request
+		resp := c.waitReplys(c.inTransactionChannel)
+		if resp != nil {
+			return resp
+		}
+
+		c.Logger.Debug("request timeout")
+
+		// send message to all nodes
+		c.Client.BroadcastRequest(msg)
+
+		// sleep one second before resending the request
+		time.Sleep(1 * time.Second)
+	}
+}

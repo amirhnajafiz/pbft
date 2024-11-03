@@ -1,8 +1,6 @@
 package consensus
 
 import (
-	"time"
-
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -334,8 +332,7 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	}(seqn, msg)
 }
 
-// handle transaction accepts a new transaction and calls
-// the request RPC on the current leader.
+// handle transaction checks a new transaction to call request RPC.
 func (c *Consensus) handleTransaction(pkt interface{}) {
 	defer func() {
 		// reset the channel when transaction is done
@@ -348,7 +345,7 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// send the request using helper functions
 	c.helpSendRequest(msg)
 
-	c.Logger.Info(
+	c.Logger.Debug(
 		"request is sent",
 		zap.Int64("timestamp", msg.GetTimestamp()),
 		zap.String("sender", msg.GetSender()),
@@ -356,27 +353,10 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 		zap.Int64("amount", msg.GetAmount()),
 	)
 
-	// wait for f+1 matching reply or timeout request
-	resp := c.waitReplys(c.inTransactionChannel)
-	if resp == nil { // timeout is hit
-		c.Logger.Debug("request timeout")
+	// get the response by calling helper functions
+	resp := c.helpReceiveResponse(msg)
 
-		for {
-			// send message to all nodes
-			c.Client.BroadcastRequest(msg)
-
-			// wait for f+1 matching reply or timeout request
-			resp = c.waitReplys(c.inTransactionChannel)
-			if resp != nil {
-				break
-			}
-
-			// sleep one second before resending the request
-			time.Sleep(1 * time.Second)
-		}
-	}
-
-	c.Logger.Info(
+	c.Logger.Debug(
 		"received reply message",
 		zap.Int64("timestamp", resp.GetTimestamp()),
 		zap.Int64("sequence number", resp.GetSequenceNumber()),

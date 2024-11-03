@@ -69,16 +69,12 @@ func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empt
 	return &emptypb.Empty{}, nil
 }
 
+// PrintDB returns the current datastore of this node.
 func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
-	return nil
-}
+	ds := p.Consensus.Logs.GetAllRequests()
 
-// PrintLog returns the datalog of this node.
-func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error {
-	logs := p.Consensus.Logs.GetAllLogs()
-
-	// publish logs one by one
-	for _, block := range logs {
+	// publish requests one by one
+	for _, block := range ds {
 		if err := stream.Send(block); err != nil {
 			return err
 		}
@@ -87,9 +83,14 @@ func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error
 	return nil
 }
 
+// PrintLog returns the datalog of this node.
+func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error {
+	return nil
+}
+
 // PrintStatus gets a sequence number and returns the status of its log.
 func (p *PBFT) PrintStatus(ctx context.Context, msg *pbft.StatusMsg) (*pbft.StatusRsp, error) {
-	if value := p.Consensus.Logs.GetLog(int(msg.GetSequenceNumber())); value != nil {
+	if value := p.Consensus.Logs.GetRequest(int(msg.GetSequenceNumber())); value != nil {
 		return &pbft.StatusRsp{
 			Status: value.GetStatus(),
 		}, nil

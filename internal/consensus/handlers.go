@@ -23,12 +23,12 @@ func (c *Consensus) handleExecute(sequence int) {
 	// follow sequence until one is not committed, execute them
 	index := sequence
 	for {
-		if msg := c.Logs.GetLog(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
+		if msg := c.Logs.GetRequest(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
 			// execute request
 			c.executeRequest(msg)
 
-			// update the log and set the status of prepare
-			c.Logs.SetLogStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
+			// update the request and set the status of prepare
+			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
 			// send the reply message
 			c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
@@ -40,7 +40,7 @@ func (c *Consensus) handleExecute(sequence int) {
 			})
 
 			c.Logger.Info(
-				"message executed and reply sent",
+				"request executed and reply sent",
 				zap.String("client", msg.GetClientId()),
 				zap.Int64("sequence number", msg.GetSequenceNumber()),
 				zap.Int64("timestamp", msg.GetTransaction().GetTimestamp()),
@@ -59,8 +59,8 @@ func (c *Consensus) handleCommit(pkt interface{}) {
 	msg := pkt.(*pbft.CommitMsg)
 	sequence := int(msg.GetSequenceNumber())
 
-	// update the log and set the status of prepare
-	c.Logs.SetLogStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	// update the request and set the status of prepare
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
 	// message committed
 	c.Logger.Debug(
@@ -87,8 +87,8 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 		return
 	}
 
-	// update the log and set the status of preprepared
-	c.Logs.SetLogStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
+	// update the request and set the status of preprepared
+	c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
 
 	c.Logger.Debug(
 		"preprepared a message",
@@ -109,11 +109,11 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PrePreparedMsg)
 
-	// get the message from our logs
-	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	// get the message from our datastore
+	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
 		c.Logger.Info(
-			"message not found",
+			"request not found",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
@@ -151,11 +151,11 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PrepareMsg)
 
-	// get the message from our logs
-	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	// get the message from our datastore
+	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
 		c.Logger.Info(
-			"message not found",
+			"request not found",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 		return
@@ -173,8 +173,8 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 		return
 	}
 
-	// update the log and set the status of prepare
-	c.Logs.SetLogStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
+	// update the request and set the status of prepare
+	c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
 
 	c.Logger.Debug(
 		"prepared a message",
@@ -195,11 +195,11 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PreparedMsg)
 
-	// get the message from our logs
-	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	// get the message from our datastore
+	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
 		c.Logger.Info(
-			"message not found",
+			"request not found",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 		return
@@ -259,7 +259,7 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	msg := pkt.(*pbft.RequestMsg)
 
 	// store the log place
-	seqn := c.Logs.InitLog()
+	seqn := c.Logs.InitRequest()
 
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
@@ -275,8 +275,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		message.SequenceNumber = int64(sequence)
 		message.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
-		// store it into logs
-		c.Logs.SetLog(sequence, message)
+		// store it into datastore
+		c.Logs.SetRequest(sequence, message)
 
 		c.Logger.Debug(
 			"new request received",

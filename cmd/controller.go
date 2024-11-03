@@ -98,6 +98,18 @@ func (c Controller) Main() error {
 					item.GetResponse().GetText(),
 				)
 			}
+		case "printdb":
+			for _, item := range c.client.PrintDB(parts[1]) {
+				fmt.Printf(
+					"%d : %d (%s, %s, %d) : %s\n",
+					item.GetSequenceNumber(),
+					item.GetTransaction().GetTimestamp(),
+					item.GetTransaction().GetSender(),
+					item.GetTransaction().GetReciever(),
+					item.GetTransaction().GetAmount(),
+					item.GetResponse().GetText(),
+				)
+			}
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[2])
 			fmt.Println(c.client.PrintStatus(parts[1], seq))

@@ -22,7 +22,11 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 
 	// validate the message
 	if !c.validatePrePrepareMsg(msg) {
-		c.Logger.Info("preprepared message is not valid")
+		c.Logger.Info(
+			"preprepare message is not valid",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
+		)
 		return
 	}
 
@@ -30,10 +34,10 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	msg.GetRequest().Status = pbft.RequestStatus_REQUEST_STATUS_PP
 	c.Logs.SetLog(int(msg.GetSequenceNumber()), msg.GetRequest())
 
-	c.Logger.Info(
+	c.Logger.Debug(
 		"preprepared a message",
-		zap.Int("sequence number", int(msg.GetSequenceNumber())),
-		zap.Int("timestamp", int(msg.GetRequest().GetTransaction().GetTimestamp())),
+		zap.Int64("sequence number", msg.GetSequenceNumber()),
+		zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 	)
 
 	// call preprepared message
@@ -54,7 +58,8 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	if message == nil {
 		c.Logger.Info(
 			"message not found",
-			zap.Int("sequence number", int(msg.GetSequenceNumber())),
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
 		return
 	}
@@ -66,15 +71,16 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	if !c.validatePrePreparedMsg(msg) {
 		c.Logger.Info(
 			"preprepared message is not valid",
-			zap.Int("sequence number", int(msg.GetSequenceNumber())),
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
 		return
 	}
 
 	c.Logger.Debug(
 		"preprepared received",
-		zap.Int("sequence number", int(msg.GetSequenceNumber())),
-		zap.Int("timestamp", int(msg.GetRequest().GetTransaction().GetTimestamp())),
+		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
 	)
 
 	// publish over correct request handler
@@ -84,14 +90,89 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	}
 }
 
+// handlePrepare gets a prepare message and updates a log status.
 func (c *Consensus) handlePrepare(pkt interface{}) {
-	// check the message
-	// update log
-	// return with accept message
+	// parse the input message
+	msg := pkt.(*pbft.PrepareMsg)
+
+	// get the message from our logs
+	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	if message == nil {
+		c.Logger.Info(
+			"message not found",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	// get digest message
+	digest := hashing.MD5(message.Request)
+
+	// validate the message
+	if !c.validatePrepareMsg(digest, msg) {
+		c.Logger.Info(
+			"prepare message is not valid",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	// update the log and set the status of prepare
+	message.Request.Status = pbft.RequestStatus_REQUEST_STATUS_P
+	c.Logs.SetLog(int(msg.GetSequenceNumber()), message.Request)
+
+	c.Logger.Info(
+		"prepared a message",
+		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+	)
+
+	// call prepared message
+	go c.Client.Prepared(msg.GetNodeId(), &pbft.PreparedMsg{
+		View:           int64(c.Memory.GetView()),
+		SequenceNumber: msg.GetSequenceNumber(),
+		Digest:         digest,
+	})
 }
 
+// handlePrepared gets a prepared message and sends it to the gith request handler.
 func (c *Consensus) handlePrepared(pkt interface{}) {
+	// parse the input message
+	msg := pkt.(*pbft.PreparedMsg)
 
+	// get the message from our logs
+	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	if message == nil {
+		c.Logger.Info(
+			"message not found",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	// get digest message
+	digest := hashing.MD5(message.Request)
+
+	// validate the message
+	if !c.validatePreparedMsg(digest, msg) {
+		c.Logger.Info(
+			"prepared message is not valid",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	c.Logger.Debug(
+		"prepared received",
+		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+	)
+
+	// publish over correct request handler
+	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
+		Type:    enum.IntrPrepared,
+		Payload: msg,
+	}
 }
 
 // handleReply gets a reply message and passes it to the right request handler.
@@ -137,9 +218,10 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 		// update request metadata
 		message.SequenceNumber = int64(sequence)
+		message.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
 		// store it into logs
-		c.Logs.SetLog(sequence, msg)
+		c.Logs.SetLog(sequence, message)
 
 		c.Logger.Info(
 			"new request received",
@@ -157,11 +239,19 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 		// wait for 2f+1 preprepared messages
 		count := c.waitForPrePrepareds(c.channels[sequence])
-
 		c.Logger.Info("received preprepared messages", zap.Int("messages", count))
 
 		// broadcast to all using prepare
-		// wait for 2f+1
+		go c.Client.BroadcastPrepare(&pbft.PrepareMsg{
+			SequenceNumber: int64(sequence),
+			View:           int64(c.Memory.GetView()),
+			Digest:         hashing.MD5(message),
+		})
+
+		// wait for 2f+1 prepared messages
+		count = c.waitForPrepareds(c.channels[sequence])
+		c.Logger.Info("received prepared messages", zap.Int("messages", count))
+
 		// broadcast to all using commit
 		// execute message if possible
 

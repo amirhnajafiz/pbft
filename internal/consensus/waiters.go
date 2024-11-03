@@ -38,6 +38,38 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 	}
 }
 
+// waitForPrepareds takes interrupts from the handler channel and waits
+// until it gets 2f+1 matching prepared messages.
+func (c *Consensus) waitForPrepareds(channel chan *models.InterruptMsg) int {
+	// create a list of messages
+	messages := make(map[string]int)
+
+	for {
+		// get raw interrupts
+		intr := <-channel
+
+		// ignore messages that are not prepared
+		if intr.Type != enum.IntrPrepared {
+			continue
+		}
+
+		// extract the digest to count the messages
+		digest := intr.Payload.(*pbft.PreparedMsg).GetDigest()
+		if _, ok := messages[digest]; !ok {
+			messages[digest] = 1
+		} else {
+			messages[digest]++
+		}
+
+		// check for having 2f+1 match messages
+		for _, value := range messages {
+			if value >= c.BFTCfg.Majority {
+				return value
+			}
+		}
+	}
+}
+
 // waitForReplys takes interrupts from the handler channel and waits
 // until it gets f+1 matching replys messages.
 func (c *Consensus) waitReplys(channel chan *models.InterruptMsg) *pbft.ReplyMsg {

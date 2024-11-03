@@ -35,3 +35,29 @@ func (c *Consensus) validatePrePreparedMsg(msg *pbft.PrePreparedMsg) bool {
 
 	return true
 }
+
+// validatePrepareMsg checks the view and digest of a prepare message.
+func (c *Consensus) validatePrepareMsg(digest string, msg *pbft.PrepareMsg) bool {
+	if msg.GetView() != int64(c.Memory.GetView()) { // not the same view
+		return false
+	}
+
+	if msg.GetDigest() != digest { // not the same digest
+		return false
+	}
+
+	return true
+}
+
+// validatePreparedMsg checks the view and digest of a prepared message.
+func (c *Consensus) validatePreparedMsg(digest string, msg *pbft.PreparedMsg) bool {
+	if msg.GetView() != int64(c.Memory.GetView()) { // not the same view
+		return false
+	}
+
+	if msg.GetDigest() != digest { // not the same digest
+		return false
+	}
+
+	return true
+}

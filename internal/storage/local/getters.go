@@ -24,3 +24,8 @@ func (m *Memory) GetView() int {
 func (m *Memory) GetNodeByIndex(index int) string {
 	return m.nodes[index]
 }
+
+// GetBalance returns the balance value of a client.
+func (m *Memory) GetBalance(key string) int {
+	return m.balances[key]
+}

@@ -9,10 +9,68 @@ import (
 	"go.uber.org/zap"
 )
 
+// handleExecute gets a sequence and message and does the execution.
+func (c *Consensus) handleExecute(sequence int, message *models.Log) {
+	// check previous messages execution
+	if !c.canExecute(sequence) {
+		c.Logger.Debug(
+			"request cannot get executed yet",
+			zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+			zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+		)
+		return
+	}
+
+	// execute the request
+	c.executeRequest(message.Request)
+
+	// update the log and set the status of prepare
+	message.Request.Status = pbft.RequestStatus_REQUEST_STATUS_E
+	c.Logs.SetLog(sequence, message.Request)
+
+	c.Logger.Info("reply sent",
+		zap.String("client", message.Request.GetClientId()),
+		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+	)
+
+	// send the reply message
+	go c.Client.Reply(message.Request.GetClientId(), &pbft.ReplyMsg{
+		SequenceNumber: message.Request.GetSequenceNumber(),
+		View:           int64(c.Memory.GetView()),
+		Timestamp:      message.Request.GetTransaction().GetTimestamp(),
+		ClientId:       message.Request.GetClientId(),
+		Response:       message.Request.GetResponse().GetText(),
+	})
+}
+
+// handleCommit gets a commit message, changes it status and calls the handleExecute.
 func (c *Consensus) handleCommit(pkt interface{}) {
-	// check the message
-	// update log
-	// do execution
+	// parse the input message
+	msg := pkt.(*pbft.CommitMsg)
+
+	// get the message from our logs
+	message := c.Logs.GetLog(int(msg.GetSequenceNumber()))
+	if message == nil {
+		c.Logger.Info(
+			"message not found",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	// update the log and set the status of prepare
+	message.Request.Status = pbft.RequestStatus_REQUEST_STATUS_C
+	c.Logs.SetLog(int(msg.GetSequenceNumber()), message.Request)
+
+	// message committed
+	c.Logger.Info("message committed",
+		zap.Int64("sequence number", message.Request.GetSequenceNumber()),
+		zap.Int64("timestamp", message.Request.GetTransaction().GetTimestamp()),
+	)
+
+	// call execute handler
+	c.handleExecute(int(msg.GetSequenceNumber()), message)
 }
 
 // handle preprepare accepts a preprepare message and validates it to call preprepared RPC.
@@ -253,21 +311,10 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		c.Logger.Info("received prepared messages", zap.Int("messages", count))
 
 		// broadcast to all using commit
-		// execute message if possible
-
-		c.Logger.Info("reply sent",
-			zap.String("client", message.GetClientId()),
-			zap.Int64("sequence number", message.GetSequenceNumber()),
-			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-		)
-
-		// send the reply
-		c.Client.Reply(message.GetClientId(), &pbft.ReplyMsg{
-			SequenceNumber: message.GetSequenceNumber(),
+		go c.Client.BroadcastCommit(&pbft.CommitMsg{
+			SequenceNumber: int64(sequence),
 			View:           int64(c.Memory.GetView()),
-			Timestamp:      message.GetTransaction().GetTimestamp(),
-			ClientId:       message.GetClientId(),
-			Response:       "received",
+			Digest:         hashing.MD5(message),
 		})
 	}(seqn, msg)
 }

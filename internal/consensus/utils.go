@@ -10,6 +10,33 @@ func (c *Consensus) getCurrentLeader() string {
 	return c.Memory.GetNodeByIndex(c.Memory.GetView())
 }
 
+// canExecute gets a sequence number and checks if all logs before that
+// are executed or not.
+func (c *Consensus) canExecute(sequence int) bool {
+	for i := 0; i < sequence; i++ {
+		if tmp := c.Logs.GetLog(i); tmp != nil && tmp.Request.Status != pbft.RequestStatus_REQUEST_STATUS_E {
+			return false
+		}
+	}
+
+	return true
+}
+
+// executeRequest takes a request message and executes its transaction.
+func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
+	senderBalance := c.Memory.GetBalance(msg.GetTransaction().GetSender())
+	receiverBalance := c.Memory.GetBalance(msg.GetTransaction().GetReciever())
+	amount := msg.GetTransaction().GetAmount()
+
+	if amount > int64(senderBalance) {
+		msg.GetResponse().Text = "not enough balance"
+	} else {
+		c.Memory.SetBalance(msg.GetTransaction().GetSender(), senderBalance-int(amount))
+		c.Memory.SetBalance(msg.GetTransaction().GetReciever(), receiverBalance+int(amount))
+		msg.GetResponse().Text = "submitted"
+	}
+}
+
 // validatePrePrepareMsg checks the view and digest of a preprepare message.
 func (c *Consensus) validatePrePrepareMsg(msg *pbft.PrePrepareMsg) bool {
 	if msg.GetView() != int64(c.Memory.GetView()) { // not the same view

@@ -38,3 +38,8 @@ func (m *Memory) SetNodes(nodes map[string]int) {
 		m.nodes[value] = key
 	}
 }
+
+// SetBalance updates a client balance.
+func (m *Memory) SetBalance(key string, value int) {
+	m.balances[key] = value
+}

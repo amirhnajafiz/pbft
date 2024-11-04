@@ -21,10 +21,12 @@ const Prefix = "pbft_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
-	LogLevel   string            `koanf:"log_level"`  // node logging level (debug, info, warn, error, panic, fatal)
-	Controller controller.Config `koanf:"controller"` // controller app configs
-	Node       node.Config       `koanf:"node"`       // node app configs
-	IPTable    IPTable           `koanf:"iptable"`    // system IP addresses
+	LogLevel   string            `koanf:"log_level"`   // node logging level (debug, info, warn, error, panic, fatal)
+	PrivateKey string            `koanf:"private_key"` // the app private key
+	PublicKey  string            `koanf:"public_key"`  // the app public key
+	Controller controller.Config `koanf:"controller"`  // controller app configs
+	Node       node.Config       `koanf:"node"`        // node app configs
+	IPTable    IPTable           `koanf:"iptable"`     // system IP addresses
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.

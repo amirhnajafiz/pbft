@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// load configs into a config struct
-	cfg := config.New(argv[2])
+	cfg := config.New(argv[2], true)
 
 	// create a new zap logger instance
 	logr := logger.NewLogger(cfg.LogLevel)

@@ -70,8 +70,18 @@ func CSVInput(path string) ([]*models.TestSet, error) {
 			transactions = make([]*models.Transaction, 0)
 
 			// set servers and byzantine servers
-			servers = append(servers, strings.Split(strings.Replace(strings.Replace(row[2], "[", "", -1), "]", "", -1), ", ")...)
-			byzantine = append(byzantine, strings.Split(strings.Replace(strings.Replace(row[3], "[", "", -1), "]", "", -1), ", ")...)
+			tmpS := append(servers, strings.Split(strings.Replace(strings.Replace(row[2], "[", "", -1), "]", "", -1), ", ")...)
+			for _, item := range tmpS {
+				if item != "" {
+					servers = append(servers, item)
+				}
+			}
+			tmpB := append(byzantine, strings.Split(strings.Replace(strings.Replace(row[3], "[", "", -1), "]", "", -1), ", ")...)
+			for _, item := range tmpB {
+				if item != "" {
+					byzantine = append(byzantine, item)
+				}
+			}
 
 			// process the first row transactions
 			tmp := strings.Split(strings.Replace(strings.Replace(row[1], "(", "", -1), ")", "", -1), ", ")

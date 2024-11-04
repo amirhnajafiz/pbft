@@ -31,4 +31,4 @@ iptable:
 
 # controller app configs
 controller:
-  csv: "tests/sample.csv"
+  csv: "tests/normal.csv"

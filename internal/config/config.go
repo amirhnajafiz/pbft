@@ -32,7 +32,7 @@ type Config struct {
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.
-func New(path string) Config {
+func New(path string, print bool) Config {
 	var instance Config
 
 	k := koanf.New(".")
@@ -70,7 +70,10 @@ func New(path string) Config {
 	%s
 	=============================================
 	`
-	log.Printf(tmpl, string(indent))
+
+	if print {
+		log.Printf(tmpl, string(indent))
+	}
 
 	return instance
 }

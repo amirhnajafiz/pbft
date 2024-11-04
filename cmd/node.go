@@ -49,9 +49,12 @@ func (n Node) Main() error {
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
-		Port:      n.Cfg.Node.Port,
-		Logger:    n.Logger.Named("grpc"),
-		Consensus: &instance,
+		Port:       n.Cfg.Node.Port,
+		PrivateKey: n.Cfg.PrivateKey,
+		PublicKey:  n.Cfg.PublicKey,
+		CAC:        n.Cfg.CAC,
+		Logger:     n.Logger.Named("grpc"),
+		Consensus:  &instance,
 	}
 
 	return boot.ListenAnsServer()

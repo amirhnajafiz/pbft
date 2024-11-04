@@ -34,8 +34,18 @@ func (c *Client) connect(address string) (*grpc.ClientConn, error) {
 
 // LoadTLS get the path of keys and certificates and creates a TLS config for connections.
 func (c *Client) LoadTLS(private, public, cac string) error {
-	// load the client keys
-	cert, err := tls.LoadX509KeyPair(public, private)
+	// load the clients keys
+	prkBytes, err := os.ReadFile(private)
+	if err != nil {
+		return fmt.Errorf("failed to load private key %s: %v", private, err)
+	}
+	pukBytes, err := os.ReadFile(public)
+	if err != nil {
+		return fmt.Errorf("failed to load public key %s: %v", public, err)
+	}
+
+	// create certs
+	cert, err := tls.X509KeyPair(pukBytes, prkBytes)
 	if err != nil {
 		return fmt.Errorf("failed to load certificates: %v", err)
 	}

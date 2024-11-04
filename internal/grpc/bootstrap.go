@@ -36,8 +36,18 @@ func (b *Bootstrap) ListenAnsServer() error {
 		return fmt.Errorf("failed to start the core listener server: %v", err)
 	}
 
+	// load the clients keys
+	prkBytes, err := os.ReadFile(b.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to load private key %s: %v", b.PrivateKey, err)
+	}
+	pukBytes, err := os.ReadFile(b.PublicKey)
+	if err != nil {
+		return fmt.Errorf("failed to load public key %s: %v", b.PublicKey, err)
+	}
+
 	// load server's certificate
-	cert, err := tls.LoadX509KeyPair(b.PublicKey, b.PrivateKey)
+	cert, err := tls.X509KeyPair(pukBytes, prkBytes)
 	if err != nil {
 		return fmt.Errorf("failed to load certificates: %v", err)
 	}

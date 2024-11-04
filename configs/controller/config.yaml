@@ -2,8 +2,8 @@
 log_level: "debug"
 
 # certificates and keys
-private_key: "configs/controller/clinet.key"
-public_key: "configs/controller/clinet.crt"
+private_key: "configs/controller/client.key"
+public_key: "configs/controller/client.crt"
 cac: "configs/ca.crt"
 
 # iptable maps all clients and nodes to their ip and metadata

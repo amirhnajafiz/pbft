@@ -64,9 +64,10 @@ func (b *Bootstrap) ListenAnsServer() error {
 
 	// tls configs
 	tlsConfig := &tls.Config{
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		Certificates: []tls.Certificate{cert},
-		ClientCAs:    ca,
+		ClientAuth:         tls.RequireAndVerifyClientCert,
+		Certificates:       []tls.Certificate{cert},
+		ClientCAs:          ca,
+		InsecureSkipVerify: true,
 	}
 
 	// create a new grpc instance

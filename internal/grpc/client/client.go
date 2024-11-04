@@ -62,9 +62,10 @@ func (c *Client) LoadTLS(private, public, cac string) error {
 
 	// set tls configs
 	c.tlsConfig = &tls.Config{
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		Certificates: []tls.Certificate{cert},
-		ClientCAs:    ca,
+		ClientAuth:         tls.RequireAndVerifyClientCert,
+		Certificates:       []tls.Certificate{cert},
+		ClientCAs:          ca,
+		InsecureSkipVerify: true,
 	}
 
 	return nil

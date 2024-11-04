@@ -24,14 +24,12 @@ func (c *Consensus) handleExecute(sequence int) {
 	index := sequence
 	for {
 		if msg := c.Logs.GetRequest(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
-			// execute request
-			c.executeRequest(msg)
+			c.executeRequest(msg) // execute request
 
 			// update the request and set the status of prepare
 			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-			// send the reply message using helper functions
-			c.helpSendReply(msg)
+			c.helpSendReply(msg) // send the reply message using helper functions
 
 			c.Logger.Info(
 				"request executed",
@@ -60,8 +58,7 @@ func (c *Consensus) handleCommit(pkt interface{}) {
 		zap.Int("sequence number", sequence),
 	)
 
-	// call execute handler
-	c.handleExecute(sequence)
+	c.handleExecute(sequence) // call execute handler
 }
 
 // handle preprepare accepts a preprepare message and validates it to call preprepared RPC.
@@ -260,6 +257,11 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		return
 	}
 
+	// check if the node is leader
+	if c.getCurrentLeader() != c.Memory.GetNodeId() {
+		return // drop the request if not leader
+	}
+
 	// store the log place
 	seqn := c.Logs.InitRequest()
 
@@ -283,22 +285,8 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// send the request using helper functions
 	c.helpSendRequest(msg)
 
-	c.Logger.Debug(
-		"request is sent",
-		zap.Int64("timestamp", msg.GetTimestamp()),
-		zap.String("sender", msg.GetSender()),
-		zap.String("receiver", msg.GetReciever()),
-		zap.Int64("amount", msg.GetAmount()),
-	)
-
 	// get the response by calling helper functions
 	resp := c.helpReceiveResponse(msg)
-
-	c.Logger.Debug(
-		"received reply message",
-		zap.Int64("timestamp", resp.GetTimestamp()),
-		zap.Int64("sequence number", resp.GetSequenceNumber()),
-	)
 
 	// reset the view
 	c.Memory.SetView(int(resp.GetView()))

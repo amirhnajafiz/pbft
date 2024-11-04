@@ -69,21 +69,15 @@ func (c Controller) Main() error {
 			return nil
 		case "next":
 			if c.index == len(ts) {
-				// end of tests
 				fmt.Println("test-sets are over.")
 			} else {
 				fmt.Printf("executing set %d.\n", c.index)
 
-				// get the current test
-				t := ts[c.index]
-
-				// loop over transactions and execute them
-				for _, trx := range t.Transactions {
+				for _, trx := range ts[c.index].Transactions {
 					amount, _ := strconv.Atoi(trx.Amount)
 					fmt.Println(c.client.Transaction(trx.Sender, trx.Receiver, amount))
 				}
 
-				// increase index
 				c.index++
 			}
 		case "printlog":

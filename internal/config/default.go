@@ -20,10 +20,11 @@ func Default() Config {
 			Port:   80,
 			NodeId: "unique",
 			BFT: bft.Config{
-				Total:          0,
-				Majority:       0,
-				Responses:      0,
-				RequestTimeout: 0,
+				Total:           0,
+				Majority:        0,
+				Responses:       0,
+				RequestTimeout:  0,
+				MajorityTimeout: 0,
 			},
 		},
 		IPTable: IPTable{

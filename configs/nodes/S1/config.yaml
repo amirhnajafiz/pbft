@@ -26,3 +26,4 @@ node:
     majority: 1
     responses: 1
     request_timeout: 1000 # in milliseconds
+    majority_timeout: 1 # in milliseconds

@@ -14,27 +14,58 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 	// create a list of messages
 	messages := make(map[string]int)
 
+	// create a new timer, time start flag, and a target holder
+	var (
+		timer        *time.Timer
+		target       string
+		timerStarted bool = false
+	)
+
 	for {
-		// get raw interrupts
-		intr := <-channel
+		if timerStarted {
+			select {
+			case intr := <-channel:
+				// ignore messages that are not preprepared
+				if intr.Type != enum.IntrPrePrepared {
+					continue
+				}
 
-		// ignore messages that are not preprepared
-		if intr.Type != enum.IntrPrePrepared {
-			continue
-		}
-
-		// extract the digest to count the messages
-		digest := intr.Payload.(*pbft.AckMsg).GetDigest()
-		if _, ok := messages[digest]; !ok {
-			messages[digest] = 1
+				// extract the digest to count the messages
+				digest := intr.Payload.(*pbft.AckMsg).GetDigest()
+				if _, ok := messages[digest]; !ok {
+					messages[digest] = 1
+				} else {
+					messages[digest]++
+				}
+			case <-timer.C:
+				return messages[target]
+			}
 		} else {
-			messages[digest]++
-		}
+			// the timer is not started, so keep waiting
+			intr := <-channel
 
-		// check for having 2f+1 match messages
-		for _, value := range messages {
-			if value >= c.BFTCfg.Majority {
-				return value
+			// ignore messages that are not preprepared
+			if intr.Type != enum.IntrPrePrepared {
+				continue
+			}
+
+			// extract the digest to count the messages
+			digest := intr.Payload.(*pbft.AckMsg).GetDigest()
+			if _, ok := messages[digest]; !ok {
+				messages[digest] = 1
+			} else {
+				messages[digest]++
+			}
+
+			// check for having 2f+1 match messages
+			for key, value := range messages {
+				if value >= c.BFTCfg.Majority {
+					target = key
+
+					// start the time on 2f+1 messages
+					timerStarted = true
+					timer = time.NewTimer(time.Duration(c.BFTCfg.Majority) * time.Millisecond)
+				}
 			}
 		}
 	}

@@ -31,8 +31,8 @@ iptable:
 
 # node app configs
 node:
-  port: 5001
-  node_id: S1
+  port: 5003
+  node_id: S3
   bft: # pbft configs
     total: 4
     majority: 3

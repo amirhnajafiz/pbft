@@ -12,9 +12,21 @@ iptable:
   - key: "S1"
     value: "127.0.0.1:5001"
     metadata: 0
+  - key: "S2"
+    value: "127.0.0.1:5002"
+    metadata: 0
+  - key: "S3"
+    value: "127.0.0.1:5003"
+    metadata: 0
+  - key: "S4"
+    value: "127.0.0.1:5004"
+    metadata: 0
   clients:
   - key: "A"
     value: "127.0.0.1:6001"
+    metadata: 10
+  - key: "B"
+    value: "127.0.0.1:6002"
     metadata: 10
 
 # node app configs
@@ -22,7 +34,7 @@ node:
   port: 6001
   node_id: A
   bft: # pbft configs
-    total: 1
-    majority: 1
-    responses: 1
+    total: 4
+    majority: 3
+    responses: 2
     request_timeout: 1000 # in milliseconds

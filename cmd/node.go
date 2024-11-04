@@ -33,6 +33,9 @@ func (n Node) Main() error {
 		n.Cfg.IPTable.GetNodes(),
 		n.Cfg.IPTable.GetClients(),
 	)
+	if err := cli.LoadTLS(n.Cfg.PrivateKey, n.Cfg.PublicKey, n.Cfg.CAC); err != nil {
+		return err
+	}
 
 	// create a new consensus module
 	instance := consensus.Consensus{

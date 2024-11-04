@@ -31,6 +31,9 @@ func (c Controller) Main() error {
 		c.Cfg.IPTable.GetNodes(),
 		c.Cfg.IPTable.GetClients(),
 	)
+	if err := c.client.LoadTLS(c.Cfg.PrivateKey, c.Cfg.PublicKey, c.Cfg.CAC); err != nil {
+		return err
+	}
 
 	// load the test-case file
 	ts, err := parser.CSVInput(c.Cfg.Controller.CSV)

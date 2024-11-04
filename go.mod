@@ -11,6 +11,7 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc/examples v0.0.0-20241101214355-70e8931a0e13
 	google.golang.org/protobuf v1.35.1
 )
 
@@ -22,9 +23,9 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

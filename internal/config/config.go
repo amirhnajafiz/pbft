@@ -21,6 +21,7 @@ const Prefix = "pbft_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
+	CtlFiles   []string          `koanf:"ctl_files"`   // a list of config files to run by ctl command
 	LogLevel   string            `koanf:"log_level"`   // node logging level (debug, info, warn, error, panic, fatal)
 	PrivateKey string            `koanf:"private_key"` // the app private key
 	PublicKey  string            `koanf:"public_key"`  // the app public key

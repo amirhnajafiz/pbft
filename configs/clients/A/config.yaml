@@ -1,6 +1,11 @@
 # log level can be (debug, info, warn, error, panic, fatal)
 log_level: "debug"
 
+# certificates and keys
+private_key: "configs/clients/A/clinet.key"
+public_key: "configs/clients/A/clinet.crt"
+cac: "configs/ca.crt"
+
 # iptable maps all clients and nodes to their ip and metadata
 iptable:
   nodes:

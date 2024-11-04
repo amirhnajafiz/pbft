@@ -9,7 +9,10 @@ import (
 // Default return default configuration.
 func Default() Config {
 	return Config{
-		LogLevel: "debug",
+		LogLevel:   "debug",
+		PrivateKey: "",
+		PublicKey:  "",
+		CAC:        "",
 		Controller: controller.Config{
 			CSV: "tests/case.csv",
 		},

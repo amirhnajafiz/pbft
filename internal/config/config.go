@@ -24,6 +24,7 @@ type Config struct {
 	LogLevel   string            `koanf:"log_level"`   // node logging level (debug, info, warn, error, panic, fatal)
 	PrivateKey string            `koanf:"private_key"` // the app private key
 	PublicKey  string            `koanf:"public_key"`  // the app public key
+	CAC        string            `koanf:"cac"`         // the certificate authority certificate
 	Controller controller.Config `koanf:"controller"`  // controller app configs
 	Node       node.Config       `koanf:"node"`        // node app configs
 	IPTable    IPTable           `koanf:"iptable"`     // system IP addresses

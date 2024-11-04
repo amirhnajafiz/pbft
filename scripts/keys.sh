@@ -10,3 +10,7 @@ openssl x509 -req -in nodes/S1/server.csr -CA ca.crt -CAkey ca.key -CAcreateseri
 openssl genpkey -algorithm RSA -out clients/A/client.key -pkeyopt rsa_keygen_bits:2048
 openssl req -new -key clients/A/client.key -out clients/A/client.csr
 openssl x509 -req -in clients/A/client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out clients/A/client.crt -days 365
+
+openssl genpkey -algorithm RSA -out controller/client.key -pkeyopt rsa_keygen_bits:2048
+openssl req -new -key controller/client.key -out controller/client.csr
+openssl x509 -req -in controller/client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out controller/client.crt -days 365

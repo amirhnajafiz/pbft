@@ -8,6 +8,8 @@ type Memory struct {
 	view       int    // systems view
 	totalNodes int    // number of total-nodes
 
+	currentTimestamp int64 // current timestamp is used inside client nodes
+
 	balances map[string]int // balances is the holder for clients and their balance value
 	nodes    map[int]string // nodes is map used for tracking leaders
 }
@@ -15,10 +17,11 @@ type Memory struct {
 // NewMemory returns an instance of the memory struct.
 func NewMemory(nodeId string, totalNodes int) *Memory {
 	return &Memory{
-		status:     true,  // the init status of node is true
-		byzantine:  false, // the init behavior node is non-byzantine
-		nodeId:     nodeId,
-		view:       0,
-		totalNodes: totalNodes,
+		status:           true,  // the init status of node is true
+		byzantine:        false, // the init behavior node is non-byzantine
+		nodeId:           nodeId,
+		view:             0,
+		totalNodes:       totalNodes,
+		currentTimestamp: 0,
 	}
 }

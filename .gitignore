@@ -1,6 +1,7 @@
 # exported files
 main
 main~
+logs.txt
 
 # build files
 vendor/

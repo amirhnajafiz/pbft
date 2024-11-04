@@ -83,7 +83,7 @@ func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMs
 	)
 
 	// broadcast to all using preprepare
-	go c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
+	c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
 		Request:        message,
 		SequenceNumber: int64(sequence),
 		View:           int64(c.Memory.GetView()),

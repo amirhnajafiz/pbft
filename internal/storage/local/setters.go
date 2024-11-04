@@ -48,3 +48,8 @@ func (m *Memory) SetNodes(nodes map[string]int) {
 func (m *Memory) SetBalance(key string, value int) {
 	m.balances[key] = value
 }
+
+// SetTimestamp sets the current request timestamp.
+func (m *Memory) SetTimestamp(in int64) {
+	m.currentTimestamp = in
+}

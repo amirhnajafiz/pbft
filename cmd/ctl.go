@@ -32,7 +32,7 @@ func (c CTL) Main() error {
 			name := parts[len(parts)-2]
 
 			// create a new node instance
-			cfg := config.New(path, false)
+			cfg := config.New(path, true)
 			node := Node{
 				Cfg:    cfg,
 				Logger: c.Logger.Named("node." + name),

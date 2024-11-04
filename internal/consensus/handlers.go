@@ -23,13 +23,14 @@ func (c *Consensus) handleExecute(sequence int) {
 	// follow sequence until one is not committed, execute them
 	index := sequence
 	for {
+		c.Logger.Debug("checking request", zap.Int("sequence number", index))
 		if msg := c.Logs.GetRequest(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
 			c.executeRequest(msg) // execute request
 
 			// update the request and set the status of prepare
 			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-			c.helpSendReply(msg) // send the reply message using helper functions
+			go c.helpSendReply(msg) // send the reply message using helper functions
 
 			c.Logger.Info(
 				"request executed",
@@ -66,8 +67,12 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.PrePrepareMsg)
 
+	c.Logger.Debug("inside preprepare handler", zap.String("node", c.Memory.GetNodeId()))
+
 	// get the digest of input request
 	digest := hashing.MD5(msg.GetRequest())
+
+	c.Logger.Debug("inside preprepare handler after digest", zap.String("node", c.Memory.GetNodeId()))
 
 	// validate the message
 	if !c.validatePrePrepareMsg(msg, digest) {
@@ -78,6 +83,8 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 		)
 		return
 	}
+
+	c.Logger.Debug("inside preprepare handler after validate", zap.String("node", c.Memory.GetNodeId()))
 
 	// update the request and set the status of preprepared
 	c.Logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
@@ -107,6 +114,15 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	if message == nil {
 		c.Logger.Info(
 			"request not found",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
+	// on prepared, we only process the ones that are preprepared
+	if message.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_PP.Number() {
+		c.Logger.Debug(
+			"old preprepard dropped",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 		return
@@ -198,6 +214,15 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 		return
 	}
 
+	// on prepared, we only process the ones that are preprepared
+	if message.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_P.Number() {
+		c.Logger.Debug(
+			"old prepared dropped",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+		return
+	}
+
 	// get the digest of input request
 	digest := hashing.MD5(message)
 
@@ -238,6 +263,14 @@ func (c *Consensus) handleReply(pkt interface{}) {
 		return
 	}
 
+	if msg.GetTimestamp() != c.Memory.GetTimestamp() {
+		c.Logger.Debug(
+			"old reply dropped",
+			zap.Int64("timestamp", msg.GetTimestamp()),
+		)
+		return
+	}
+
 	// publish over correct request handler
 	c.inTransactionChannel <- &models.InterruptMsg{
 		Type:    enum.IntrReply,
@@ -253,6 +286,12 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 
 	// check if we had a request with the given timestamp
 	if rsp := c.isRequestExecuted(msg.GetTransaction().GetTimestamp()); rsp != nil {
+		c.Logger.Debug(
+			"redundant request",
+			zap.Int64("timestamp", rsp.GetTransaction().GetTimestamp()),
+			zap.Int64("sequence number", rsp.GetSequenceNumber()),
+		)
+
 		c.helpSendReply(rsp) // send the reply message using helper function
 		return
 	}
@@ -265,6 +304,11 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// store the log place
 	seqn := c.Logs.InitRequest()
 
+	c.Logger.Debug(
+		"new sequence",
+		zap.Int("sequence number", seqn),
+	)
+
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
 
@@ -275,6 +319,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 // handle transaction checks a new transaction to call request RPC.
 func (c *Consensus) handleTransaction(pkt interface{}) {
 	defer func() {
+		c.Memory.SetTimestamp(0)
+
 		// reset the channel when transaction is done
 		c.inTransactionChannel = nil
 	}()
@@ -282,11 +328,18 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.TransactionMsg)
 
+	c.Logger.Debug("new transaction", zap.Int64("timestamp", msg.GetTimestamp()))
+
 	// send the request using helper functions
 	c.helpSendRequest(msg)
 
+	// after the request is sent, update the current timestamp
+	c.Memory.SetTimestamp(msg.GetTimestamp())
+
 	// get the response by calling helper functions
 	resp := c.helpReceiveResponse(msg)
+
+	c.Logger.Debug("received reply", zap.Int64("sequence number", resp.GetSequenceNumber()))
 
 	// reset the view
 	c.Memory.SetView(int(resp.GetView()))

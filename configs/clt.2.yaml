@@ -1,0 +1,4 @@
+# list of the config files
+ctl_files:
+  - "configs/nodes/S1/config.yaml"
+  - "configs/nodes/S2/config.yaml"

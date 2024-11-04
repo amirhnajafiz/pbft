@@ -1,8 +1,0 @@
-# list of the config files
-ctl_files:
-  - "configs/clients/A/config.yaml"
-  - "configs/clients/B/config.yaml"
-  - "configs/nodes/S1/config.yaml"
-  - "configs/nodes/S2/config.yaml"
-  - "configs/nodes/S3/config.yaml"
-  - "configs/nodes/S4/config.yaml"

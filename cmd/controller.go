@@ -43,6 +43,7 @@ func (c Controller) Main() error {
 
 	// reset the index
 	c.index = 0
+	timestamp := 10
 
 	// print some metadata
 	fmt.Printf("read %s with %d test sets.\n", c.Cfg.Controller.CSV, len(ts))
@@ -77,8 +78,12 @@ func (c Controller) Main() error {
 				fmt.Printf("executing set %d.\n", c.index)
 
 				for _, trx := range ts[c.index].Transactions {
+					fmt.Printf("execute (%d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
+
 					amount, _ := strconv.Atoi(trx.Amount)
-					fmt.Println(c.client.Transaction(trx.Sender, trx.Receiver, amount))
+					fmt.Println(c.client.Transaction(trx.Sender, trx.Receiver, amount, timestamp))
+
+					timestamp++
 				}
 
 				c.index++

@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -66,6 +65,8 @@ func (c *Client) PrePrepared(target string, msg *pbft.AckMsg) {
 	if _, err := pbft.NewPBFTClient(conn).PrePrepared(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Preprepared RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("preprepared sent", zap.String("to", target))
 }
 
 // Prepare calls the Prepare RPC on the target machine (nodes to nodes).
@@ -104,6 +105,8 @@ func (c *Client) Prepared(target string, msg *pbft.AckMsg) {
 	if _, err := pbft.NewPBFTClient(conn).Prepared(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Prepared RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("prepared sent", zap.String("to", target))
 }
 
 // Reply calls the Reply RPC on the target machine (nodes to clients).
@@ -123,6 +126,8 @@ func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
 	if _, err := pbft.NewPBFTClient(conn).Reply(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Reply RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("reply sent", zap.String("to", target))
 }
 
 // Request calls the Request RPC on the target machine (clients to nodes).
@@ -270,7 +275,7 @@ func (c *Client) PrintView(target string) bool {
 }
 
 // Transaction sends a transaction to one client.
-func (c *Client) Transaction(sender, reseiver string, amount int) string {
+func (c *Client) Transaction(sender, reseiver string, amount int, ts int) string {
 	address := c.clients[sender]
 
 	// base connection
@@ -287,7 +292,7 @@ func (c *Client) Transaction(sender, reseiver string, amount int) string {
 		Sender:    sender,
 		Reciever:  reseiver,
 		Amount:    int64(amount),
-		Timestamp: time.Now().Unix(),
+		Timestamp: int64(ts),
 	})
 	if err != nil {
 		c.logger.Debug("failed to call Transaction RPC", zap.String("address", address), zap.Error(err))

@@ -1,0 +1,4 @@
+# list of the config files
+ctl_files:
+  - "configs/clients/A/config.yaml"
+  - "configs/clients/B/config.yaml"

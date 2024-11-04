@@ -11,7 +11,6 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.67.1
-	google.golang.org/grpc/examples v0.0.0-20241101214355-70e8931a0e13
 	google.golang.org/protobuf v1.35.1
 )
 

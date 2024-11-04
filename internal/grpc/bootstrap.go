@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/examples/data"
 )
 
 // Bootstrap is a wrapper that holds requirements for the gRPC services.
@@ -38,20 +37,19 @@ func (b *Bootstrap) ListenAnsServer() error {
 	}
 
 	// load server's certificate
-	cert, err := tls.LoadX509KeyPair(data.Path(b.PublicKey), data.Path(b.PrivateKey))
+	cert, err := tls.LoadX509KeyPair(b.PublicKey, b.PrivateKey)
 	if err != nil {
 		return fmt.Errorf("failed to load certificates: %v", err)
 	}
 
 	// create the CA data
 	ca := x509.NewCertPool()
-	cac := data.Path(b.CAC)
-	cacBytes, err := os.ReadFile(cac)
+	cacBytes, err := os.ReadFile(b.CAC)
 	if err != nil {
 		return fmt.Errorf("failed to read ca cert: %v", err)
 	}
 	if ok := ca.AppendCertsFromPEM(cacBytes); !ok {
-		return fmt.Errorf("failed to append certs: %s", cac)
+		return fmt.Errorf("failed to append certs: %s", b.CAC)
 	}
 
 	// tls configs

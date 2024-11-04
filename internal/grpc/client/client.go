@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/examples/data"
 )
 
 // Client has all RPCs to communicate with the gRPC servers.
@@ -34,16 +33,15 @@ func (c *Client) connect(address string) (*grpc.ClientConn, error) {
 }
 
 // LoadTLS get the path of keys and certificates and creates a TLS config for connections.
-func (c *Client) LoadTLS(private, public, cas string) error {
+func (c *Client) LoadTLS(private, public, cac string) error {
 	// load the client keys
-	cert, err := tls.LoadX509KeyPair(data.Path(public), data.Path(private))
+	cert, err := tls.LoadX509KeyPair(public, private)
 	if err != nil {
 		return fmt.Errorf("failed to load certificates: %v", err)
 	}
 
 	// ca credentials
 	ca := x509.NewCertPool()
-	cac := data.Path(cas)
 	cacBytes, err := os.ReadFile(cac)
 	if err != nil {
 		return fmt.Errorf("failed to read ca cert: %v", err)

@@ -15,6 +15,7 @@ import (
 const (
 	ControllerCmdName = "controller"
 	NodeCmdName       = "node"
+	CTLCMdName        = "ctl"
 )
 
 func main() {
@@ -39,6 +40,10 @@ func main() {
 		NodeCmdName: cmd.Node{
 			Cfg:    cfg,
 			Logger: logr.Named("node"),
+		},
+		CTLCMdName: cmd.CTL{
+			Cfg:    cfg,
+			Logger: logr.Named("ctl"),
 		},
 	}
 

@@ -27,6 +27,8 @@ func (c *Client) Commit(target string, msg *pbft.AckMsg) {
 	if _, err := pbft.NewPBFTClient(conn).Commit(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Commit RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("commit sent", zap.String("to", target))
 }
 
 // PrePrepare calls the PrePrepare RPC on the target machine (nodes to nodes).
@@ -46,6 +48,8 @@ func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
 	if _, err := pbft.NewPBFTClient(conn).PrePrepare(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Preprepare RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("preprepare sent", zap.String("to", target))
 }
 
 // PrePrepared calls the PrePrepared RPC on the target machine (nodes to nodes).
@@ -86,6 +90,8 @@ func (c *Client) Prepare(target string, msg *pbft.AckMsg) {
 	if _, err := pbft.NewPBFTClient(conn).Prepare(context.Background(), msg); err != nil {
 		c.logger.Debug("failed to call Prepare RPC", zap.String("address", address), zap.Error(err))
 	}
+
+	c.logger.Debug("prepare sent", zap.String("to", target))
 }
 
 // Prepared calls the Prepared RPC on the target machine (nodes to nodes).
@@ -149,6 +155,8 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 		c.logger.Debug("failed to call Request RPC", zap.String("address", address), zap.Error(err))
 		return err
 	}
+
+	c.logger.Debug("request sent", zap.String("to", target))
 
 	return nil
 }

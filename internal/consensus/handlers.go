@@ -30,7 +30,7 @@ func (c *Consensus) handleExecute(sequence int) {
 			// update the request and set the status of prepare
 			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-			go c.helpSendReply(msg) // send the reply message using helper functions
+			c.promiseReply(msg) // send the reply message using helper functions
 
 			c.Logger.Info(
 				"request executed",
@@ -97,7 +97,7 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	)
 
 	// call preprepared message
-	go c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
+	c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
 		Digest:         msg.GetDigest(),
@@ -192,7 +192,7 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 	}
 
 	// call prepared message
-	go c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
+	c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
 		View:           int64(c.Memory.GetView()),
 		SequenceNumber: msg.GetSequenceNumber(),
 		Digest:         digest,
@@ -292,12 +292,16 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 			zap.Int64("sequence number", rsp.GetSequenceNumber()),
 		)
 
-		c.helpSendReply(rsp) // send the reply message using helper function
+		c.promiseReply(rsp) // send the reply message using helper function
 		return
 	}
 
 	// check if the node is leader
 	if c.getCurrentLeader() != c.Memory.GetNodeId() {
+		c.Logger.Debug(
+			"backup received a request",
+			zap.String("current leader", c.getCurrentLeader()),
+		)
 		return // drop the request if not leader
 	}
 
@@ -312,8 +316,8 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 	// create our channel for input messages
 	c.channels[seqn] = make(chan *models.InterruptMsg)
 
-	// need to create a go-routine to not block the request and call helper functions
-	go c.helpProcessTransaction(seqn, msg)
+	//call helper functions to process the transaction
+	c.promiseProcess(seqn, msg)
 }
 
 // handle transaction checks a new transaction to call request RPC.
@@ -331,13 +335,13 @@ func (c *Consensus) handleTransaction(pkt interface{}) {
 	c.Logger.Debug("new transaction", zap.Int64("timestamp", msg.GetTimestamp()))
 
 	// send the request using helper functions
-	c.helpSendRequest(msg)
+	c.promiseRequest(msg)
 
 	// after the request is sent, update the current timestamp
 	c.Memory.SetTimestamp(msg.GetTimestamp())
 
 	// get the response by calling helper functions
-	resp := c.helpReceiveResponse(msg)
+	resp := c.promiseReceive(msg)
 
 	c.Logger.Debug("received reply", zap.Int64("sequence number", resp.GetSequenceNumber()))
 

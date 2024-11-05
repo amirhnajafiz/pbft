@@ -34,6 +34,13 @@ func (c *Consensus) Signal(target enum.Interrupt, pkt interface{}) {
 	}
 }
 
+// SignalAndGo sends a packet from gRPC level to a new go-routine handler.
+func (c *Consensus) SignalAndGo(target enum.Interrupt, pkt interface{}) {
+	if target == enum.IntrCommit || target == enum.IntrRequest {
+		go c.interruptTable[target](pkt)
+	}
+}
+
 // SignalAndWait sends a packet from gRPC level to handlers and sends a channel to get the response.
 func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan interface{} {
 	if target == enum.IntrTransaction {

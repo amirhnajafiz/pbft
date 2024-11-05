@@ -59,12 +59,12 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 
 			// check for having 2f+1 match messages
 			for key, value := range messages {
-				if value >= c.BFTCfg.Majority {
+				if value >= c.BFTCfg.Majority-1 {
 					target = key
 
 					// start the time on 2f+1 messages
 					timerStarted = true
-					timer = time.NewTimer(time.Duration(c.BFTCfg.Majority) * time.Millisecond)
+					timer = time.NewTimer(time.Duration(c.BFTCfg.MajorityTimeout) * time.Millisecond)
 				}
 			}
 		}
@@ -96,7 +96,7 @@ func (c *Consensus) waitForPrepareds(channel chan *models.InterruptMsg) int {
 
 		// check for having 2f+1 match messages
 		for _, value := range messages {
-			if value >= c.BFTCfg.Majority {
+			if value >= c.BFTCfg.Majority-1 {
 				return value
 			}
 		}

@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// helpSendReply sends a reply message to the client by parsing the request message.
-func (c *Consensus) helpSendReply(msg *pbft.RequestMsg) {
+// promiseReply sends a reply message to the client by parsing the request message.
+func (c *Consensus) promiseReply(msg *pbft.RequestMsg) {
 	c.Client.Reply(msg.GetClientId(), &pbft.ReplyMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
 		View:           int64(c.Memory.GetView()),
@@ -20,8 +20,8 @@ func (c *Consensus) helpSendReply(msg *pbft.RequestMsg) {
 	})
 }
 
-// helpSendRequest in a loop trys to send your request to a leader.
-func (c *Consensus) helpSendRequest(msg *pbft.TransactionMsg) {
+// promiseRequest in a loop trys to send your request to a leader.
+func (c *Consensus) promiseRequest(msg *pbft.TransactionMsg) {
 	for {
 		// get the current leader id
 		id := c.getCurrentLeader()
@@ -44,8 +44,8 @@ func (c *Consensus) helpSendRequest(msg *pbft.TransactionMsg) {
 	}
 }
 
-// helpReceiveResponse in a loop trys to get a response for user request.
-func (c *Consensus) helpReceiveResponse(msg *pbft.TransactionMsg) *pbft.ReplyMsg {
+// promiseReceive in a loop trys to get a response for user request.
+func (c *Consensus) promiseReceive(msg *pbft.TransactionMsg) *pbft.ReplyMsg {
 	for {
 		// wait for f+1 matching reply or timeout request
 		resp := c.waitReplys(c.inTransactionChannel)
@@ -63,12 +63,8 @@ func (c *Consensus) helpReceiveResponse(msg *pbft.TransactionMsg) *pbft.ReplyMsg
 	}
 }
 
-// helpProcessTransaction follows the pbft protocol.
-func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMsg) {
-	defer func() {
-		delete(c.channels, sequence) // reset our channel
-	}()
-
+// promiseProcess follows the pbft protocol on a given request.
+func (c *Consensus) promiseProcess(sequence int, message *pbft.RequestMsg) {
 	// update request metadata
 	message.SequenceNumber = int64(sequence)
 	message.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
@@ -83,16 +79,19 @@ func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMs
 	)
 
 	// broadcast to all using preprepare
-	c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
+	go c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
 		Request:        message,
 		SequenceNumber: int64(sequence),
 		View:           int64(c.Memory.GetView()),
 		Digest:         hashing.MD5(message),
 	})
 
-	// wait for 2f+1 preprepared messages
+	// update our own status
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+
+	// wait for 2f+1 preprepared messages (count our own)
 	count := c.waitForPrePrepareds(c.channels[sequence])
-	c.Logger.Debug("received preprepared messages", zap.Int("messages", count))
+	c.Logger.Debug("received preprepared messages", zap.Int("messages", count+1))
 
 	// broadcast to all using prepare
 	go c.Client.BroadcastPrepare(&pbft.AckMsg{
@@ -101,14 +100,26 @@ func (c *Consensus) helpProcessTransaction(sequence int, message *pbft.RequestMs
 		Digest:         hashing.MD5(message),
 	})
 
-	// wait for 2f+1 prepared messages
-	count = c.waitForPrepareds(c.channels[sequence])
-	c.Logger.Debug("received prepared messages", zap.Int("messages", count))
+	// update our own status
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
 
-	// broadcast to all using commit
+	// wait for 2f+1 prepared messages (count our own)
+	count = c.waitForPrepareds(c.channels[sequence])
+	c.Logger.Debug("received prepared messages", zap.Int("messages", count+1))
+
+	// broadcast to all using commit, make sure everyone get's it
 	go c.Client.BroadcastCommit(&pbft.AckMsg{
 		SequenceNumber: int64(sequence),
 		View:           int64(c.Memory.GetView()),
 		Digest:         hashing.MD5(message),
 	})
+
+	// update our own status
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+
+	// reset our channel
+	delete(c.channels, sequence)
+
+	// call execute
+	c.handleExecute(sequence)
 }

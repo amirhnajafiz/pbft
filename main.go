@@ -39,7 +39,7 @@ func main() {
 		},
 		NodeCmdName: cmd.Node{
 			Cfg:    cfg,
-			Logger: logr.Named("node"),
+			Logger: logr.Named("node." + cfg.Node.NodeId),
 		},
 		CTLCMdName: cmd.CTL{
 			Cfg:    cfg,

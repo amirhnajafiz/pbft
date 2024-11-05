@@ -73,6 +73,8 @@ func (c *Client) LoadTLS(private, public, cac string) error {
 
 // NewClient returns a new RPC client to make RPC to the gRPC server.
 func NewClient(logr *zap.Logger, nodeId string, nodes map[string]string, clients map[string]string) *Client {
+	delete(nodes, nodeId)
+
 	return &Client{
 		nodeId:  nodeId,
 		nodes:   nodes,

@@ -23,7 +23,7 @@ type PBFT struct {
 // Commit RPC forwards a commit message into consensus.handleCommit
 func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Commit", msg.String())
-	p.Consensus.Signal(enum.IntrCommit, msg)
+	p.Consensus.SignalAndGo(enum.IntrCommit, msg)
 
 	return &emptypb.Empty{}, nil
 }
@@ -71,7 +71,7 @@ func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, e
 // Request RPC forwards a request message into consensus.handleRequest
 func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Request", msg.String())
-	p.Consensus.Signal(enum.IntrRequest, msg)
+	p.Consensus.SignalAndGo(enum.IntrRequest, msg)
 
 	return &emptypb.Empty{}, nil
 }

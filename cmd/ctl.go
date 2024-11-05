@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/f24-cse535/pbft/internal/config"
@@ -27,23 +26,19 @@ func (c CTL) Main() error {
 				wg.Done()
 			}()
 
-			// get the instance name from path
-			parts := strings.Split(path, "/")
-			name := parts[len(parts)-2]
-
 			// create a new node instance
-			cfg := config.New(path, true)
+			cfg := config.New(path, false)
 			node := Node{
 				Cfg:    cfg,
-				Logger: c.Logger.Named("node." + name),
+				Logger: c.Logger.Named("node." + cfg.Node.NodeId),
 			}
 
-			c.Logger.Info("instance started", zap.String("instance", name), zap.String("file", path))
+			c.Logger.Info("instance started", zap.String("instance", cfg.Node.NodeId), zap.String("file", path))
 
 			if err := node.Main(); err != nil {
-				c.Logger.Error("failed to start instance", zap.String("instance", name), zap.Error(err))
+				c.Logger.Error("failed to start instance", zap.String("instance", cfg.Node.NodeId), zap.Error(err))
 			} else {
-				c.Logger.Info("instance terminated", zap.String("instance", name), zap.String("file", key))
+				c.Logger.Info("instance terminated", zap.String("instance", cfg.Node.NodeId), zap.String("file", key))
 			}
 		}(key, &wg)
 	}

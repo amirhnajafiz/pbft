@@ -1,4 +1,0 @@
-# list of the config files
-ctl_files:
-  - "configs/nodes/S3/config.yaml"
-  - "configs/nodes/S4/config.yaml"

@@ -2,3 +2,5 @@
 ctl_files:
   - "configs/nodes/S1/config.yaml"
   - "configs/nodes/S2/config.yaml"
+  - "configs/nodes/S3/config.yaml"
+  - "configs/nodes/S4/config.yaml"

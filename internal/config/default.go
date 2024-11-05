@@ -25,6 +25,7 @@ func Default() Config {
 				Responses:       0,
 				RequestTimeout:  0,
 				MajorityTimeout: 0,
+				ViewTimeout:     0,
 			},
 		},
 		IPTable: IPTable{

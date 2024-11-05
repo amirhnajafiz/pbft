@@ -7,4 +7,5 @@ type Config struct {
 	Responses       int `koanf:"responses"`        // f+1
 	RequestTimeout  int `koanf:"request_timeout"`  // in milliseconds
 	MajorityTimeout int `koanf:"majority_timeout"` // in milliseconds
+	ViewTimeout     int `koanf:"view_timeout"`     // in milliseconds
 }

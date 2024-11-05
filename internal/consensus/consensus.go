@@ -19,6 +19,13 @@ type Consensus struct {
 	Logger *zap.Logger    // logger is needed for tracing
 	BFTCfg bft.Config     // bft config is used inside consensus handlers
 
+	viewTimerStatus bool      // if it is true, it means timer is on
+	viewTimerStart  chan bool // notify the view timer to start
+	viewTimerHalt   chan bool // notify the view timer to stop
+
+	viewTimerIn chan int // sending the requests to view timer
+	viewTimerRm chan int // notify the view timer of the finished requests
+
 	interrupts            chan *models.InterruptMsg            // interrupts is an internal channel for dispatching gRPC level packets
 	interruptTable        map[enum.Interrupt]func(interface{}) // interrupt table is a map for interrupts and their handlers
 	channels              map[int]chan *models.InterruptMsg    // the channels for communication between consensus handlers
@@ -66,6 +73,11 @@ func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan i
 // Start consensus registers a go-routine that captures all gRPC level interrupts and forwards them to handlers.
 func (c *Consensus) Start() {
 	// initial consensus fields
+	c.viewTimerIn = make(chan int)
+	c.viewTimerRm = make(chan int)
+	c.viewTimerHalt = make(chan bool)
+	c.viewTimerStart = make(chan bool)
+	c.viewTimerStatus = true
 	c.interrupts = make(chan *models.InterruptMsg)
 	c.channels = make(map[int]chan *models.InterruptMsg)
 	c.interruptTable = map[enum.Interrupt]func(interface{}){
@@ -77,6 +89,16 @@ func (c *Consensus) Start() {
 		enum.IntrReply:       c.handleReply,
 		enum.IntrRequest:     c.handleRequest,
 		enum.IntrTransaction: c.handleTransaction,
+	}
+
+	// timer process
+	go func() {
+		c.viewTimer()
+	}()
+
+	// if not the leader, start the timer
+	if c.getCurrentLeader() == c.Memory.GetNodeId() {
+		c.viewTimerStart <- true
 	}
 
 	go func() {

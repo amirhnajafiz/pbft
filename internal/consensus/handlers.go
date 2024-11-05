@@ -25,7 +25,8 @@ func (c *Consensus) handleExecute(sequence int) {
 	msg := c.Logs.GetRequest(index)
 
 	for {
-		c.executeRequest(msg) // execute request
+		c.executeRequest(msg)  // execute request
+		c.viewTimerRm <- index // notify the timer
 
 		// update the request and set the status of prepare
 		c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
@@ -50,6 +51,7 @@ func (c *Consensus) handleCommit(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.AckMsg)
 	sequence := int(msg.GetSequenceNumber())
+	c.viewTimerIn <- sequence
 
 	// update the request and set the status of prepare
 	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
@@ -96,6 +98,8 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 		zap.Int64("sequence number", msg.GetSequenceNumber()),
 		zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 	)
+
+	c.viewTimerIn <- int(msg.GetSequenceNumber())
 
 	// call preprepared message
 	c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
@@ -149,6 +153,7 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 func (c *Consensus) handlePrepare(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.AckMsg)
+	c.viewTimerIn <- int(msg.GetSequenceNumber())
 
 	// get the message from our datastore
 	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))

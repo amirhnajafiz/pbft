@@ -1,0 +1,5 @@
+Set Number, Transactions, Live Servers, Byzantine Servers
+1,"(A, B, 45)","[S1, S2, S3, S4]","[S3]"
+,"(A, B, 5)","",""
+2,"(A, B, 45)","[S1, S2, S3, S4]","[S1]"
+,"(A, B, 5)","",""

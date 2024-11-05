@@ -9,6 +9,7 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/config"
 	goclient "github.com/f24-cse535/pbft/internal/grpc/client"
+	"github.com/f24-cse535/pbft/internal/utils/lists"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
@@ -75,10 +76,13 @@ func (c Controller) Main() error {
 			if c.index == len(ts) {
 				fmt.Println("test-sets are over.")
 			} else {
-				fmt.Printf("executing set %d.\n", c.index)
+				fmt.Printf("executing set %d\n", c.index)
+
+				c.resetNodesStatus()
+				c.updateNodesStatus(ts[c.index].LiveServers, ts[c.index].ByzantineServers)
 
 				for _, trx := range ts[c.index].Transactions {
-					fmt.Printf("execute (%d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
+					fmt.Printf("execute (timestamp: %d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
 
 					amount, _ := strconv.Atoi(trx.Amount)
 					fmt.Println(c.client.Transaction(trx.Sender, trx.Receiver, amount, timestamp))
@@ -112,5 +116,20 @@ func (c Controller) Main() error {
 		default:
 			fmt.Printf("command `%s` not found.\n", parts[1])
 		}
+	}
+}
+
+// updateNodesStatus before running each transaction.
+func (c Controller) updateNodesStatus(liveservers []string, byzantines []string) {
+	for key := range c.Cfg.IPTable.GetNodes() {
+		c.client.ChangeState(key, lists.IsInList(key, liveservers), lists.IsInList(key, byzantines))
+	}
+}
+
+// resetNodesStatus by calling flush and reset status.
+func (c Controller) resetNodesStatus() {
+	for key := range c.Cfg.IPTable.GetNodes() {
+		c.client.ChangeState(key, true, false)
+		c.client.Flush(key)
 	}
 }

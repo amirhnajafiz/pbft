@@ -101,7 +101,9 @@ func (c *Consensus) promiseProcess(sequence int, message *pbft.RequestMsg) {
 	})
 
 	// update our own status
-	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+	if !c.Memory.GetByzantine() {
+		c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+	}
 
 	// wait for 2f+1 prepared messages (count our own)
 	count = c.waitForPrepareds(c.channels[sequence])
@@ -117,9 +119,25 @@ func (c *Consensus) promiseProcess(sequence int, message *pbft.RequestMsg) {
 	// update our own status
 	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
-	// reset our channel
-	delete(c.channels, sequence)
-
 	// call execute
 	c.handleExecute(sequence)
+
+	// empty the buffer
+	go c.promitseClear(sequence)
+}
+
+// promiseClear makes sure that nothing is inside a dead channel.
+func (c *Consensus) promitseClear(sequence int) {
+	channel := c.channels[sequence]
+	timer := time.NewTimer(60 * time.Second)
+
+	for {
+		select {
+		case <-channel:
+			continue
+		case <-timer.C:
+			delete(c.channels, sequence)
+			return
+		}
+	}
 }

@@ -55,6 +55,8 @@ func (c *Client) ChangeState(target string, state, byzantine bool) {
 
 		return
 	}
+
+	c.logger.Debug("changed status", zap.String("target", target), zap.Bool("live", state), zap.Bool("byzantine", byzantine))
 }
 
 // Flush calls the Flush RPC on a target node.

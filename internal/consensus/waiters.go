@@ -64,6 +64,7 @@ func (c *Consensus) waitForPrePrepareds(channel chan *models.InterruptMsg) int {
 
 					// start the time on 2f+1 messages
 					timerStarted = true
+
 					timer = time.NewTimer(time.Duration(c.BFTCfg.MajorityTimeout) * time.Millisecond)
 				}
 			}

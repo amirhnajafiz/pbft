@@ -12,7 +12,7 @@ import (
 // handleExecute gets a sequence and message and does the execution.
 func (c *Consensus) handleExecute(sequence int) {
 	// check if this sequence is executable
-	if !c.canExecute(sequence) {
+	if !c.Memory.GetByzantine() && !c.canExecute(sequence) {
 		c.Logger.Info(
 			"request cannot get executed yet",
 			zap.Int("sequence number", sequence),
@@ -22,25 +22,26 @@ func (c *Consensus) handleExecute(sequence int) {
 
 	// follow sequence until one is not committed, execute them
 	index := sequence
+	msg := c.Logs.GetRequest(index)
+
 	for {
-		c.Logger.Debug("checking request", zap.Int("sequence number", index))
-		if msg := c.Logs.GetRequest(index); msg != nil && msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_C {
-			c.executeRequest(msg) // execute request
+		c.executeRequest(msg) // execute request
 
-			// update the request and set the status of prepare
-			c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
+		// update the request and set the status of prepare
+		c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-			c.promiseReply(msg) // send the reply message using helper functions
+		c.promiseReply(msg) // send the reply message using helper functions
 
-			c.Logger.Info(
-				"request executed",
-				zap.Int64("sequence number", msg.GetSequenceNumber()),
-			)
-		} else {
-			break
-		}
+		c.Logger.Info(
+			"request executed",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
 
 		index++
+
+		if msg = c.Logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
+			break
+		}
 	}
 }
 
@@ -114,15 +115,6 @@ func (c *Consensus) handlePrePrepared(pkt interface{}) {
 	if message == nil {
 		c.Logger.Info(
 			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	// on prepared, we only process the ones that are preprepared
-	if message.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_PP.Number() {
-		c.Logger.Debug(
-			"old preprepard dropped",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 		return
@@ -209,15 +201,6 @@ func (c *Consensus) handlePrepared(pkt interface{}) {
 	if message == nil {
 		c.Logger.Info(
 			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	// on prepared, we only process the ones that are preprepared
-	if message.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_P.Number() {
-		c.Logger.Debug(
-			"old prepared dropped",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 		return

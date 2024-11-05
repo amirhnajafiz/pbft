@@ -122,12 +122,12 @@ func (c *Consensus) promiseProcess(sequence int, message *pbft.RequestMsg) {
 	// call execute
 	c.handleExecute(sequence)
 
-	// empty the buffer
-	go c.promitseClear(sequence)
+	// empty the buffer (aka channel)
+	go c.promiseClear(sequence)
 }
 
 // promiseClear makes sure that nothing is inside a dead channel.
-func (c *Consensus) promitseClear(sequence int) {
+func (c *Consensus) promiseClear(sequence int) {
 	channel := c.channels[sequence]
 	timer := time.NewTimer(60 * time.Second)
 

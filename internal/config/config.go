@@ -7,6 +7,7 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/config/controller"
 	"github.com/f24-cse535/pbft/internal/config/node"
+	"github.com/f24-cse535/pbft/internal/config/tls"
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -21,12 +22,15 @@ const Prefix = "pbft_"
 
 // Config struct is a module that stores system configs.
 type Config struct {
-	CtlFiles   []string          `koanf:"ctl_files"`  // a list of config files to run by ctl command
-	LogLevel   string            `koanf:"log_level"`  // node logging level (debug, info, warn, error, panic, fatal)
+	CtlFiles []string `koanf:"ctl_files"` // a list of config files to run by ctl command
+	LogLevel string   `koanf:"log_level"` // node logging level (debug, info, warn, error, panic, fatal)
+
 	Controller controller.Config `koanf:"controller"` // controller app configs
 	Node       node.Config       `koanf:"node"`       // node app configs
-	IPTable    IPTable           `koanf:"iptable"`    // system IP addresses
-	TLS        TLS               `koanf:"tls"`        // node tls keys
+	TLS        tls.Config        `koanf:"tls"`        // node tls keys
+
+	Clients []Pair `koanf:"clients"` // system clients
+	IPTable []Pair `koanf:"iptable"` // system IP addresses
 }
 
 // New reads configuration with koanf, by loading a yaml config path into the Config struct.

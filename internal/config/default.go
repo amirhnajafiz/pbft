@@ -4,6 +4,7 @@ import (
 	"github.com/f24-cse535/pbft/internal/config/controller"
 	"github.com/f24-cse535/pbft/internal/config/node"
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
+	"github.com/f24-cse535/pbft/internal/config/tls"
 )
 
 // Default return default configuration.
@@ -14,8 +15,9 @@ func Default() Config {
 			CSV: "tests/case.csv",
 		},
 		Node: node.Config{
-			Port:   80,
-			NodeId: "unique",
+			Port:     80,
+			NodeId:   "unique",
+			CoreNode: false,
 			BFT: bft.Config{
 				Total:           0,
 				Majority:        0,
@@ -25,11 +27,9 @@ func Default() Config {
 				ViewTimeout:     0,
 			},
 		},
-		IPTable: IPTable{
-			Nodes:   make([]Pair, 0),
-			Clients: make([]Pair, 0),
-		},
-		TLS: TLS{
+		IPTable: make([]Pair, 0),
+		Clients: make([]Pair, 0),
+		TLS: tls.Config{
 			PrivateKey: "",
 			PublicKey:  "",
 			CaKey:      "",

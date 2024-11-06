@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/consensus"
+	"github.com/f24-cse535/pbft/internal/core"
 	"github.com/f24-cse535/pbft/internal/grpc"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
@@ -47,6 +48,7 @@ func (n Node) Main() error {
 		Logs:       datalog,
 		Logger:     n.Logger.Named("grpc"),
 		Consensus:  consensus.NewConsensus(datalog, mem, n.Logger.Named("consensus"), &n.Cfg.Node.BFT, cli),
+		Core:       core.NewCore(mem, cli, n.Logger.Named("core"), n.Cfg.Node.BFT.Responses),
 	}
 
 	return boot.ListenAnsServer()

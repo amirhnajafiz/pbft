@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
+	"github.com/f24-cse535/pbft/internal/core"
 	"github.com/f24-cse535/pbft/internal/grpc/services"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
@@ -26,7 +27,8 @@ type Bootstrap struct {
 	PublicKey  string
 	CAKey      string
 
-	Consensus *consensus.Consensus // consensus module is the core module
+	Core      *core.Core           // core module is the client main module
+	Consensus *consensus.Consensus // consensus module is the node main module
 	Memory    *local.Memory        // memory is needed for liveness
 	Logs      *logs.Logs
 	Logger    *zap.Logger // logger is needed for tracing
@@ -89,6 +91,7 @@ func (b *Bootstrap) ListenAnsServer() error {
 	})
 	pbft.RegisterPBFTServer(server, &services.PBFT{
 		Consensus: b.Consensus,
+		Core:      b.Core,
 		Memory:    b.Memory,
 		Logs:      b.Logs,
 		Logger:    b.Logger.Named("pbft"),

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
+	"github.com/f24-cse535/pbft/internal/core"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/enum"
@@ -19,6 +20,7 @@ import (
 type PBFT struct {
 	pbft.UnimplementedPBFTServer
 
+	Core      *core.Core
 	Consensus *consensus.Consensus
 	Memory    *local.Memory
 	Logs      *logs.Logs
@@ -73,13 +75,22 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, 
 	return &emptypb.Empty{}, nil
 }
 
-// Transaction RPC calls signal and wait on consensus and waits for a response.
+// Transaction RPC calls core new transaction and waits for a response from transaction handler.
 func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft.TransactionRsp, error) {
-	return nil, nil
+	p.Logs.AppendLog("Transaction", msg.String())
+
+	txt := <-p.Core.NewTransaction(msg.GetSender(), msg)
+
+	return &pbft.TransactionRsp{
+		Text: txt,
+	}, nil
 }
 
-// Reply RPC forwards a reply message into consensus.handleReply
+// Reply RPC calls core new reply to send the reply message to request handler.
 func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
+	p.Logs.AppendLog("Reply", msg.String())
+	p.Core.NewReply(msg.GetClientId(), msg)
+
 	return &emptypb.Empty{}, nil
 }
 

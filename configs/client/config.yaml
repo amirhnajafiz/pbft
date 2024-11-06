@@ -2,13 +2,13 @@
 log_level: "debug"
 
 # certificates and keys
-private_key: "./configs/clients/A/client.key"
-public_key: "./configs/clients/A/client.crt"
-cac: "./configs/ca.crt"
+tls:
+  private_key: "./configs/clients/A/client.key"
+  public_key: "./configs/clients/A/client.crt"
+  ca_key: "./configs/ca.crt"
 
 # iptable maps all clients and nodes to their ip and metadata
 iptable:
-  nodes:
   - key: "S1"
     value: "127.0.0.1:5001"
     metadata: 0
@@ -21,15 +21,15 @@ iptable:
   - key: "S4"
     value: "127.0.0.1:5004"
     metadata: 3
-  clients:
   - key: "client"
     value: "127.0.0.1:6001"
-    metadata: 10
+    metadata: -1
 
 # node app configs
 node:
   port: 6001
-  node_id: A
+  node_id: client
+  core_node: false # client is not a core node
   bft: # pbft configs
     total: 4
     majority: 3

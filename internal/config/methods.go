@@ -16,7 +16,9 @@ func (c Config) GetNodesMeta() map[string]int {
 	hashMap := make(map[string]int)
 
 	for _, pair := range c.IPTable {
-		hashMap[pair.Key] = pair.Metadata
+		if pair.Metadata != -1 {
+			hashMap[pair.Key] = pair.Metadata
+		}
 	}
 
 	return hashMap

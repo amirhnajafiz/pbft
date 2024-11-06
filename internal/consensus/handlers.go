@@ -9,6 +9,30 @@ import (
 	"go.uber.org/zap"
 )
 
+func (c *Consensus) preprepareHandler() {
+	for {
+
+	}
+}
+
+func (c *Consensus) prepareHandler() {
+	for {
+
+	}
+}
+
+func (c *Consensus) commitHandler() {
+	for {
+
+	}
+}
+
+func (c *Consensus) requestHandler() {
+	for {
+
+	}
+}
+
 // handleExecute gets a sequence and message and does the execution.
 func (c *Consensus) handleExecute(sequence int) {
 	// check if this sequence is executable
@@ -109,46 +133,6 @@ func (c *Consensus) handlePrePrepare(pkt interface{}) {
 	})
 }
 
-// handlePrePrepared gets preprepared message and passes it to the correct request handler.
-func (c *Consensus) handlePrePrepared(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.AckMsg)
-
-	// get the message from our datastore
-	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
-	if message == nil {
-		c.Logger.Info(
-			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	// get the digest of input request
-	digest := hashing.MD5(message)
-
-	// validate the message
-	if !c.validateAckMessage(msg, digest) {
-		c.Logger.Info(
-			"preprepared message is not valid",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	c.Logger.Debug(
-		"preprepared received",
-		zap.Int64("sequence number", message.GetSequenceNumber()),
-		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-	)
-
-	// publish over correct request handler
-	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
-		Type:    enum.IntrPrePrepared,
-		Payload: msg,
-	}
-}
-
 // handlePrepare gets a prepare message and updates a log status.
 func (c *Consensus) handlePrepare(pkt interface{}) {
 	// parse the input message
@@ -194,46 +178,6 @@ func (c *Consensus) handlePrepare(pkt interface{}) {
 		SequenceNumber: msg.GetSequenceNumber(),
 		Digest:         digest,
 	})
-}
-
-// handlePrepared gets a prepared message and sends it to the gith request handler.
-func (c *Consensus) handlePrepared(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.AckMsg)
-
-	// get the message from our datastore
-	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
-	if message == nil {
-		c.Logger.Info(
-			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	// get the digest of input request
-	digest := hashing.MD5(message)
-
-	// validate the message
-	if !c.validateAckMessage(msg, digest) {
-		c.Logger.Info(
-			"prepared message is not valid",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	c.Logger.Debug(
-		"prepared received",
-		zap.Int64("sequence number", message.GetSequenceNumber()),
-		zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-	)
-
-	// publish over correct request handler
-	c.channels[int(msg.GetSequenceNumber())] <- &models.InterruptMsg{
-		Type:    enum.IntrPrepared,
-		Payload: msg,
-	}
 }
 
 // handleReply gets a reply message and passes it to the right request handler.

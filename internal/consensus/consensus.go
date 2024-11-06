@@ -56,9 +56,7 @@ func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
 	} else if pkt.Type == enum.PktReq {
 		// if a new request is arrived, create a new channel and handler
 		c.requestsHandlersTable[sequence] = make(chan *models.Packet, c.BFTCfg.Total) // size of total
-		c.requestsHandlersTable[sequence] <- pkt
-
-		go c.requestHandler()
+		go c.requestHandler(pkt)
 	}
 }
 

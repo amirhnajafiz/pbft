@@ -123,45 +123,8 @@ func (c *Consensus) commitHandler() {
 	}
 }
 
-func (c *Consensus) requestHandler() {
-	for {
-
-	}
-}
-
-// handleReply gets a reply message and passes it to the right request handler.
-func (c *Consensus) handleReply(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.ReplyMsg)
-
-	// ignore the messages that are not for this node
-	if msg.GetClientId() != c.Memory.GetNodeId() {
-		c.Logger.Debug(
-			"reply dropped",
-			zap.String("to", msg.GetClientId()),
-			zap.String("whoami", c.Memory.GetNodeId()),
-		)
-		return
-	}
-
-	if msg.GetTimestamp() != c.Memory.GetTimestamp() {
-		c.Logger.Debug(
-			"old reply dropped",
-			zap.Int64("timestamp", msg.GetTimestamp()),
-		)
-		return
-	}
-
-	// publish over correct request handler
-	c.inTransactionChannel <- &models.InterruptMsg{
-		Type:    enum.IntrReply,
-		Payload: msg,
-	}
-}
-
-// handle request accepts a new request and creates a go-routine
-// to collect all preprepared and prepared messages.
-func (c *Consensus) handleRequest(pkt interface{}) {
+// requestHandler gets a request message and performs the request handling logic.
+func (c *Consensus) requestHandler(pkt interface{}) {
 	// parse the input message
 	msg := pkt.(*pbft.RequestMsg)
 
@@ -194,11 +157,37 @@ func (c *Consensus) handleRequest(pkt interface{}) {
 		zap.Int("sequence number", seqn),
 	)
 
-	// create our channel for input messages
-	c.channels[seqn] = make(chan *models.InterruptMsg)
-
-	//call helper functions to process the transaction
 	c.promiseProcess(seqn, msg)
+}
+
+// handleReply gets a reply message and passes it to the right request handler.
+func (c *Consensus) handleReply(pkt interface{}) {
+	// parse the input message
+	msg := pkt.(*pbft.ReplyMsg)
+
+	// ignore the messages that are not for this node
+	if msg.GetClientId() != c.Memory.GetNodeId() {
+		c.Logger.Debug(
+			"reply dropped",
+			zap.String("to", msg.GetClientId()),
+			zap.String("whoami", c.Memory.GetNodeId()),
+		)
+		return
+	}
+
+	if msg.GetTimestamp() != c.Memory.GetTimestamp() {
+		c.Logger.Debug(
+			"old reply dropped",
+			zap.Int64("timestamp", msg.GetTimestamp()),
+		)
+		return
+	}
+
+	// publish over correct request handler
+	c.inTransactionChannel <- &models.InterruptMsg{
+		Type:    enum.IntrReply,
+		Payload: msg,
+	}
 }
 
 // handle transaction checks a new transaction to call request RPC.

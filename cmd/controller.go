@@ -32,7 +32,7 @@ func (c Controller) Main() error {
 		c.Cfg.IPTable.GetNodes(),
 		c.Cfg.IPTable.GetClients(),
 	)
-	if err := c.client.LoadTLS(c.Cfg.PrivateKey, c.Cfg.PublicKey, c.Cfg.CAC); err != nil {
+	if err := c.client.LoadTLS(c.Cfg.TLS.PrivateKey, c.Cfg.TLS.PublicKey, c.Cfg.TLS.CaKey); err != nil {
 		return err
 	}
 

@@ -33,16 +33,16 @@ func (n Node) Main() error {
 		n.Cfg.IPTable.GetNodes(),
 		n.Cfg.IPTable.GetClients(),
 	)
-	if err := cli.LoadTLS(n.Cfg.PrivateKey, n.Cfg.PublicKey, n.Cfg.CAC); err != nil {
+	if err := cli.LoadTLS(n.Cfg.TLS.PrivateKey, n.Cfg.TLS.PublicKey, n.Cfg.TLS.CaKey); err != nil {
 		return err
 	}
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
 		Port:       n.Cfg.Node.Port,
-		PrivateKey: n.Cfg.PrivateKey,
-		PublicKey:  n.Cfg.PublicKey,
-		CAC:        n.Cfg.CAC,
+		PrivateKey: n.Cfg.TLS.PrivateKey,
+		PublicKey:  n.Cfg.TLS.PublicKey,
+		CAKey:      n.Cfg.TLS.CaKey,
 		Memory:     mem,
 		Logs:       datalog,
 		Logger:     n.Logger.Named("grpc"),

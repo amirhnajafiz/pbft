@@ -9,10 +9,7 @@ import (
 // Default return default configuration.
 func Default() Config {
 	return Config{
-		LogLevel:   "debug",
-		PrivateKey: "",
-		PublicKey:  "",
-		CAC:        "",
+		LogLevel: "debug",
 		Controller: controller.Config{
 			CSV: "tests/case.csv",
 		},
@@ -31,6 +28,11 @@ func Default() Config {
 		IPTable: IPTable{
 			Nodes:   make([]Pair, 0),
 			Clients: make([]Pair, 0),
+		},
+		TLS: TLS{
+			PrivateKey: "",
+			PublicKey:  "",
+			CaKey:      "",
 		},
 	}
 }

@@ -24,7 +24,7 @@ type Bootstrap struct {
 	Port       int
 	PrivateKey string
 	PublicKey  string
-	CAC        string
+	CAKey      string
 
 	Consensus *consensus.Consensus // consensus module is the core module
 	Memory    *local.Memory        // memory is needed for liveness
@@ -58,12 +58,12 @@ func (b *Bootstrap) ListenAnsServer() error {
 
 	// create the CA data
 	ca := x509.NewCertPool()
-	cacBytes, err := os.ReadFile(b.CAC)
+	cacBytes, err := os.ReadFile(b.CAKey)
 	if err != nil {
 		return fmt.Errorf("failed to read ca cert: %v", err)
 	}
 	if ok := ca.AppendCertsFromPEM(cacBytes); !ok {
-		return fmt.Errorf("failed to append certs: %s", b.CAC)
+		return fmt.Errorf("failed to append certs: %s", b.CAKey)
 	}
 
 	// tls configs

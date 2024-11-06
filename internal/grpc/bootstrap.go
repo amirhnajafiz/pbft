@@ -9,6 +9,8 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc/services"
+	"github.com/f24-cse535/pbft/internal/storage/local"
+	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -25,7 +27,9 @@ type Bootstrap struct {
 	CAC        string
 
 	Consensus *consensus.Consensus // consensus module is the core module
-	Logger    *zap.Logger          // logger is needed for tracing
+	Memory    *local.Memory        // memory is needed for liveness
+	Logs      *logs.Logs
+	Logger    *zap.Logger // logger is needed for tracing
 }
 
 // ListenAnsServer creates a new gRPC instance with all services.
@@ -79,11 +83,14 @@ func (b *Bootstrap) ListenAnsServer() error {
 
 	// register all gRPC services
 	liveness.RegisterLivenessServer(server, &services.Liveness{
-		Consensus: b.Consensus,
-		Logger:    b.Logger.Named("liveness"),
+		Memory: b.Memory,
+		Logs:   b.Logs,
+		Logger: b.Logger.Named("liveness"),
 	})
 	pbft.RegisterPBFTServer(server, &services.PBFT{
 		Consensus: b.Consensus,
+		Memory:    b.Memory,
+		Logs:      b.Logs,
 		Logger:    b.Logger.Named("pbft"),
 	})
 

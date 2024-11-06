@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
+	"github.com/f24-cse535/pbft/internal/storage/local"
+	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
@@ -18,12 +20,14 @@ type PBFT struct {
 	pbft.UnimplementedPBFTServer
 
 	Consensus *consensus.Consensus
+	Memory    *local.Memory
+	Logs      *logs.Logs
 	Logger    *zap.Logger
 }
 
 // Commit RPC generates a packet for consensus' commit handler.
 func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Commit", msg.String())
+	p.Logs.AppendLog("Commit", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktCmt, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -31,7 +35,7 @@ func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, er
 
 // PrePrepare RPC generates a packet for consensus' preprepare handler.
 func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("PrePrepare", msg.String())
+	p.Logs.AppendLog("PrePrepare", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktPP, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -39,7 +43,7 @@ func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptyp
 
 // Prepare RPC generates a packet for consensus' prepare handler.
 func (p *PBFT) Prepare(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Prepare", msg.String())
+	p.Logs.AppendLog("Prepare", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktP, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -47,7 +51,7 @@ func (p *PBFT) Prepare(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, e
 
 // Request RPC generates a packet for consensus' request handler.
 func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Request", msg.String())
+	p.Logs.AppendLog("Request", msg.String())
 	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktReq, 0))
 
 	return &emptypb.Empty{}, nil
@@ -55,7 +59,7 @@ func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empt
 
 // PrePrepared RPC generates a packet for consensus' request handler.
 func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("PrePrepared", msg.String())
+	p.Logs.AppendLog("PrePrepared", msg.String())
 	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktPPed, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -63,7 +67,7 @@ func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empt
 
 // Prepared RPC generates a packet for consensus' request handler.
 func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Prepared", msg.String())
+	p.Logs.AppendLog("Prepared", msg.String())
 	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktPed, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -81,7 +85,7 @@ func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, e
 
 // PrintDB returns the current datastore of this node.
 func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
-	ds := p.Consensus.Logs.GetAllRequests()
+	ds := p.Logs.GetAllRequests()
 
 	// publish requests one by one
 	for _, block := range ds {
@@ -95,7 +99,7 @@ func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 
 // PrintLog returns the datalog of this node.
 func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error {
-	logs := p.Consensus.Logs.GetLogs()
+	logs := p.Logs.GetLogs()
 
 	// publish logs one by one
 	for _, block := range logs {
@@ -111,7 +115,7 @@ func (p *PBFT) PrintLog(_ *emptypb.Empty, stream pbft.PBFT_PrintLogServer) error
 
 // PrintStatus gets a sequence number and returns the status of its log.
 func (p *PBFT) PrintStatus(ctx context.Context, msg *pbft.StatusMsg) (*pbft.StatusRsp, error) {
-	if value := p.Consensus.Logs.GetRequest(int(msg.GetSequenceNumber())); value != nil {
+	if value := p.Logs.GetRequest(int(msg.GetSequenceNumber())); value != nil {
 		return &pbft.StatusRsp{
 			Status: value.GetStatus(),
 		}, nil

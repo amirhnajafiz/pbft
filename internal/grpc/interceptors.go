@@ -33,7 +33,7 @@ func (b *Bootstrap) allUnaryInterceptor(
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	// if status is true, allow all services to proceed
-	if b.Consensus.Memory.GetStatus() {
+	if b.Memory.GetStatus() {
 		b.Logger.Info("RPC called", zap.String("method", info.FullMethod))
 		return handler(ctx, req)
 	}

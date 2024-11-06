@@ -37,24 +37,16 @@ func (n Node) Main() error {
 		return err
 	}
 
-	// create a new consensus module
-	instance := consensus.Consensus{
-		BFTCfg: &n.Cfg.Node.BFT,
-		Client: cli,
-		Memory: mem,
-		Logs:   datalog,
-		Logger: n.Logger.Named("consensus"),
-	}
-	instance.Init()
-
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
 		Port:       n.Cfg.Node.Port,
 		PrivateKey: n.Cfg.PrivateKey,
 		PublicKey:  n.Cfg.PublicKey,
 		CAC:        n.Cfg.CAC,
+		Memory:     mem,
+		Logs:       datalog,
 		Logger:     n.Logger.Named("grpc"),
-		Consensus:  &instance,
+		Consensus:  consensus.NewConsensus(datalog, mem, n.Logger.Named("consensus"), &n.Cfg.Node.BFT, cli),
 	}
 
 	return boot.ListenAnsServer()

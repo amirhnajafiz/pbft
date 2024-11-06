@@ -117,7 +117,7 @@ func (c *Client) Prepared(target string, msg *pbft.AckMsg) {
 
 // Reply calls the Reply RPC on the target machine (nodes to clients).
 func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
-	address := c.clients[target]
+	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
@@ -283,8 +283,8 @@ func (c *Client) PrintView(target string) bool {
 }
 
 // Transaction sends a transaction to one client.
-func (c *Client) Transaction(sender, reseiver string, amount int, ts int) string {
-	address := c.clients[sender]
+func (c *Client) Transaction(target, sender, reseiver string, amount int, ts int) string {
+	address := c.nodes[target]
 
 	// base connection
 	conn, err := c.connect(address)

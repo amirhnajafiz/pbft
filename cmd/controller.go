@@ -29,8 +29,7 @@ func (c Controller) Main() error {
 	c.client = goclient.NewClient(
 		c.Logger.Named("client.go"),
 		"",
-		c.Cfg.IPTable.GetNodes(),
-		c.Cfg.IPTable.GetClients(),
+		c.Cfg.GetNodes(),
 	)
 	if err := c.client.LoadTLS(c.Cfg.TLS.PrivateKey, c.Cfg.TLS.PublicKey, c.Cfg.TLS.CaKey); err != nil {
 		return err
@@ -51,6 +50,10 @@ func (c Controller) Main() error {
 	for _, t := range ts {
 		fmt.Printf("transactions of %s is %d (Live Servers=%d, Byzantine Servers=%d)\n", t.Index, len(t.Transactions), len(t.LiveServers), len(t.ByzantineServers))
 	}
+
+	// remove the client from nodes
+	nodes := c.Cfg.GetNodes()
+	delete(nodes, c.Cfg.Controller.Client)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
@@ -78,14 +81,14 @@ func (c Controller) Main() error {
 			} else {
 				fmt.Printf("executing set %d\n", c.index)
 
-				c.resetNodesStatus()
-				c.updateNodesStatus(ts[c.index].LiveServers, ts[c.index].ByzantineServers)
+				c.resetNodesStatus(nodes)
+				c.updateNodesStatus(nodes, ts[c.index].LiveServers, ts[c.index].ByzantineServers)
 
 				for _, trx := range ts[c.index].Transactions {
 					fmt.Printf("execute (timestamp: %d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
 
 					amount, _ := strconv.Atoi(trx.Amount)
-					fmt.Println(c.client.Transaction(trx.Sender, trx.Receiver, amount, timestamp))
+					fmt.Println(c.client.Transaction(c.Cfg.Controller.Client, trx.Sender, trx.Receiver, amount, timestamp))
 
 					timestamp++
 				}
@@ -110,7 +113,7 @@ func (c Controller) Main() error {
 			}
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[1])
-			for key := range c.Cfg.IPTable.GetNodes() {
+			for key := range nodes {
 				fmt.Printf("%s : %s\n", key, c.client.PrintStatus(key, seq))
 			}
 		default:
@@ -120,15 +123,15 @@ func (c Controller) Main() error {
 }
 
 // updateNodesStatus before running each transaction.
-func (c Controller) updateNodesStatus(liveservers []string, byzantines []string) {
-	for key := range c.Cfg.IPTable.GetNodes() {
+func (c Controller) updateNodesStatus(nodes map[string]string, liveservers []string, byzantines []string) {
+	for key := range nodes {
 		c.client.ChangeState(key, lists.IsInList(key, liveservers), lists.IsInList(key, byzantines))
 	}
 }
 
 // resetNodesStatus by calling flush and reset status.
-func (c Controller) resetNodesStatus() {
-	for key := range c.Cfg.IPTable.GetNodes() {
+func (c Controller) resetNodesStatus(nodes map[string]string) {
+	for key := range nodes {
 		c.client.ChangeState(key, true, false)
 		c.client.Flush(key)
 	}

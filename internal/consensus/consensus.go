@@ -48,12 +48,9 @@ func (c *Consensus) SignalToHandlers(pkt *models.Packet) {
 
 // SignalToReqHandlers sends a packet from gRPC level to request handlers without waiting for a response.
 func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
-	// if the request handler exists, pass the packet to it
 	if ch, ok := c.requestsHandlersTable[pkt.Sequence]; ok {
-		ch <- pkt
+		ch <- pkt // if the request handler exists, pass the packet to it
 	} else if pkt.Type == enum.PktReq {
-		// if a new request is arrived, create a new channel and handler
-		c.requestsHandlersTable[pkt.Sequence] = make(chan *models.Packet, c.BFTCfg.Total) // size of total
-		go c.requestHandler(pkt)
+		go c.requestHandler(pkt) // if a new request is arrived create handler
 	}
 }

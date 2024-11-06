@@ -125,14 +125,15 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	msg := pkt.(*pbft.RequestMsg)
 
 	// check if we had a request with the given timestamp
-	if rsp := c.isRequestExecuted(msg.GetTransaction().GetTimestamp()); rsp != nil {
+	if req := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
 		c.Logger.Debug(
 			"redundant request",
-			zap.Int64("timestamp", rsp.GetTransaction().GetTimestamp()),
-			zap.Int64("sequence number", rsp.GetSequenceNumber()),
+			zap.Int64("timestamp", req.GetTransaction().GetTimestamp()),
+			zap.Int64("sequence number", req.GetSequenceNumber()),
 		)
 
-		c.promiseReply(rsp) // send the reply message using helper function
+		c.sendReplyMsg(req) // send the reply message using helper function
+
 		return
 	}
 
@@ -142,78 +143,63 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 			"backup received a request",
 			zap.String("current leader", c.getCurrentLeader()),
 		)
+
 		return // drop the request if not leader
 	}
 
-	// store the log place
-	seqn := c.Logs.InitRequest()
+	// find a sequence number for this request
+	sequence := c.Logs.InitRequest()
+
+	// open a communication channel
+	channel := make(chan *models.Packet)
+	c.requestsHandlersTable[sequence] = channel
 
 	c.Logger.Debug(
 		"new sequence",
-		zap.Int("sequence number", seqn),
+		zap.Int("sequence number", sequence),
 	)
 
-	c.promiseProcess(seqn, msg)
-}
+	// update request metadata
+	msg.SequenceNumber = int64(sequence)
+	msg.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
-// handleReply gets a reply message and passes it to the right request handler.
-func (c *Consensus) handleReply(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.ReplyMsg)
+	// store it into datastore
+	c.Logs.SetRequest(sequence, msg)
 
-	// ignore the messages that are not for this node
-	if msg.GetClientId() != c.Memory.GetNodeId() {
-		c.Logger.Debug(
-			"reply dropped",
-			zap.String("to", msg.GetClientId()),
-			zap.String("whoami", c.Memory.GetNodeId()),
-		)
-		return
+	c.Logger.Debug(
+		"new request received",
+		zap.Int("sequence number", sequence),
+		zap.Int64("timestamp", msg.GetTransaction().GetTimestamp()),
+	)
+
+	// send preprepare messages
+	go c.sendPreprepareMsg(msg)
+
+	// update our own status
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+
+	// wait for 2f+1 preprepared messages (count our own)
+	count := c.waitForPrePrepareds(channel)
+	c.Logger.Debug("received preprepared messages", zap.Int("messages", count+1))
+
+	// broadcast to all using prepare
+	go c.sendPrepareMsg(msg)
+
+	// update our own status
+	if !c.Memory.GetByzantine() {
+		c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
 	}
 
-	if msg.GetTimestamp() != c.Memory.GetTimestamp() {
-		c.Logger.Debug(
-			"old reply dropped",
-			zap.Int64("timestamp", msg.GetTimestamp()),
-		)
-		return
-	}
+	// wait for 2f+1 prepared messages (count our own)
+	count = c.waitForPrepareds(channel)
+	c.Logger.Debug("received prepared messages", zap.Int("messages", count+1))
 
-	// publish over correct request handler
-	c.inTransactionChannel <- &models.InterruptMsg{
-		Type:    enum.IntrReply,
-		Payload: msg,
-	}
-}
+	// broadcast to all using commit, make sure everyone get's it
+	go c.sendCommitMsg(msg)
 
-// handle transaction checks a new transaction to call request RPC.
-func (c *Consensus) handleTransaction(pkt interface{}) {
-	defer func() {
-		c.Memory.SetTimestamp(0)
+	// update our own status
+	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
-		// reset the channel when transaction is done
-		c.inTransactionChannel = nil
-	}()
-
-	// parse the input message
-	msg := pkt.(*pbft.TransactionMsg)
-
-	c.Logger.Debug("new transaction", zap.Int64("timestamp", msg.GetTimestamp()))
-
-	// send the request using helper functions
-	c.promiseRequest(msg)
-
-	// after the request is sent, update the current timestamp
-	c.Memory.SetTimestamp(msg.GetTimestamp())
-
-	// get the response by calling helper functions
-	resp := c.promiseReceive(msg)
-
-	c.Logger.Debug("received reply", zap.Int64("sequence number", resp.GetSequenceNumber()))
-
-	// reset the view
-	c.Memory.SetView(int(resp.GetView()))
-
-	// return the response in channel
-	c.outTransactionChannel <- resp.GetResponse()
+	// execute our own requests
+	c.newExecutionGadget(sequence)
 }

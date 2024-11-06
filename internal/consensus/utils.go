@@ -10,8 +10,8 @@ func (c *Consensus) getCurrentLeader() string {
 	return c.Memory.GetNodeByIndex(c.Memory.GetView())
 }
 
-// isRequestExecuted checks the timestamps to see if a request is executed or not.
-func (c *Consensus) isRequestExecuted(ts int64) *pbft.RequestMsg {
+// checkRequestExecution checks the timestamps to see if a request is executed or not.
+func (c *Consensus) checkRequestExecution(ts int64) *pbft.RequestMsg {
 	for _, key := range c.Logs.GetAllRequests() {
 		if key.GetTransaction().GetTimestamp() == ts && key.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
 			return key

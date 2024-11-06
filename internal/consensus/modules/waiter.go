@@ -9,6 +9,9 @@ import (
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
+// Validator is function type used to validate input messages.
+type Validator func(*pbft.AckMsg) *pbft.AckMsg
+
 // Waiter is a module that handles wait processes on consensus demand.
 type Waiter struct {
 	cfg *bft.Config
@@ -22,7 +25,7 @@ func NewWaiter(cfg *bft.Config) *Waiter {
 }
 
 // NewPrePreparedWaiter takes packets from a channel until it gets 2f+1 matching preprepared messages.
-func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet) int {
+func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Validator) int {
 	// create a list of messages
 	messages := make(map[string]int)
 
@@ -42,8 +45,14 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet) int {
 					continue
 				}
 
+				// validate the message
+				msg := intr.Payload.(*pbft.AckMsg)
+				if msg = validator(msg); msg == nil {
+					continue
+				}
+
 				// extract the digest to count the messages
-				digest := intr.Payload.(*pbft.AckMsg).GetDigest()
+				digest := msg.GetDigest()
 				if _, ok := messages[digest]; !ok {
 					messages[digest] = 1
 				} else {
@@ -82,7 +91,7 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet) int {
 }
 
 // NewPreparedWaiter takes packets from a channel until it gets 2f+1 matching prepared messages.
-func (w *Waiter) NewPreparedWaiter(channel chan *models.Packet) int {
+func (w *Waiter) NewPreparedWaiter(channel chan *models.Packet, validator Validator) int {
 	// create a list of messages
 	messages := make(map[string]int)
 
@@ -95,8 +104,14 @@ func (w *Waiter) NewPreparedWaiter(channel chan *models.Packet) int {
 			continue
 		}
 
+		// validate the message
+		msg := intr.Payload.(*pbft.AckMsg)
+		if msg = validator(msg); msg == nil {
+			continue
+		}
+
 		// extract the digest to count the messages
-		digest := intr.Payload.(*pbft.AckMsg).GetDigest()
+		digest := msg.GetDigest()
 		if _, ok := messages[digest]; !ok {
 			messages[digest] = 1
 		} else {

@@ -179,7 +179,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 
 	// wait for 2f+1 preprepared messages (count our own)
-	count := c.waitForPrePrepareds(channel)
+	count := c.Waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
 	c.Logger.Debug("received preprepared messages", zap.Int("messages", count+1))
 
 	// broadcast to all using prepare
@@ -191,7 +191,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	}
 
 	// wait for 2f+1 prepared messages (count our own)
-	count = c.waitForPrepareds(channel)
+	count = c.Waiter.NewPreparedWaiter(channel, c.newAckGadget)
 	c.Logger.Debug("received prepared messages", zap.Int("messages", count+1))
 
 	// broadcast to all using commit, make sure everyone get's it

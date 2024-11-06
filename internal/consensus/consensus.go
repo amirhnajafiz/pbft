@@ -21,6 +21,7 @@ type Consensus struct {
 	BFTCfg *bft.Config    // bft config is used inside consensus handlers
 
 	Communication *modules.Communication
+	Waiter        *modules.Waiter
 
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
@@ -30,6 +31,7 @@ type Consensus struct {
 func (c *Consensus) Init() {
 	// create consensus modules
 	c.Communication = modules.NewCommunicationModule(c.Client)
+	c.Waiter = modules.NewWaiter(c.BFTCfg)
 
 	// create consensus tables
 	c.requestsHandlersTable = make(map[int]chan *models.Packet, c.BFTCfg.Total*2) // size of 2*total nodes

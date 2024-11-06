@@ -56,13 +56,9 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 
 		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
 
-		c.logger.Info(
-			"request executed",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
+		c.logger.Info("request executed", zap.Int("sequence number", index))
 
 		index++
-
 		if msg = c.logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
 			return
 		}

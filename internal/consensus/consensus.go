@@ -14,11 +14,9 @@ import (
 
 // Consensus module is the main module of PBFT that manages packets.
 type Consensus struct {
-	logs   *logs.Logs    // data log is used to store and retrive logs
-	memory *local.Memory // memory is needed to update the node state
-	logger *zap.Logger   // logger is needed for tracing
-
-	// inner modules
+	logs          *logs.Logs
+	memory        *local.Memory
+	logger        *zap.Logger
 	communication *modules.Communication
 	waiter        *modules.Waiter
 

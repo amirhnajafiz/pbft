@@ -54,7 +54,7 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 		// update the request and set the status of prepare
 		c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-		c.promiseReply(msg) // send the reply message using helper functions
+		c.Communication.SendReplyMsg(msg, c.Memory.GetView()) // send the reply message using helper functions
 
 		c.Logger.Info(
 			"request executed",

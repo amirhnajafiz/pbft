@@ -132,7 +132,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 			zap.Int64("sequence number", req.GetSequenceNumber()),
 		)
 
-		c.sendReplyMsg(req) // send the reply message using helper function
+		c.Communication.SendReplyMsg(req, c.Memory.GetView())
 
 		return
 	}
@@ -173,7 +173,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	)
 
 	// send preprepare messages
-	go c.sendPreprepareMsg(msg)
+	go c.Communication.SendPreprepareMsg(msg, c.Memory.GetView())
 
 	// update our own status
 	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
@@ -183,7 +183,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	c.Logger.Debug("received preprepared messages", zap.Int("messages", count+1))
 
 	// broadcast to all using prepare
-	go c.sendPrepareMsg(msg)
+	go c.Communication.SendPrepareMsg(msg, c.Memory.GetView())
 
 	// update our own status
 	if !c.Memory.GetByzantine() {
@@ -195,7 +195,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	c.Logger.Debug("received prepared messages", zap.Int("messages", count+1))
 
 	// broadcast to all using commit, make sure everyone get's it
-	go c.sendCommitMsg(msg)
+	go c.Communication.SendCommitMsg(msg, c.Memory.GetView())
 
 	// update our own status
 	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)

@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
+	"github.com/f24-cse535/pbft/internal/consensus/modules"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
@@ -19,12 +20,17 @@ type Consensus struct {
 	Logger *zap.Logger    // logger is needed for tracing
 	BFTCfg *bft.Config    // bft config is used inside consensus handlers
 
+	Communication *modules.Communication
+
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
 }
 
 // Init method, initializes the consensus fields.
 func (c *Consensus) Init() {
+	// create consensus modules
+	c.Communication = modules.NewCommunicationModule(c.Client)
+
 	// create consensus tables
 	c.requestsHandlersTable = make(map[int]chan *models.Packet, c.BFTCfg.Total*2) // size of 2*total nodes
 	c.consensusHandlersTable = map[enum.PacketType]chan *models.Packet{

@@ -1,17 +1,30 @@
-package consensus
+package modules
 
 import (
+	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
+// Communication is a module that uses client.go to send messages.
+type Communication struct {
+	cli *client.Client
+}
+
+// NewCommunicationModule returns a new communication module instance.
+func NewCommunicationModule(cli *client.Client) *Communication {
+	return &Communication{
+		cli: cli,
+	}
+}
+
 // sendReplyMsg gets a request message and uses client.go to send a reply message.
-func (c *Consensus) sendReplyMsg(msg *pbft.RequestMsg) {
-	c.Client.Reply(
+func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
+	c.cli.Reply(
 		msg.GetClientId(),
 		&pbft.ReplyMsg{
 			SequenceNumber: msg.GetSequenceNumber(),
-			View:           int64(c.Memory.GetView()),
+			View:           int64(view),
 			Timestamp:      msg.GetTransaction().GetTimestamp(),
 			ClientId:       msg.GetClientId(),
 			Response:       msg.GetResponse().GetText(),
@@ -20,29 +33,29 @@ func (c *Consensus) sendReplyMsg(msg *pbft.RequestMsg) {
 }
 
 // sendPreprepareMsg gets a request message and uses client.go to broadcast a preprepare message.
-func (c *Consensus) sendPreprepareMsg(msg *pbft.RequestMsg) {
-	c.Client.BroadcastPrePrepare(&pbft.PrePrepareMsg{
+func (c *Communication) SendPreprepareMsg(msg *pbft.RequestMsg, view int) {
+	c.cli.BroadcastPrePrepare(&pbft.PrePrepareMsg{
 		Request:        msg,
 		SequenceNumber: msg.GetSequenceNumber(),
-		View:           int64(c.Memory.GetView()),
+		View:           int64(view),
 		Digest:         hashing.MD5(msg),
 	})
 }
 
 // sendPrepareMsg gets a request message and uses client.go to broadcast a prepare message.
-func (c *Consensus) sendPrepareMsg(msg *pbft.RequestMsg) {
-	c.Client.BroadcastPrepare(&pbft.AckMsg{
+func (c *Communication) SendPrepareMsg(msg *pbft.RequestMsg, view int) {
+	c.cli.BroadcastPrepare(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
-		View:           int64(c.Memory.GetView()),
+		View:           int64(view),
 		Digest:         hashing.MD5(msg),
 	})
 }
 
 // sendCommitMsg gets a request message and uses client.go to broadcast a commit message.
-func (c *Consensus) sendCommitMsg(msg *pbft.RequestMsg) {
-	c.Client.BroadcastCommit(&pbft.AckMsg{
+func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
+	c.cli.BroadcastCommit(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
-		View:           int64(c.Memory.GetView()),
+		View:           int64(view),
 		Digest:         hashing.MD5(msg),
 	})
 }

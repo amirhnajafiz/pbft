@@ -5,6 +5,7 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/pkg/enum"
+	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
@@ -20,59 +21,61 @@ type PBFT struct {
 	Logger    *zap.Logger
 }
 
-// Commit RPC forwards a commit message into consensus.handleCommit
+// Commit RPC generates a packet for consensus' commit handler.
 func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Commit", msg.String())
-	p.Consensus.SignalAndGo(enum.IntrCommit, msg)
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktCmt, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
 }
 
-// PrePrepare RPC forwards a preprepare message into consensus.handlePrePrepare
+// PrePrepare RPC generates a packet for consensus' preprepare handler.
 func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("PrePrepare", msg.String())
-	p.Consensus.Signal(enum.IntrPrePrepare, msg)
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktPP, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
 }
 
-// PrePrepared RPC forwards a preprepared message into consensus.handlePrePrepared
-func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("PrePrepared", msg.String())
-	p.Consensus.Signal(enum.IntrPrePrepared, msg)
-
-	return &emptypb.Empty{}, nil
-}
-
-// Prepare RPC forwards a prepare message into consensus.handlePrepare
+// Prepare RPC generates a packet for consensus' prepare handler.
 func (p *PBFT) Prepare(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
 	p.Consensus.Logs.AppendLog("Prepare", msg.String())
-	p.Consensus.Signal(enum.IntrPrepare, msg)
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktP, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
 }
 
-// Prepared RPC forwards a prepared message into consensus.handlePrepared
-func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Prepared", msg.String())
-	p.Consensus.Signal(enum.IntrPrepared, msg)
+// Request RPC generates a packet for consensus' request handler.
+func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Request", msg.String())
+	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktReq, 0))
 
 	return &emptypb.Empty{}, nil
+}
+
+// PrePrepared RPC generates a packet for consensus' request handler.
+func (p *PBFT) PrePrepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("PrePrepared", msg.String())
+	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktPPed, int(msg.GetSequenceNumber())))
+
+	return &emptypb.Empty{}, nil
+}
+
+// Prepared RPC generates a packet for consensus' request handler.
+func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, error) {
+	p.Consensus.Logs.AppendLog("Prepared", msg.String())
+	p.Consensus.SignalToReqHandlers(models.NewPacket(msg, enum.PktPed, int(msg.GetSequenceNumber())))
+
+	return &emptypb.Empty{}, nil
+}
+
+// Transaction RPC calls signal and wait on consensus and waits for a response.
+func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft.TransactionRsp, error) {
+	return nil, nil
 }
 
 // Reply RPC forwards a reply message into consensus.handleReply
 func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Reply", msg.String())
-	p.Consensus.Signal(enum.IntrReply, msg)
-
-	return &emptypb.Empty{}, nil
-}
-
-// Request RPC forwards a request message into consensus.handleRequest
-func (p *PBFT) Request(ctx context.Context, msg *pbft.RequestMsg) (*emptypb.Empty, error) {
-	p.Consensus.Logs.AppendLog("Request", msg.String())
-	p.Consensus.SignalAndGo(enum.IntrRequest, msg)
-
 	return &emptypb.Empty{}, nil
 }
 
@@ -119,21 +122,4 @@ func (p *PBFT) PrintStatus(ctx context.Context, msg *pbft.StatusMsg) (*pbft.Stat
 
 func (p *PBFT) PrintView(ctx context.Context, msg *emptypb.Empty) (*pbft.ViewRsp, error) {
 	return nil, nil
-}
-
-// Transaction RPC calls signal and wait on consensus and waits for a response.
-func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft.TransactionRsp, error) {
-	resp := pbft.TransactionRsp{}
-
-	// call signal and wait
-	ch := p.Consensus.SignalAndWait(enum.IntrTransaction, msg)
-	if ch != nil {
-		text := <-ch
-		resp.Text = text.(string)
-	} else {
-		// the channel is not returned, it means it is in progress
-		resp.Text = "server is busy with processing another transaction"
-	}
-
-	return &resp, nil
 }

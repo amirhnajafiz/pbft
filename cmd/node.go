@@ -39,13 +39,13 @@ func (n Node) Main() error {
 
 	// create a new consensus module
 	instance := consensus.Consensus{
-		BFTCfg: n.Cfg.Node.BFT,
+		BFTCfg: &n.Cfg.Node.BFT,
 		Client: cli,
 		Memory: mem,
 		Logs:   datalog,
 		Logger: n.Logger.Named("consensus"),
 	}
-	instance.Start()
+	instance.Init()
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{

@@ -57,32 +57,3 @@ func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
 		go c.requestHandler(pkt)
 	}
 }
-
-// // SignalAndGo sends a packet from gRPC level to a new go-routine handler.
-// func (c *Consensus) SignalAndGo(target enum.Interrupt, pkt interface{}) {
-// 	if target == enum.IntrCommit || target == enum.IntrRequest {
-// 		go c.interruptTable[target](pkt)
-// 	}
-// }
-
-// // SignalAndWait sends a packet from gRPC level to handlers and sends a channel to get the response.
-// func (c *Consensus) SignalAndWait(target enum.Interrupt, pkt interface{}) chan interface{} {
-// 	if target == enum.IntrTransaction {
-// 		// check to see if a transaction is in process or not
-// 		if c.inTransactionChannel != nil {
-// 			return nil
-// 		}
-
-// 		// initial transaction handler in and out channels
-// 		c.inTransactionChannel = make(chan *models.InterruptMsg)
-// 		c.outTransactionChannel = make(chan interface{})
-
-// 		// call the proper transaction handler
-// 		go c.interruptTable[enum.IntrTransaction](pkt)
-
-// 		// return the out channel
-// 		return c.outTransactionChannel
-// 	}
-
-// 	return nil
-// }

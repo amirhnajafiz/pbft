@@ -23,7 +23,7 @@ func (c *Consensus) preprepareHandler() {
 
 		// validate the message
 		if !c.validatePrePrepareMsg(msg, digest) {
-			c.Logger.Info(
+			c.Logger.Debug(
 				"preprepare message is not valid",
 				zap.Int64("sequence number", msg.GetSequenceNumber()),
 				zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
@@ -50,15 +50,76 @@ func (c *Consensus) preprepareHandler() {
 	}
 }
 
+// prepareHandler gets gRPC packets of type P and handles them.
 func (c *Consensus) prepareHandler() {
 	for {
+		// get raw P packets
+		raw := <-c.consensusHandlersTable[enum.PktP]
 
+		// parse the input message
+		msg := raw.Payload.(*pbft.AckMsg)
+
+		// get the message from our datastore
+		message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
+		if message == nil {
+			c.Logger.Debug(
+				"request not found",
+				zap.Int64("sequence number", msg.GetSequenceNumber()),
+			)
+			continue
+		}
+
+		// get the digest of input request
+		digest := hashing.MD5(message)
+
+		if !c.Memory.GetByzantine() { // byzantine nodes don't prepare messages
+			// validate the message
+			if !c.validateAckMessage(msg, digest) {
+				c.Logger.Debug(
+					"prepare message is not valid",
+					zap.Int64("sequence number", msg.GetSequenceNumber()),
+				)
+				continue
+			}
+
+			// update the request and set the status of prepare
+			c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
+
+			c.Logger.Debug(
+				"prepared a message",
+				zap.Int64("sequence number", message.GetSequenceNumber()),
+				zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
+			)
+		}
+
+		// call prepared RPC to notify the sender
+		c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
+			View:           int64(c.Memory.GetView()),
+			SequenceNumber: msg.GetSequenceNumber(),
+			Digest:         digest,
+		})
 	}
 }
 
+// commitHandler gets gRPC packets of type C and handles them.
 func (c *Consensus) commitHandler() {
 	for {
+		// get raw C packets
+		raw := <-c.consensusHandlersTable[enum.PktCmt]
 
+		// parse the input message
+		msg := raw.Payload.(*pbft.AckMsg)
+
+		// update the request and set the status of prepare
+		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_C)
+
+		c.Logger.Debug(
+			"request committed",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+		)
+
+		// execute the request
+		c.newExecutionGadget(int(msg.GetSequenceNumber()))
 	}
 }
 
@@ -66,153 +127,6 @@ func (c *Consensus) requestHandler() {
 	for {
 
 	}
-}
-
-// handleExecute gets a sequence and message and does the execution.
-func (c *Consensus) handleExecute(sequence int) {
-	// check if this sequence is executable
-	if !c.Memory.GetByzantine() && !c.canExecute(sequence) {
-		c.Logger.Info(
-			"request cannot get executed yet",
-			zap.Int("sequence number", sequence),
-		)
-		return
-	}
-
-	// follow sequence until one is not committed, execute them
-	index := sequence
-	msg := c.Logs.GetRequest(index)
-
-	for {
-		c.executeRequest(msg)  // execute request
-		c.viewTimerRm <- index // notify the timer
-
-		// update the request and set the status of prepare
-		c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
-
-		c.promiseReply(msg) // send the reply message using helper functions
-
-		c.Logger.Info(
-			"request executed",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-
-		index++
-
-		if msg = c.Logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
-			break
-		}
-	}
-}
-
-// handleCommit gets a commit message, changes it status and calls the handleExecute.
-func (c *Consensus) handleCommit(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.AckMsg)
-	sequence := int(msg.GetSequenceNumber())
-	c.viewTimerIn <- sequence
-
-	// update the request and set the status of prepare
-	c.Logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
-
-	// message committed
-	c.Logger.Debug(
-		"message committed",
-		zap.Int("sequence number", sequence),
-	)
-
-	c.handleExecute(sequence) // call execute handler
-}
-
-// handle preprepare accepts a preprepare message and validates it to call preprepared RPC.
-func (c *Consensus) handlePrePrepare(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.PrePrepareMsg)
-
-	c.Logger.Debug("inside preprepare handler", zap.String("node", c.Memory.GetNodeId()))
-
-	// get the digest of input request
-	digest := hashing.MD5(msg.GetRequest())
-
-	c.Logger.Debug("inside preprepare handler after digest", zap.String("node", c.Memory.GetNodeId()))
-
-	// validate the message
-	if !c.validatePrePrepareMsg(msg, digest) {
-		c.Logger.Info(
-			"preprepare message is not valid",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
-		)
-		return
-	}
-
-	c.Logger.Debug("inside preprepare handler after validate", zap.String("node", c.Memory.GetNodeId()))
-
-	// update the request and set the status of preprepared
-	c.Logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
-	c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
-
-	c.Logger.Debug(
-		"preprepared a message",
-		zap.Int64("sequence number", msg.GetSequenceNumber()),
-		zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
-	)
-
-	c.viewTimerIn <- int(msg.GetSequenceNumber())
-
-	// call preprepared message
-	c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
-		View:           int64(c.Memory.GetView()),
-		SequenceNumber: msg.GetSequenceNumber(),
-		Digest:         msg.GetDigest(),
-	})
-}
-
-// handlePrepare gets a prepare message and updates a log status.
-func (c *Consensus) handlePrepare(pkt interface{}) {
-	// parse the input message
-	msg := pkt.(*pbft.AckMsg)
-	c.viewTimerIn <- int(msg.GetSequenceNumber())
-
-	// get the message from our datastore
-	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
-	if message == nil {
-		c.Logger.Info(
-			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
-		return
-	}
-
-	// get the digest of input request
-	digest := hashing.MD5(message)
-
-	if !c.Memory.GetByzantine() { // byzantine nodes don't prepare messages
-		// validate the message
-		if !c.validateAckMessage(msg, digest) {
-			c.Logger.Info(
-				"prepare message is not valid",
-				zap.Int64("sequence number", msg.GetSequenceNumber()),
-			)
-			return
-		}
-
-		// update the request and set the status of prepare
-		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
-
-		c.Logger.Debug(
-			"prepared a message",
-			zap.Int64("sequence number", message.GetSequenceNumber()),
-			zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
-		)
-	}
-
-	// call prepared message
-	c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
-		View:           int64(c.Memory.GetView()),
-		SequenceNumber: msg.GetSequenceNumber(),
-		Digest:         digest,
-	})
 }
 
 // handleReply gets a reply message and passes it to the right request handler.

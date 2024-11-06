@@ -25,26 +25,26 @@ func (c *Consensus) preprepareHandler() {
 		if !c.validatePrePrepareMsg(msg, digest) {
 			c.Logger.Debug(
 				"preprepare message is not valid",
-				zap.Int64("sequence number", msg.GetSequenceNumber()),
+				zap.Int("sequence number", raw.Sequence),
 				zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 			)
 			continue
 		}
 
 		// update the request and set the status of preprepared
-		c.Logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
-		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
+		c.Logs.SetRequest(raw.Sequence, msg.GetRequest())
+		c.Logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 
 		c.Logger.Debug(
 			"preprepared a message",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int("sequence number", raw.Sequence),
 			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
 		)
 
 		// call preprepared RPC to notify the sender
 		c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 			View:           int64(c.Memory.GetView()),
-			SequenceNumber: msg.GetSequenceNumber(),
+			SequenceNumber: int64(raw.Sequence),
 			Digest:         msg.GetDigest(),
 		})
 	}
@@ -60,11 +60,11 @@ func (c *Consensus) prepareHandler() {
 		msg := raw.Payload.(*pbft.AckMsg)
 
 		// get the message from our datastore
-		message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
+		message := c.Logs.GetRequest(raw.Sequence)
 		if message == nil {
 			c.Logger.Debug(
 				"request not found",
-				zap.Int64("sequence number", msg.GetSequenceNumber()),
+				zap.Int("sequence number", raw.Sequence),
 			)
 			continue
 		}
@@ -73,21 +73,20 @@ func (c *Consensus) prepareHandler() {
 		digest := hashing.MD5(message)
 
 		if !c.Memory.GetByzantine() { // byzantine nodes don't prepare messages
-			// validate the message
 			if !c.validateAckMessage(msg, digest) {
 				c.Logger.Debug(
 					"prepare message is not valid",
-					zap.Int64("sequence number", msg.GetSequenceNumber()),
+					zap.Int("sequence number", raw.Sequence),
 				)
 				continue
 			}
 
 			// update the request and set the status of prepare
-			c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_P)
+			c.Logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_P)
 
 			c.Logger.Debug(
 				"prepared a message",
-				zap.Int64("sequence number", message.GetSequenceNumber()),
+				zap.Int("sequence number", raw.Sequence),
 				zap.Int64("timestamp", message.GetTransaction().GetTimestamp()),
 			)
 		}
@@ -95,7 +94,7 @@ func (c *Consensus) prepareHandler() {
 		// call prepared RPC to notify the sender
 		c.Client.Prepared(msg.GetNodeId(), &pbft.AckMsg{
 			View:           int64(c.Memory.GetView()),
-			SequenceNumber: msg.GetSequenceNumber(),
+			SequenceNumber: int64(raw.Sequence),
 			Digest:         digest,
 		})
 	}
@@ -107,19 +106,16 @@ func (c *Consensus) commitHandler() {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
 
-		// parse the input message
-		msg := raw.Payload.(*pbft.AckMsg)
-
 		// update the request and set the status of prepare
-		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_C)
+		c.Logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
 		c.Logger.Debug(
 			"request committed",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int("sequence number", raw.Sequence),
 		)
 
 		// execute the request
-		c.newExecutionGadget(int(msg.GetSequenceNumber()))
+		c.newExecutionGadget(raw.Sequence)
 	}
 }
 

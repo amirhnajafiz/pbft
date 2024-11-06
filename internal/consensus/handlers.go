@@ -9,9 +9,44 @@ import (
 	"go.uber.org/zap"
 )
 
+// preprepareHandler gets gRPC packets of type PP and handles them.
 func (c *Consensus) preprepareHandler() {
 	for {
+		// get raw PP packets
+		raw := <-c.consensusHandlersTable[enum.PktPP]
 
+		// parse the input message
+		msg := raw.Payload.(*pbft.PrePrepareMsg)
+
+		// get the digest of request
+		digest := hashing.MD5(msg.GetRequest())
+
+		// validate the message
+		if !c.validatePrePrepareMsg(msg, digest) {
+			c.Logger.Info(
+				"preprepare message is not valid",
+				zap.Int64("sequence number", msg.GetSequenceNumber()),
+				zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
+			)
+			continue
+		}
+
+		// update the request and set the status of preprepared
+		c.Logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
+		c.Logs.SetRequestStatus(int(msg.GetSequenceNumber()), pbft.RequestStatus_REQUEST_STATUS_PP)
+
+		c.Logger.Debug(
+			"preprepared a message",
+			zap.Int64("sequence number", msg.GetSequenceNumber()),
+			zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()),
+		)
+
+		// call preprepared RPC to notify the sender
+		c.Client.PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
+			View:           int64(c.Memory.GetView()),
+			SequenceNumber: msg.GetSequenceNumber(),
+			Digest:         msg.GetDigest(),
+		})
 	}
 }
 

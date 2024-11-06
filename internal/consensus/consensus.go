@@ -14,37 +14,51 @@ import (
 
 // Consensus module is the main module of PBFT that manages packets.
 type Consensus struct {
-	Client *client.Client // client is used to make RPC calls
-	Logs   *logs.Logs     // data log is used to store and retrive logs
-	Memory *local.Memory  // memory is needed to update the node state
-	Logger *zap.Logger    // logger is needed for tracing
-	BFTCfg *bft.Config    // bft config is used inside consensus handlers
+	logs   *logs.Logs    // data log is used to store and retrive logs
+	memory *local.Memory // memory is needed to update the node state
+	logger *zap.Logger   // logger is needed for tracing
 
-	Communication *modules.Communication
-	Waiter        *modules.Waiter
+	// inner modules
+	communication *modules.Communication
+	waiter        *modules.Waiter
 
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
 }
 
-// Init method, initializes the consensus fields.
-func (c *Consensus) Init() {
+// NewConsensus returns a consensus instance.
+func NewConsensus(
+	logs *logs.Logs,
+	mem *local.Memory,
+	logr *zap.Logger,
+	cfg *bft.Config,
+	cli *client.Client,
+) *Consensus {
+	// create a new consensus instance
+	c := &Consensus{
+		logs:   logs,
+		memory: mem,
+		logger: logr,
+	}
+
 	// create consensus modules
-	c.Communication = modules.NewCommunicationModule(c.Client)
-	c.Waiter = modules.NewWaiter(c.BFTCfg)
+	c.communication = modules.NewCommunicationModule(cli)
+	c.waiter = modules.NewWaiter(cfg)
 
 	// create consensus tables
-	c.requestsHandlersTable = make(map[int]chan *models.Packet, c.BFTCfg.Total*2) // size of 2*total nodes
+	c.requestsHandlersTable = make(map[int]chan *models.Packet, cfg.Total*2) // size of 2*total nodes
 	c.consensusHandlersTable = map[enum.PacketType]chan *models.Packet{
-		enum.PktPP:  make(chan *models.Packet, c.BFTCfg.Total), // size of total
-		enum.PktP:   make(chan *models.Packet, c.BFTCfg.Total), // size of total
-		enum.PktCmt: make(chan *models.Packet, c.BFTCfg.Total), // size of total
+		enum.PktPP:  make(chan *models.Packet, cfg.Total), // size of total
+		enum.PktP:   make(chan *models.Packet, cfg.Total), // size of total
+		enum.PktCmt: make(chan *models.Packet, cfg.Total), // size of total
 	}
 
 	// start handlers go-routines
 	go c.preprepareHandler()
 	go c.prepareHandler()
 	go c.commitHandler()
+
+	return c
 }
 
 // SignalToHandlers sends a packet from gRPC level to consensus handlers without waiting for a response.

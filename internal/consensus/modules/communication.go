@@ -18,6 +18,11 @@ func NewCommunicationModule(cli *client.Client) *Communication {
 	}
 }
 
+// Client returns the client.go instance for direct calls.
+func (c *Communication) Client() *client.Client {
+	return c.cli
+}
+
 // sendReplyMsg gets a request message and uses client.go to send a reply message.
 func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.Reply(

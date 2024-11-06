@@ -10,9 +10,9 @@ import (
 // newAckGadget validates a preprepared or prepared ack message.
 func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	// get the message from our datastore
-	message := c.Logs.GetRequest(int(msg.GetSequenceNumber()))
+	message := c.logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
-		c.Logger.Debug(
+		c.logger.Debug(
 			"request not found",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
@@ -24,7 +24,7 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 
 	// validate the message
 	if !c.validateAckMessage(msg, digest) {
-		c.Logger.Debug(
+		c.logger.Debug(
 			"ack message is not valid",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
@@ -36,8 +36,8 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 
 // newExecutionGadget gets a sequence number and performs the execution logic.
 func (c *Consensus) newExecutionGadget(sequence int) {
-	if !c.Memory.GetByzantine() && !c.canExecute(sequence) {
-		c.Logger.Debug(
+	if !c.memory.GetByzantine() && !c.canExecuteRequest(sequence) {
+		c.logger.Debug(
 			"cannot execute the request yet",
 			zap.Int("sequence number", sequence),
 		)
@@ -46,24 +46,24 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 
 	// follow sequence until one is not committed, execute them
 	index := sequence
-	msg := c.Logs.GetRequest(index)
+	msg := c.logs.GetRequest(index)
 
 	for {
 		c.executeRequest(msg) // execute request
 
 		// update the request and set the status of prepare
-		c.Logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
+		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
 
-		c.Communication.SendReplyMsg(msg, c.Memory.GetView()) // send the reply message using helper functions
+		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
 
-		c.Logger.Info(
+		c.logger.Info(
 			"request executed",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),
 		)
 
 		index++
 
-		if msg = c.Logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
+		if msg = c.logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
 			return
 		}
 	}

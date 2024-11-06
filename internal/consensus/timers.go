@@ -39,7 +39,7 @@ func (c *Consensus) processTimerStart(timer *time.Timer, hashMap map[int]bool) {
 		timer.Reset(time.Duration(c.BFTCfg.ViewTimeout) * time.Millisecond)
 	case <-timer.C:
 		fmt.Println("timer timeout")
-		timer.Reset(time.Duration(c.BFTCfg.ViewTimeout) * time.Millisecond)
+		c.viewTimerStatus = false
 	}
 }
 

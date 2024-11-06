@@ -50,19 +50,3 @@ func (c *Consensus) promiseReceive(msg *pbft.TransactionMsg) *pbft.ReplyMsg {
 		time.Sleep(1 * time.Second)
 	}
 }
-
-// promiseClear makes sure that nothing is inside a dead channel.
-func (c *Consensus) promiseClear(sequence int) {
-	channel := c.channels[sequence]
-	timer := time.NewTimer(60 * time.Second)
-
-	for {
-		select {
-		case <-channel:
-			continue
-		case <-timer.C:
-			delete(c.channels, sequence)
-			return
-		}
-	}
-}

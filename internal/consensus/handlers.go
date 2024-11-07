@@ -137,7 +137,10 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 			zap.String("current leader", c.getCurrentLeader()),
 		)
 
-		return // drop the request if not leader
+		// send the request to leader
+		c.communication.Client().Request(c.getCurrentLeader(), msg)
+
+		return
 	}
 
 	// find a sequence number for this request

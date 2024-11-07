@@ -32,8 +32,6 @@ func (c *Client) GetSystemNodes() map[string]string {
 
 // NewClient returns a new RPC client to make RPC to the gRPC server.
 func NewClient(creds *tls.Config, nodeId string, nodes map[string]string) *Client {
-	delete(nodes, nodeId)
-
 	return &Client{
 		creds:  creds,
 		nodeId: nodeId,

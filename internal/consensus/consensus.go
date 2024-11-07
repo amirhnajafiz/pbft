@@ -64,12 +64,16 @@ func NewConsensus(
 // SignalToHandlers sends a packet from gRPC level to consensus handlers without waiting for a response.
 func (c *Consensus) SignalToHandlers(pkt *models.Packet) {
 	if ch, ok := c.consensusHandlersTable[pkt.Type]; ok {
+		c.logger.Debug("received a signal to handler", zap.Any("hanlder", pkt.Type))
+
 		ch <- pkt
 	}
 }
 
 // SignalToReqHandlers sends a packet from gRPC level to request handlers without waiting for a response.
 func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
+	c.logger.Debug("received a signal to request handler", zap.Any("hanlder", pkt.Type), zap.Int("sequence", pkt.Sequence))
+
 	if ch, ok := c.requestsHandlersTable[pkt.Sequence]; ok {
 		ch <- pkt // if the request handler exists, pass the packet to it
 	} else if pkt.Type == enum.PktReq {

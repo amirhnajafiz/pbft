@@ -144,7 +144,7 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 	sequence := c.logs.InitRequest()
 
 	// open a communication channel
-	channel := make(chan *models.Packet)
+	channel := make(chan *models.Packet, c.cfg.Total*2)
 	c.requestsHandlersTable[sequence] = channel
 
 	c.logger.Debug(
@@ -189,6 +189,9 @@ func (c *Consensus) requestHandler(pkt interface{}) {
 
 	// broadcast to all using commit, make sure everyone get's it
 	go c.communication.SendCommitMsg(msg, c.memory.GetView())
+
+	// delete our input channel as soon as possible
+	delete(c.requestsHandlersTable, sequence)
 
 	// update our own status
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)

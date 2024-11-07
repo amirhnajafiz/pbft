@@ -15,6 +15,7 @@ import (
 // Consensus module is the main module of PBFT that manages packets.
 type Consensus struct {
 	logs          *logs.Logs
+	cfg           *bft.Config
 	memory        *local.Memory
 	logger        *zap.Logger
 	communication *modules.Communication
@@ -37,6 +38,7 @@ func NewConsensus(
 		logs:   logs,
 		memory: mem,
 		logger: logr,
+		cfg:    cfg,
 	}
 
 	// create consensus modules
@@ -44,7 +46,7 @@ func NewConsensus(
 	c.waiter = modules.NewWaiter(cfg)
 
 	// create consensus tables
-	c.requestsHandlersTable = make(map[int]chan *models.Packet, cfg.Total*2) // size of 2*total nodes
+	c.requestsHandlersTable = make(map[int]chan *models.Packet)
 	c.consensusHandlersTable = map[enum.PacketType]chan *models.Packet{
 		enum.PktPP:  make(chan *models.Packet, cfg.Total), // size of total
 		enum.PktP:   make(chan *models.Packet, cfg.Total), // size of total

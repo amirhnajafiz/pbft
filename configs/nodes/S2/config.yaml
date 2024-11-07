@@ -3,8 +3,8 @@ log_level: "debug"
 
 # certificates and keys
 tls:
-  private_key: "configs/nodes/S1/server.key"
-  public_key: "configs/nodes/S1/server.crt"
+  private_key: "configs/nodes/S2/server.key"
+  public_key: "configs/nodes/S2/server.crt"
   ca_key: "configs/ca.crt"
 
 # iptable maps all clients and nodes to their ip and metadata
@@ -36,10 +36,8 @@ clients:
 node:
   port: 5002
   node_id: S2
-  core_node: true # core nodes
   bft: # pbft configs
     total: 4
     majority: 3
     responses: 2
     majority_timeout: 100 # in milliseconds
-    view_timeout: 100 # in milliseconds

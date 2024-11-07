@@ -58,7 +58,7 @@ func (a Application) Main() error {
 
 func (a Application) terminal(app *application.App) {
 	// load the test-case file
-	ts, err := parser.CSVInput(a.Cfg.Controller.CSV)
+	ts, err := parser.CSVInput(a.Cfg.CSV)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +67,7 @@ func (a Application) terminal(app *application.App) {
 	index := 0
 
 	// print some metadata
-	fmt.Printf("read %s with %d test sets.\n", a.Cfg.Controller.CSV, len(ts))
+	fmt.Printf("read %s with %d test sets.\n", a.Cfg.CSV, len(ts))
 	for _, t := range ts {
 		fmt.Printf(
 			"transactions of %s is %d (Live Servers=%d, Byzantine Servers=%d)\n",
@@ -76,10 +76,6 @@ func (a Application) terminal(app *application.App) {
 			len(t.ByzantineServers),
 		)
 	}
-
-	// create a new node list and remove the target client from it
-	nodes := a.Cfg.GetNodes()
-	delete(nodes, a.Cfg.Controller.Client)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
@@ -124,7 +120,7 @@ func (a Application) terminal(app *application.App) {
 			}
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[1])
-			for key := range nodes {
+			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("%s : %s\n", key, app.Client().PrintStatus(key, seq))
 			}
 		default:

@@ -36,10 +36,8 @@ clients:
 node:
   port: 5001
   node_id: S1
-  core_node: true # core nodes
   bft: # pbft configs
     total: 4
     majority: 3
     responses: 2
     majority_timeout: 100 # in milliseconds
-    view_timeout: 100 # in milliseconds

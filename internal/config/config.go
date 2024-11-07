@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/f24-cse535/pbft/internal/config/controller"
 	"github.com/f24-cse535/pbft/internal/config/node"
 	"github.com/f24-cse535/pbft/internal/config/tls"
 
@@ -24,10 +23,10 @@ const Prefix = "pbft_"
 type Config struct {
 	CtlFiles []string `koanf:"ctl_files"` // a list of config files to run by ctl command
 	LogLevel string   `koanf:"log_level"` // node logging level (debug, info, warn, error, panic, fatal)
+	CSV      string   `koanf:"csv"`       // testcase file path
 
-	Controller controller.Config `koanf:"controller"` // controller app configs
-	Node       node.Config       `koanf:"node"`       // node app configs
-	TLS        tls.Config        `koanf:"tls"`        // node tls keys
+	Node node.Config `koanf:"node"` // node app configs
+	TLS  tls.Config  `koanf:"tls"`  // node tls keys
 
 	Clients []Pair `koanf:"clients"` // system clients
 	IPTable []Pair `koanf:"iptable"` // system IP addresses

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
-	"github.com/f24-cse535/pbft/internal/core"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/enum"
@@ -20,7 +19,6 @@ import (
 type PBFT struct {
 	pbft.UnimplementedPBFTServer
 
-	Core      *core.Core
 	Consensus *consensus.Consensus
 	Memory    *local.Memory
 	Logs      *logs.Logs

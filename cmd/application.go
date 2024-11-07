@@ -45,23 +45,25 @@ func (a Application) Main() error {
 		Cli: cli,
 	}
 
+	// start getting user inputs
+	go a.terminal(&app)
+
 	// start the gRPC server
 	return app.Service(a.Cfg.Node.Port, creds)
 }
 
-func (a Application) terminal(app *application.App) error {
+func (a Application) terminal(app *application.App) {
 	// start the app
 	app.Start(a.Cfg.GetClients())
 
 	// load the test-case file
 	ts, err := parser.CSVInput(a.Cfg.Controller.CSV)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	// set the initial values of our parameters that are used in transaction sending
+	// set the tests index to zero
 	index := 0
-	timestamp := 10
 
 	// print some metadata
 	fmt.Printf("read %s with %d test sets.\n", a.Cfg.Controller.CSV, len(ts))
@@ -94,19 +96,11 @@ func (a Application) terminal(app *application.App) error {
 
 		switch parts[0] {
 		case "exit":
-			return nil
+			os.Exit(0)
 		case "next":
-			if index == len(ts) {
-				fmt.Println("test-sets are over.")
-			} else {
-				testcase := ts[index]
-
-				fmt.Printf("executing test set %d\n", index)
-				for _, trx := range testcase.Transactions {
-					fmt.Printf("(timestamp: %d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
+			if index < len(ts) {
+				for _, trx := range ts[index].Transactions {
 					app.Transaction(trx)
-
-					timestamp++
 				}
 
 				index++

@@ -15,23 +15,37 @@ import (
 
 // App is the main module of the client's program.
 type App struct {
-	Cli *client.Client
+	cli *client.Client
 
-	clients  map[string]chan *models.Transaction
-	handlers map[string]chan *app.ReplyMsg
+	clients  map[string]chan *models.Transaction // for each client there is go-routine that accepts using these channels
+	handlers map[string]chan *app.ReplyMsg       // handlers is a channel to get gRPC messages
 }
 
-// Start a go-routine to get and dispatch reply messages to handlers.
-func (a *App) Start(clients map[string]int) {
+// NewApp returns a new app instance.
+func NewApp(cli *client.Client, clients map[string]int) *App {
+	// create a new app instance
+	a := &App{
+		cli: cli,
+	}
+
+	// initial channels
 	a.clients = make(map[string]chan *models.Transaction)
 	a.handlers = make(map[string]chan *app.ReplyMsg)
 
+	// for each client, run a transaction handler
 	for key := range clients {
 		a.clients[key] = make(chan *models.Transaction)
 		a.handlers[key] = make(chan *app.ReplyMsg)
 
 		go a.transactionHandler(key)
 	}
+
+	return a
+}
+
+// Client returns the app client for direct calls.
+func (a *App) Client() *client.Client {
+	return a.cli
 }
 
 // Transaction sends a new transaction to the transaction handler.

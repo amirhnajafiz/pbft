@@ -10,7 +10,6 @@ import (
 	"github.com/f24-cse535/pbft/internal/application"
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
-	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
@@ -23,10 +22,6 @@ type Application struct {
 }
 
 func (a Application) Main() error {
-	// create a memory instance
-	mem := local.NewMemory(a.Cfg.Node.NodeId, a.Cfg.Node.BFT.Total)
-	mem.SetNodes(a.Cfg.GetNodesMeta())
-
 	// load tls configs
 	creds, err := a.Cfg.TLS.TLS()
 	if err != nil {
@@ -41,21 +36,16 @@ func (a Application) Main() error {
 	)
 
 	// create a new app instance
-	app := application.App{
-		Cli: cli,
-	}
+	app := application.NewApp(cli, config.Default().GetClients())
 
 	// start getting user inputs
-	go a.terminal(&app)
+	go a.terminal(app)
 
 	// start the gRPC server
 	return app.Service(a.Cfg.Node.Port, creds)
 }
 
 func (a Application) terminal(app *application.App) {
-	// start the app
-	app.Start(a.Cfg.GetClients())
-
 	// load the test-case file
 	ts, err := parser.CSVInput(a.Cfg.Controller.CSV)
 	if err != nil {
@@ -106,11 +96,11 @@ func (a Application) terminal(app *application.App) {
 				index++
 			}
 		case "printlog":
-			for _, item := range app.Cli.PrintLog(parts[1]) {
+			for _, item := range app.Client().PrintLog(parts[1]) {
 				fmt.Println(item)
 			}
 		case "printdb":
-			for _, item := range app.Cli.PrintDB(parts[1]) {
+			for _, item := range app.Client().PrintDB(parts[1]) {
 				fmt.Printf(
 					"%d : %d (%s, %s, %d) : %s\n",
 					item.GetSequenceNumber(),
@@ -124,7 +114,7 @@ func (a Application) terminal(app *application.App) {
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[1])
 			for key := range nodes {
-				fmt.Printf("%s : %s\n", key, app.Cli.PrintStatus(key, seq))
+				fmt.Printf("%s : %s\n", key, app.Client().PrintStatus(key, seq))
 			}
 		default:
 			fmt.Printf("command `%s` not found.\n", parts[1])

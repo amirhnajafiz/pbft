@@ -41,7 +41,7 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Val
 			select {
 			case intr := <-channel:
 				// ignore messages that are not preprepared
-				if intr.Type != enum.PktPP {
+				if intr.Type != enum.PktPPed {
 					continue
 				}
 
@@ -66,12 +66,18 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Val
 			intr := <-channel
 
 			// ignore messages that are not preprepared
-			if intr.Type != enum.PktPP {
+			if intr.Type != enum.PktPPed {
+				continue
+			}
+
+			// validate the message
+			msg := intr.Payload.(*pbft.AckMsg)
+			if msg = validator(msg); msg == nil {
 				continue
 			}
 
 			// extract the digest to count the messages
-			digest := intr.Payload.(*pbft.AckMsg).GetDigest()
+			digest := msg.GetDigest()
 			if _, ok := messages[digest]; !ok {
 				messages[digest] = 1
 			} else {
@@ -100,7 +106,7 @@ func (w *Waiter) NewPreparedWaiter(channel chan *models.Packet, validator Valida
 		intr := <-channel
 
 		// ignore messages that are not prepared
-		if intr.Type != enum.PktP {
+		if intr.Type != enum.PktPed {
 			continue
 		}
 

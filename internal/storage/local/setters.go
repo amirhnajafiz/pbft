@@ -18,12 +18,16 @@ func (m *Memory) Reset() {
 
 // IncView increases the view one unit.
 func (m *Memory) IncView() {
+	m.lock.Lock()
 	m.view = (m.view + 1) % m.totalNodes
+	m.lock.Unlock()
 }
 
 // SetView updates the view value.
 func (m *Memory) SetView(in int) {
+	m.lock.Lock()
 	m.view = in
+	m.lock.Unlock()
 }
 
 // SetBalances is used to set clients balances.
@@ -47,9 +51,4 @@ func (m *Memory) SetNodes(nodes map[string]int) {
 // SetBalance updates a client balance.
 func (m *Memory) SetBalance(key string, value int) {
 	m.balances[key] = value
-}
-
-// SetTimestamp sets the current request timestamp.
-func (m *Memory) SetTimestamp(in int64) {
-	m.currentTimestamp = in
 }

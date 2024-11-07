@@ -1,5 +1,7 @@
 package local
 
+import "sync"
+
 // Memory is a local storage that is used for each node. It keeps the state of each node.
 type Memory struct {
 	status     bool   // status is for node's availability
@@ -8,7 +10,7 @@ type Memory struct {
 	view       int    // systems view
 	totalNodes int    // number of total-nodes
 
-	currentTimestamp int64 // current timestamp is used inside client nodes
+	lock sync.Mutex
 
 	balances map[string]int // balances is the holder for clients and their balance value
 	nodes    map[int]string // nodes is map used for tracking leaders
@@ -17,11 +19,11 @@ type Memory struct {
 // NewMemory returns an instance of the memory struct.
 func NewMemory(nodeId string, totalNodes int) *Memory {
 	return &Memory{
-		status:           true,  // the init status of node is true
-		byzantine:        false, // the init behavior node is non-byzantine
-		nodeId:           nodeId,
-		view:             0,
-		totalNodes:       totalNodes,
-		currentTimestamp: 0,
+		lock:       sync.Mutex{},
+		status:     true,  // the init status of node is true
+		byzantine:  false, // the init behavior node is non-byzantine
+		nodeId:     nodeId,
+		view:       0,
+		totalNodes: totalNodes,
 	}
 }

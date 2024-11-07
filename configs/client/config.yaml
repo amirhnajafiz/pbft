@@ -2,7 +2,7 @@
 log_level: "debug"
 
 # the testcase file path
-csv: "tests/normal.csv"
+csv: "tests/parallel.csv"
 
 # certificates and keys
 tls:

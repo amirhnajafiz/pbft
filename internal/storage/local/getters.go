@@ -29,8 +29,3 @@ func (m *Memory) GetNodeByIndex(index int) string {
 func (m *Memory) GetBalance(key string) int {
 	return m.balances[key]
 }
-
-// GetTimestamp returns the current timestamp.
-func (m *Memory) GetTimestamp() int64 {
-	return m.currentTimestamp
-}

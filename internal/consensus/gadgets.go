@@ -49,13 +49,10 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 	msg := c.logs.GetRequest(index)
 
 	for {
-		c.executeRequest(msg) // execute request
-
-		// update the request and set the status of prepare
-		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E)
+		c.executeRequest(msg)                                               // execute request
+		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
 
 		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
-
 		c.logger.Info("request executed", zap.Int("sequence number", index))
 
 		index++

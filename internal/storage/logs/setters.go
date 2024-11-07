@@ -8,10 +8,14 @@ import (
 
 // InitRequest places a new request at the end of datastore.
 func (l *Logs) InitRequest() int {
+	l.lock.Lock()
 	for {
 		index := l.index
 		l.index++
+
 		if l.GetRequest(index) == nil {
+			l.lock.Unlock()
+
 			return index
 		}
 	}

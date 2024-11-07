@@ -44,9 +44,10 @@ func (a *App) transactionHandler(client string) {
 func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 	// create a pbft request
 	req := &pbft.RequestMsg{
-		Transaction: trx,
-		ClientId:    a.memory.GetNodeId(),
-		Response:    &pbft.TransactionRsp{},
+		Transaction:    trx,
+		ClientId:       a.memory.GetNodeId(),
+		Response:       &pbft.TransactionRsp{},
+		SequenceNumber: -1,
 	}
 
 	currentLeader := a.getCurrentLeader() // get current leader id

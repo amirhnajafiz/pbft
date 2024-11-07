@@ -9,6 +9,8 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/application"
 	"github.com/f24-cse535/pbft/internal/config"
+	"github.com/f24-cse535/pbft/internal/grpc/client"
+	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
@@ -21,10 +23,36 @@ type Application struct {
 }
 
 func (a Application) Main() error {
-	return nil
+	// create a memory instance
+	mem := local.NewMemory(a.Cfg.Node.NodeId, a.Cfg.Node.BFT.Total)
+	mem.SetNodes(a.Cfg.GetNodesMeta())
+
+	// load tls configs
+	creds, err := a.Cfg.TLS.TLS()
+	if err != nil {
+		return err
+	}
+
+	// create a new client.go
+	cli := client.NewClient(
+		creds,
+		a.Cfg.Node.NodeId,
+		a.Cfg.GetNodes(),
+	)
+
+	// create a new app instance
+	app := application.App{
+		Cli: cli,
+	}
+
+	// start the gRPC server
+	return app.Service(a.Cfg.Node.Port, creds)
 }
 
 func (a Application) terminal(app *application.App) error {
+	// start the app
+	app.Start(a.Cfg.GetClients())
+
 	// load the test-case file
 	ts, err := parser.CSVInput(a.Cfg.Controller.CSV)
 	if err != nil {
@@ -36,7 +64,7 @@ func (a Application) terminal(app *application.App) error {
 	timestamp := 10
 
 	// print some metadata
-	fmt.Printf("read %s with %d test sets.\n", c.Cfg.Controller.CSV, len(ts))
+	fmt.Printf("read %s with %d test sets.\n", a.Cfg.Controller.CSV, len(ts))
 	for _, t := range ts {
 		fmt.Printf(
 			"transactions of %s is %d (Live Servers=%d, Byzantine Servers=%d)\n",
@@ -84,11 +112,11 @@ func (a Application) terminal(app *application.App) error {
 				index++
 			}
 		case "printlog":
-			for _, item := range cli.PrintLog(parts[1]) {
+			for _, item := range app.Cli.PrintLog(parts[1]) {
 				fmt.Println(item)
 			}
 		case "printdb":
-			for _, item := range cli.PrintDB(parts[1]) {
+			for _, item := range app.Cli.PrintDB(parts[1]) {
 				fmt.Printf(
 					"%d : %d (%s, %s, %d) : %s\n",
 					item.GetSequenceNumber(),
@@ -102,7 +130,7 @@ func (a Application) terminal(app *application.App) error {
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[1])
 			for key := range nodes {
-				fmt.Printf("%s : %s\n", key, cli.PrintStatus(key, seq))
+				fmt.Printf("%s : %s\n", key, app.Cli.PrintStatus(key, seq))
 			}
 		default:
 			fmt.Printf("command `%s` not found.\n", parts[1])

@@ -27,28 +27,26 @@ func (n Node) Main() error {
 	datalog := logs.NewLogs()
 
 	// load tls configs
-	tlsC, _ := n.Cfg.TLS.TLS()
+	creds, err := n.Cfg.TLS.TLS()
+	if err != nil {
+		return err
+	}
 
 	// create a new client.go
 	cli := client.NewClient(
-		n.Logger.Named("client.go"),
-		tlsC,
+		creds,
 		n.Cfg.Node.NodeId,
 		n.Cfg.GetNodes(),
 	)
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
-		Port:       n.Cfg.Node.Port,
-		PrivateKey: n.Cfg.TLS.PrivateKey,
-		PublicKey:  n.Cfg.TLS.PublicKey,
-		CAKey:      n.Cfg.TLS.CaKey,
-		Memory:     mem,
-		Logs:       datalog,
-		Logger:     n.Logger.Named("grpc"),
-		Consensus:  consensus.NewConsensus(datalog, mem, n.Logger.Named("consensus"), &n.Cfg.Node.BFT, cli),
+		Memory:    mem,
+		Logs:      datalog,
+		Logger:    n.Logger.Named("grpc"),
+		Consensus: consensus.NewConsensus(datalog, mem, n.Logger.Named("consensus"), &n.Cfg.Node.BFT, cli),
 	}
 
 	// start the gRPC server
-	return boot.ListenAnsServer()
+	return boot.ListenAnsServer(n.Cfg.Node.Port, creds)
 }

@@ -15,14 +15,14 @@ import (
 
 // App is the main module of the client's program.
 type App struct {
-	cli      *client.Client
+	Cli *client.Client
+
 	clients  map[string]chan *models.Transaction
 	handlers map[string]chan *app.ReplyMsg
 }
 
 // Start a go-routine to get and dispatch reply messages to handlers.
-func (a *App) Start(cli *client.Client, clients map[string]int) {
-	a.cli = cli
+func (a *App) Start(clients map[string]int) {
 	a.clients = make(map[string]chan *models.Transaction)
 	a.handlers = make(map[string]chan *app.ReplyMsg)
 
@@ -39,17 +39,12 @@ func (a *App) Transaction(trx *models.Transaction) {
 	a.clients[trx.Sender] <- trx
 }
 
-// Client returns the gRPC client for direct calls.
-func (a *App) Client() *client.Client {
-	return a.cli
-}
-
 // service starts the gRPC server.
-func (a *App) Service(port int, tlsConfig *tls.Config) {
+func (a *App) Service(port int, tlsConfig *tls.Config) error {
 	// on the local network, listen to a port
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to start the listener server: %v", err)
 	}
 
 	// create a new grpc instance
@@ -64,6 +59,8 @@ func (a *App) Service(port int, tlsConfig *tls.Config) {
 
 	// starting the server
 	if err := server.Serve(listener); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to start services: %v", err)
 	}
+
+	return nil
 }

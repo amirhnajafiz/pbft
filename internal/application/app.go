@@ -7,28 +7,40 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
+	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 // App is the main module of the client's program.
 type App struct {
-	cli *client.Client
-	cfg *bft.Config
+	memory *local.Memory
+	cli    *client.Client
+	cfg    *bft.Config
+	logger *zap.Logger
 
 	clients  map[string]chan *models.Transaction // for each client there is go-routine that accepts using these channels
 	handlers map[string]chan *app.ReplyMsg       // handlers is a channel to get gRPC messages
 }
 
 // NewApp returns a new app instance.
-func NewApp(cfg *bft.Config, cli *client.Client, clients map[string]int) *App {
+func NewApp(
+	logr *zap.Logger,
+	mem *local.Memory,
+	cfg *bft.Config,
+	cli *client.Client,
+	clients map[string]int,
+) *App {
 	// create a new app instance
 	a := &App{
-		cfg: cfg,
-		cli: cli,
+		logger: logr,
+		memory: mem,
+		cfg:    cfg,
+		cli:    cli,
 	}
 
 	// initial channels

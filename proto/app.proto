@@ -5,7 +5,7 @@ import "google/protobuf/empty.proto";
 
 option go_package = "./rpc/app";
 
-// creating rpc services client's application.
+// creating rpc services for client's application.
 service App {
   rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
 }

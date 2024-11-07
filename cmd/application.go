@@ -10,6 +10,7 @@ import (
 	"github.com/f24-cse535/pbft/internal/application"
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
+	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
@@ -22,6 +23,10 @@ type Application struct {
 }
 
 func (a Application) Main() error {
+	// create a memory instance
+	mem := local.NewMemory(a.Cfg.Node.NodeId, a.Cfg.Node.BFT.Total)
+	mem.SetNodes(a.Cfg.GetNodesMeta())
+
 	// load tls configs
 	creds, err := a.Cfg.TLS.Creds()
 	if err != nil {
@@ -36,7 +41,13 @@ func (a Application) Main() error {
 	)
 
 	// create a new app instance
-	app := application.NewApp(&a.Cfg.Node.BFT, cli, config.Default().GetClients())
+	app := application.NewApp(
+		a.Logger.Named("app"),
+		mem,
+		&a.Cfg.Node.BFT,
+		cli,
+		config.Default().GetClients(),
+	)
 
 	// start getting user inputs
 	go a.terminal(app)

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc"
@@ -28,15 +26,16 @@ func (n Node) Main() error {
 	// create a datalog instance
 	datalog := logs.NewLogs()
 
+	// load tls configs
+	tlsC, _ := n.Cfg.TLS.TLS()
+
 	// create a new client.go
 	cli := client.NewClient(
 		n.Logger.Named("client.go"),
+		tlsC,
 		n.Cfg.Node.NodeId,
 		n.Cfg.GetNodes(),
 	)
-	if err := cli.LoadTLS(n.Cfg.TLS.PrivateKey, n.Cfg.TLS.PublicKey, n.Cfg.TLS.CaKey); err != nil {
-		return fmt.Errorf("failed to load TLS keys: %v", err)
-	}
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{

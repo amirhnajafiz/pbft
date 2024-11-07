@@ -10,6 +10,19 @@ func (c *Consensus) getCurrentLeader() string {
 	return c.memory.GetNodeByIndex(c.memory.GetView())
 }
 
+// validateMsg is used to check if the view and digest of a message is valid.
+func (c *Consensus) validateMsg(digest, msgDigest string, msgView int64) bool {
+	if msgView != int64(c.memory.GetView()) { // not the same view
+		return false
+	}
+
+	if msgDigest != digest { // not the same digest
+		return false
+	}
+
+	return true
+}
+
 // checkRequestExecution checks the timestamps to see if a request is executed or not.
 func (c *Consensus) checkRequestExecution(ts int64) *pbft.RequestMsg {
 	for _, key := range c.logs.GetAllRequests() {

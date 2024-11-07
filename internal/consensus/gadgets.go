@@ -23,7 +23,7 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	digest := hashing.MD5(message)
 
 	// validate the message
-	if !c.validateAckMessage(msg, digest) {
+	if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
 		c.logger.Debug(
 			"ack message is not valid",
 			zap.Int64("sequence number", msg.GetSequenceNumber()),

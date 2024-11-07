@@ -18,7 +18,7 @@ func (c *Consensus) preprepareHandler() {
 
 		digest := hashing.MD5(msg.GetRequest()) // get the digest of request
 
-		if !c.validatePrePrepareMsg(msg, digest) {
+		if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
 			c.logger.Debug(
 				"preprepare message is not valid",
 				zap.Int("sequence number", raw.Sequence),
@@ -66,7 +66,7 @@ func (c *Consensus) prepareHandler() {
 		digest := hashing.MD5(message) // get the digest of input request
 
 		if !c.memory.GetByzantine() { // byzantine nodes don't prepare messages
-			if !c.validateAckMessage(msg, digest) {
+			if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
 				c.logger.Debug(
 					"prepare message is not valid",
 					zap.Int("sequence number", raw.Sequence),

@@ -15,17 +15,25 @@ func (a *App) transactionHandler(client string) {
 	// timestamp variable
 	ts := 10
 
+	a.logger.Debug("transaction handler started", zap.String("client", client))
+
 	for {
 		// get model transactions
 		trx := <-a.clients[client]
 
+		fmt.Printf("processing (%s, %s, %d)\n", trx.Sender, trx.Receiver, trx.Amount)
+
 		// call requestHandler
-		fmt.Println(a.requestHandler(&pbft.TransactionMsg{
-			Sender:    trx.Sender,
-			Reciever:  trx.Receiver,
-			Amount:    trx.Amount,
-			Timestamp: int64(ts),
-		}))
+		resp := a.requestHandler(
+			&pbft.TransactionMsg{
+				Sender:    trx.Sender,
+				Reciever:  trx.Receiver,
+				Amount:    trx.Amount,
+				Timestamp: int64(ts),
+			},
+		)
+
+		fmt.Printf("done (%s, %s, %d) at %d : `%s`\n", trx.Sender, trx.Receiver, trx.Amount, ts, resp)
 
 		// increase timestamp
 		ts++

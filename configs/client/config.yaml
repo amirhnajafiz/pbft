@@ -2,7 +2,7 @@
 log_level: "debug"
 
 # the testcase file path
-csv: "tests/sample.csv"
+csv: "tests/normal.csv"
 
 # certificates and keys
 tls:
@@ -28,6 +28,8 @@ iptable:
 # list of the systems clients
 clients:
   - key: "A"
+    metadata: 10
+  - key: "B"
     metadata: 10
 
 # node app configs

@@ -113,9 +113,9 @@ func (c *Consensus) commitHandler() {
 }
 
 // requestHandler gets a request message and performs the request handling logic.
-func (c *Consensus) requestHandler(pkt interface{}) {
+func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// parse the input message
-	msg := pkt.(*pbft.RequestMsg)
+	msg := pkt.Payload.(*pbft.RequestMsg)
 
 	// check if we had a request with the given timestamp
 	if req := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {

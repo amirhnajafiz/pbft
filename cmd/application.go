@@ -46,7 +46,7 @@ func (a Application) Main() error {
 		mem,
 		&a.Cfg.Node.BFT,
 		cli,
-		config.Default().GetClients(),
+		a.Cfg.GetClients(),
 	)
 
 	// start getting user inputs
@@ -96,6 +96,7 @@ func (a Application) terminal(app *application.App) {
 			os.Exit(0)
 		case "next":
 			if index < len(ts) {
+				fmt.Printf("running set %d\n", index)
 				for _, trx := range ts[index].Transactions {
 					app.Transaction(trx)
 				}

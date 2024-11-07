@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -47,10 +48,12 @@ func CSVInput(path string) ([]*models.TestSet, error) {
 
 		if row[0] == "" { // old row
 			tmp := strings.Split(strings.Replace(strings.Replace(row[1], "(", "", -1), ")", "", -1), ", ")
+			amount, _ := strconv.Atoi(tmp[2])
+
 			transactions = append(transactions, &models.Transaction{
 				Sender:   tmp[0],
 				Receiver: tmp[1],
-				Amount:   tmp[2],
+				Amount:   int64(amount),
 			})
 		} else {
 			// save the current values
@@ -85,10 +88,12 @@ func CSVInput(path string) ([]*models.TestSet, error) {
 
 			// process the first row transactions
 			tmp := strings.Split(strings.Replace(strings.Replace(row[1], "(", "", -1), ")", "", -1), ", ")
+			amount, _ := strconv.Atoi(tmp[2])
+
 			transactions = append(transactions, &models.Transaction{
 				Sender:   tmp[0],
 				Receiver: tmp[1],
-				Amount:   tmp[2],
+				Amount:   int64(amount),
 			})
 		}
 

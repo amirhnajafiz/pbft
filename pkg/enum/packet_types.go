@@ -5,12 +5,10 @@ type PacketType int
 
 // List of the packet types.
 const (
-	PktTrx PacketType = iota + 1
-	PktReq
+	PktReq PacketType = iota + 1
 	PktPP
 	PktPPed
 	PktP
 	PktPed
 	PktCmt
-	PktRpl
 )

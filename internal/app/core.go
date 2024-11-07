@@ -2,17 +2,12 @@ package core
 
 import (
 	"github.com/f24-cse535/pbft/internal/grpc/client"
-	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
-
-	"go.uber.org/zap"
 )
 
 // Core is the client main module that get's users requests, and sends them to nodes.
 type Core struct {
-	memory *local.Memory
 	cli    *client.Client
-	logger *zap.Logger
 	replys int
 
 	handlers map[string]chan *pbft.ReplyMsg
@@ -45,11 +40,9 @@ func (c *Core) Done(client, txt string) {
 }
 
 // NewCore returns an instance of the core struct.
-func NewCore(mem *local.Memory, cli *client.Client, logr *zap.Logger, replys int) *Core {
+func NewCore(cli *client.Client, replys int) *Core {
 	return &Core{
-		memory:   mem,
 		cli:      cli,
-		logger:   logr,
 		replys:   replys,
 		handlers: make(map[string]chan *pbft.ReplyMsg),
 		clients:  make(map[string]chan string),

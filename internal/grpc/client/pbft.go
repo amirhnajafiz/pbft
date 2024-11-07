@@ -115,31 +115,9 @@ func (c *Client) Prepared(target string, msg *pbft.AckMsg) {
 	c.logger.Debug("prepared sent", zap.String("to", target))
 }
 
-// Reply calls the Reply RPC on the target machine (nodes to clients).
-func (c *Client) Reply(target string, msg *pbft.ReplyMsg) {
-	address := c.nodes[target]
-	msg.NodeId = c.nodeId
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
-	}
-	defer conn.Close()
-
-	// call reply RPC
-	if _, err := pbft.NewPBFTClient(conn).Reply(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Reply RPC", zap.String("address", address), zap.Error(err))
-	}
-
-	c.logger.Debug("reply sent", zap.String("to", target))
-}
-
 // Request calls the Request RPC on the target machine (clients to nodes).
 func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	address := c.nodes[target]
-	msg.NodeId = c.nodeId
 	msg.ClientId = c.nodeId
 
 	// base connection
@@ -155,8 +133,6 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 		c.logger.Debug("failed to call Request RPC", zap.String("address", address), zap.Error(err))
 		return err
 	}
-
-	c.logger.Debug("request sent", zap.String("to", target))
 
 	return nil
 }
@@ -280,34 +256,4 @@ func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 // TODO: print view
 func (c *Client) PrintView(target string) bool {
 	return false
-}
-
-// Transaction sends a transaction to one client.
-func (c *Client) Transaction(target, sender, reseiver string, amount int, ts int) string {
-	address := c.nodes[target]
-
-	// base connection
-	conn, err := c.connect(address)
-	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
-		return err.Error()
-	}
-	defer conn.Close()
-
-	// call transaction RPC
-	resp, err := pbft.NewPBFTClient(conn).Transaction(context.Background(), &pbft.TransactionMsg{
-		Sender:    sender,
-		Reciever:  reseiver,
-		Amount:    int64(amount),
-		Timestamp: int64(ts),
-	})
-	if err != nil {
-		c.logger.Debug("failed to call Transaction RPC", zap.String("address", address), zap.Error(err))
-
-		return err.Error()
-	}
-
-	// extract and return message
-	return resp.GetText()
 }

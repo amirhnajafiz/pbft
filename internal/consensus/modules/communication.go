@@ -3,6 +3,7 @@ package modules
 import (
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
+	"github.com/f24-cse535/pbft/pkg/rpc/app"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
@@ -27,7 +28,7 @@ func (c *Communication) Client() *client.Client {
 func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.Reply(
 		msg.GetClientId(),
-		&pbft.ReplyMsg{
+		&app.ReplyMsg{
 			SequenceNumber: msg.GetSequenceNumber(),
 			View:           int64(view),
 			Timestamp:      msg.GetTransaction().GetTimestamp(),

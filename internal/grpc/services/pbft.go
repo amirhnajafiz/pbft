@@ -75,25 +75,6 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, 
 	return &emptypb.Empty{}, nil
 }
 
-// Transaction RPC calls core new transaction and waits for a response from transaction handler.
-func (p *PBFT) Transaction(ctx context.Context, msg *pbft.TransactionMsg) (*pbft.TransactionRsp, error) {
-	p.Logs.AppendLog("Transaction", msg.String())
-
-	txt := <-p.Core.NewTransaction(msg.GetSender(), msg)
-
-	return &pbft.TransactionRsp{
-		Text: txt,
-	}, nil
-}
-
-// Reply RPC calls core new reply to send the reply message to request handler.
-func (p *PBFT) Reply(ctx context.Context, msg *pbft.ReplyMsg) (*emptypb.Empty, error) {
-	p.Logs.AppendLog("Reply", msg.String())
-	p.Core.NewReply(msg.GetClientId(), msg)
-
-	return &emptypb.Empty{}, nil
-}
-
 // PrintDB returns the current datastore of this node.
 func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 	ds := p.Logs.GetAllRequests()

@@ -14,9 +14,6 @@ service PBFT {
   rpc Prepare(AckMsg) returns (google.protobuf.Empty) {}
   rpc Prepared(AckMsg) returns (google.protobuf.Empty) {}
   rpc Commit(AckMsg) returns (google.protobuf.Empty) {}
-  rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
-  
-  rpc Transaction(TransactionMsg) returns (TransactionRsp) {}
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
@@ -62,15 +59,6 @@ message AckMsg {
   int64 view = 2;
   string digest = 3;
   string node_id = 4;
-}
-
-message ReplyMsg {
-  int64 sequence_number = 1;
-  int64 view = 2;
-  int64 timestamp = 3;
-  string client_id = 4;
-  string node_id = 5;
-  string response = 6;
 }
 
 message StatusMsg {

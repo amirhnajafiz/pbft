@@ -26,8 +26,6 @@ const (
 	PBFT_Prepare_FullMethodName     = "/pbft.PBFT/Prepare"
 	PBFT_Prepared_FullMethodName    = "/pbft.PBFT/Prepared"
 	PBFT_Commit_FullMethodName      = "/pbft.PBFT/Commit"
-	PBFT_Reply_FullMethodName       = "/pbft.PBFT/Reply"
-	PBFT_Transaction_FullMethodName = "/pbft.PBFT/Transaction"
 	PBFT_PrintLog_FullMethodName    = "/pbft.PBFT/PrintLog"
 	PBFT_PrintDB_FullMethodName     = "/pbft.PBFT/PrintDB"
 	PBFT_PrintStatus_FullMethodName = "/pbft.PBFT/PrintStatus"
@@ -47,8 +45,6 @@ type PBFTClient interface {
 	Prepare(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Prepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
@@ -117,26 +113,6 @@ func (c *pBFTClient) Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_Commit_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pBFTClient) Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, PBFT_Reply_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pBFTClient) Transaction(ctx context.Context, in *TransactionMsg, opts ...grpc.CallOption) (*TransactionRsp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TransactionRsp)
-	err := c.cc.Invoke(ctx, PBFT_Transaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +190,6 @@ type PBFTServer interface {
 	Prepare(context.Context, *AckMsg) (*emptypb.Empty, error)
 	Prepared(context.Context, *AckMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *AckMsg) (*emptypb.Empty, error)
-	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
-	Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
@@ -247,12 +221,6 @@ func (UnimplementedPBFTServer) Prepared(context.Context, *AckMsg) (*emptypb.Empt
 }
 func (UnimplementedPBFTServer) Commit(context.Context, *AckMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
-}
-func (UnimplementedPBFTServer) Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Reply not implemented")
-}
-func (UnimplementedPBFTServer) Transaction(context.Context, *TransactionMsg) (*TransactionRsp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Transaction not implemented")
 }
 func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
@@ -395,42 +363,6 @@ func _PBFT_Commit_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PBFT_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReplyMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PBFTServer).Reply(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PBFT_Reply_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Reply(ctx, req.(*ReplyMsg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PBFT_Transaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransactionMsg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PBFTServer).Transaction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PBFT_Transaction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).Transaction(ctx, req.(*TransactionMsg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _PBFT_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -519,14 +451,6 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Commit",
 			Handler:    _PBFT_Commit_Handler,
-		},
-		{
-			MethodName: "Reply",
-			Handler:    _PBFT_Reply_Handler,
-		},
-		{
-			MethodName: "Transaction",
-			Handler:    _PBFT_Transaction_Handler,
 		},
 		{
 			MethodName: "PrintStatus",

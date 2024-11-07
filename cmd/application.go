@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/f24-cse535/pbft/internal/application"
 	"github.com/f24-cse535/pbft/internal/config"
-	"github.com/f24-cse535/pbft/internal/utils/lists"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
 )
 
-// Application is the client app in our system.
+// Application is the client program in our system.
 type Application struct {
 	Cfg    config.Config
 	Logger *zap.Logger
@@ -24,11 +24,11 @@ func (a Application) Main() error {
 	return nil
 }
 
-func (a Application) terminal(coreInstance *core.Core) {
+func (a Application) terminal(app *application.App) error {
 	// load the test-case file
-	ts, err := parser.CSVInput(c.Cfg.Controller.CSV)
+	ts, err := parser.CSVInput(a.Cfg.Controller.CSV)
 	if err != nil {
-		c.Logger.Panic("failed to load the test file", zap.Error(err))
+		return err
 	}
 
 	// set the initial values of our parameters that are used in transaction sending
@@ -47,8 +47,8 @@ func (a Application) terminal(coreInstance *core.Core) {
 	}
 
 	// create a new node list and remove the target client from it
-	nodes := c.Cfg.GetNodes()
-	delete(nodes, c.Cfg.Controller.Client)
+	nodes := a.Cfg.GetNodes()
+	delete(nodes, a.Cfg.Controller.Client)
 
 	// in a for loop, read user commands
 	reader := bufio.NewReader(os.Stdin)
@@ -73,21 +73,12 @@ func (a Application) terminal(coreInstance *core.Core) {
 			} else {
 				testcase := ts[index]
 
-				for key := range nodes {
-					cli.Flush(key)
-					cli.ChangeState(key, lists.IsInList(key, testcase.LiveServers), lists.IsInList(key, testcase.ByzantineServers))
-				}
-
 				fmt.Printf("executing test set %d\n", index)
 				for _, trx := range testcase.Transactions {
 					fmt.Printf("(timestamp: %d) (%s, %s, %s)\n", timestamp, trx.Sender, trx.Receiver, trx.Amount)
-					fmt.Println(cli.Transaction(c.Cfg.Controller.Client, trx.Sender, trx.Receiver, trx.Amount, timestamp))
+					app.Transaction(trx)
 
 					timestamp++
-				}
-
-				for key := range nodes {
-					cli.ChangeState(key, true, false)
 				}
 
 				index++

@@ -18,4 +18,5 @@ message ReplyMsg {
   string client_id = 4;
   string node_id = 5;
   string response = 6;
+  string sender = 7;
 }

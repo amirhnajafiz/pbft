@@ -12,12 +12,12 @@ import (
 type service struct {
 	app.UnimplementedAppServer
 
-	channel chan *app.ReplyMsg
+	channels map[string]chan *app.ReplyMsg
 }
 
-// Reply RPC forwards the reply message to the app channel.
+// Reply RPC forwards the reply message to the apps request handlers.
 func (s *service) Reply(ctx context.Context, msg *app.ReplyMsg) (*emptypb.Empty, error) {
-	s.channel <- msg
+	s.channels[msg.GetSender()] <- msg
 
 	return &emptypb.Empty{}, nil
 }

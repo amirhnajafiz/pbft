@@ -34,6 +34,7 @@ func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 			Timestamp:      msg.GetTransaction().GetTimestamp(),
 			ClientId:       msg.GetClientId(),
 			Response:       msg.GetResponse().GetText(),
+			Sender:         msg.GetTransaction().GetSender(),
 		},
 	)
 }

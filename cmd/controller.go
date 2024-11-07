@@ -8,13 +8,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// CTl is an app for creating system's nodes.
-type CTL struct {
+// Controller is a program for creating system's nodes.
+type Controller struct {
 	Cfg    config.Config
 	Logger *zap.Logger
 }
 
-func (c CTL) Main() error {
+func (c Controller) Main() error {
 	// init a waitgroup
 	var wg sync.WaitGroup
 

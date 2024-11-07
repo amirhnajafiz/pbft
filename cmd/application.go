@@ -8,57 +8,23 @@ import (
 	"strings"
 
 	"github.com/f24-cse535/pbft/internal/config"
-	"github.com/f24-cse535/pbft/internal/core"
-	"github.com/f24-cse535/pbft/internal/grpc"
-	"github.com/f24-cse535/pbft/internal/grpc/client"
-	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/utils/lists"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
 )
 
-// Client is the client app in our system.
-type Client struct {
+// Application is the client app in our system.
+type Application struct {
 	Cfg    config.Config
 	Logger *zap.Logger
 }
 
-func (c Client) Main() error {
-	// create a memory instance
-	mem := local.NewMemory(c.Cfg.Node.NodeId, c.Cfg.Node.BFT.Total)
-	mem.SetNodes(c.Cfg.GetNodesMeta())
-
-	// create a new client.go
-	cli := client.NewClient(
-		c.Logger.Named("client.go"),
-		c.Cfg.Node.NodeId,
-		c.Cfg.GetNodes(),
-	)
-	if err := cli.LoadTLS(c.Cfg.TLS.PrivateKey, c.Cfg.TLS.PublicKey, c.Cfg.TLS.CaKey); err != nil {
-		return fmt.Errorf("failed to load TLS keys: %v", err)
-	}
-
-	// create a new core instance
-	coreInstance := core.NewCore(cli, c.Cfg.Node.BFT.Responses)
-
-	// create a new gRPC bootstrap instance and execute the server by running the boot commands
-	boot := grpc.Bootstrap{
-		Port:       c.Cfg.Node.Port,
-		PrivateKey: c.Cfg.TLS.PrivateKey,
-		PublicKey:  c.Cfg.TLS.PublicKey,
-		CAKey:      c.Cfg.TLS.CaKey,
-		Core:       coreInstance,
-	}
-
-	// start the terminal process to get user inputs and pass it to core
-	go c.terminal(coreInstance)
-
-	// run a gRPC server for client to capture it's messages
-	return boot.ListenAnsServer()
+func (a Application) Main() error {
+	return nil
 }
 
-func (c Client) terminal(coreInstance *core.Core) {
+func (a Application) terminal(coreInstance *core.Core) {
 	// load the test-case file
 	ts, err := parser.CSVInput(c.Cfg.Controller.CSV)
 	if err != nil {

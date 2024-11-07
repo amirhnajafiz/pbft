@@ -12,9 +12,9 @@ import (
 
 // list of current system commands.
 const (
+	AppCmd        = "app"
 	ControllerCmd = "controller"
 	NodeCmd       = "node"
-	CtlCmd        = "ctl"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 			Cfg:    cfg,
 			Logger: logr.Named("node." + cfg.Node.NodeId),
 		},
-		CtlCmd: cmd.CTL{
+		AppCmd: cmd.Application{
 			Cfg:    cfg,
 			Logger: logr.Named("ctl"),
 		},

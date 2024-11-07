@@ -46,12 +46,52 @@ func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 	// send the request
 	if err := a.cli.Request(currentLeader, req); err != nil {
 		a.logger.Debug("failed to send the request", zap.String("leader", currentLeader))
+
+		// send the request to all servers
+		count := 0
+		for key := range a.cli.GetSystemNodes() {
+			if er := a.cli.Request(key, req); er != nil {
+				a.logger.Debug("failed to resend the request", zap.String("target", key))
+			} else {
+				count++
+			}
+		}
+
+		// if the number of live servers is less than 2f+1, then raise an error
+		if count < a.cfg.Majority {
+			a.logger.Debug("majority of servers are unavailable", zap.Int("servers", count))
+			return "not enough servers are available"
+		}
 	}
 
 	// handle the reply
 	resp, err := a.replyHandler(trx)
 	if err != nil {
 		a.logger.Debug("request blocked or got timeout", zap.Error(err))
+
+		// send the request to all servers
+		count := 0
+		for key := range a.cli.GetSystemNodes() {
+			if er := a.cli.Request(key, req); er != nil {
+				a.logger.Debug("failed to resend the request", zap.String("target", key))
+			} else {
+				count++
+			}
+		}
+
+		// if the number of live servers is less than 2f+1, then raise an error
+		if count < a.cfg.Majority {
+			a.logger.Debug("majority of servers are unavailable", zap.Int("servers", count))
+			return "not enough servers are available"
+		}
+
+		// again, wait for replys
+		resp, err = a.replyHandler(trx)
+		if err != nil {
+			a.logger.Debug("servers are not responding", zap.Error(err))
+
+			return "servers are not responding"
+		}
 	}
 
 	// update the view

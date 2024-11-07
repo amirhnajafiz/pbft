@@ -41,7 +41,7 @@ func main() {
 		},
 		AppCmd: cmd.Application{
 			Cfg:    cfg,
-			Logger: logr.Named("ctl"),
+			Logger: logr.Named("app"),
 		},
 	}
 

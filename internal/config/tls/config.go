@@ -14,8 +14,8 @@ type Config struct {
 	CaKey      string `koanf:"ca_key"`      // the certificate authority key
 }
 
-// TLS returns a crypto tls config type.
-func (c *Config) TLS() (*tls.Config, error) {
+// Creds returns a crypto tls config type.
+func (c *Config) Creds() (*tls.Config, error) {
 	// load the clients keys
 	prkBytes, err := os.ReadFile(c.PrivateKey)
 	if err != nil {

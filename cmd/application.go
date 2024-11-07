@@ -23,7 +23,7 @@ type Application struct {
 
 func (a Application) Main() error {
 	// load tls configs
-	creds, err := a.Cfg.TLS.TLS()
+	creds, err := a.Cfg.TLS.Creds()
 	if err != nil {
 		return err
 	}

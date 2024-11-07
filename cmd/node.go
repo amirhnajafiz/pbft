@@ -27,7 +27,7 @@ func (n Node) Main() error {
 	datalog := logs.NewLogs()
 
 	// load tls configs
-	creds, err := n.Cfg.TLS.TLS()
+	creds, err := n.Cfg.TLS.Creds()
 	if err != nil {
 		return err
 	}

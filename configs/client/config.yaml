@@ -3,8 +3,8 @@ log_level: "debug"
 
 # certificates and keys
 tls:
-  private_key: "./configs/clients/A/client.key"
-  public_key: "./configs/clients/A/client.crt"
+  private_key: "./configs/client/client.key"
+  public_key: "./configs/client/client.crt"
   ca_key: "./configs/ca.crt"
 
 # iptable maps all clients and nodes to their ip and metadata

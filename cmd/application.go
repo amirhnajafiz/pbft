@@ -36,7 +36,7 @@ func (a Application) Main() error {
 	)
 
 	// create a new app instance
-	app := application.NewApp(cli, config.Default().GetClients())
+	app := application.NewApp(&a.Cfg.Node.BFT, cli, config.Default().GetClients())
 
 	// start getting user inputs
 	go a.terminal(app)

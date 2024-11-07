@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/f24-cse535/pbft/internal/config/node/bft"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
@@ -16,15 +17,17 @@ import (
 // App is the main module of the client's program.
 type App struct {
 	cli *client.Client
+	cfg *bft.Config
 
 	clients  map[string]chan *models.Transaction // for each client there is go-routine that accepts using these channels
 	handlers map[string]chan *app.ReplyMsg       // handlers is a channel to get gRPC messages
 }
 
 // NewApp returns a new app instance.
-func NewApp(cli *client.Client, clients map[string]int) *App {
+func NewApp(cfg *bft.Config, cli *client.Client, clients map[string]int) *App {
 	// create a new app instance
 	a := &App{
+		cfg: cfg,
 		cli: cli,
 	}
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
 
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -16,32 +15,24 @@ func (c *Client) Ping(target string) bool {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
 		return false
 	}
 	defer conn.Close()
 
 	// call ping RPC
 	_, err = liveness.NewLivenessClient(conn).Ping(context.Background(), &emptypb.Empty{})
-	if err != nil {
-		c.logger.Debug("failed to call Ping RPC", zap.String("address", address), zap.Error(err))
 
-		return false
-	}
-
-	// server is ok
-	return true
+	return err == nil
 }
 
 // ChangeState is used to modify the state of a gRPC server.
-func (c *Client) ChangeState(target string, state, byzantine bool) {
+func (c *Client) ChangeState(target string, state, byzantine bool) error {
 	address := c.nodes[target]
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+		return err
 	}
 	defer conn.Close()
 
@@ -51,30 +42,28 @@ func (c *Client) ChangeState(target string, state, byzantine bool) {
 		Byzantine: byzantine,
 	})
 	if err != nil {
-		c.logger.Debug("failed to call ChangeState RPC", zap.String("address", address), zap.Error(err))
-
-		return
+		return err
 	}
 
-	c.logger.Debug("changed status", zap.String("target", target), zap.Bool("live", state), zap.Bool("byzantine", byzantine))
+	return nil
 }
 
 // Flush calls the Flush RPC on a target node.
-func (c *Client) Flush(target string) {
+func (c *Client) Flush(target string) error {
 	address := c.nodes[target]
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
+		return err
 	}
 	defer conn.Close()
 
 	// call flush RPC
 	_, err = liveness.NewLivenessClient(conn).Flush(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		c.logger.Debug("failed to call Flush RPC", zap.String("address", address), zap.Error(err))
-
-		return
+		return err
 	}
+
+	return err
 }

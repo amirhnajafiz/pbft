@@ -2,10 +2,8 @@ package grpc
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net"
-	"os"
 
 	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/grpc/services"
@@ -21,11 +19,6 @@ import (
 
 // Bootstrap is a wrapper that holds requirements for the gRPC services.
 type Bootstrap struct {
-	Port       int
-	PrivateKey string
-	PublicKey  string
-	CAKey      string
-
 	Consensus *consensus.Consensus // consensus module is the node main module
 	Memory    *local.Memory        // memory is needed for liveness
 	Logs      *logs.Logs
@@ -33,50 +26,16 @@ type Bootstrap struct {
 }
 
 // ListenAnsServer creates a new gRPC instance with all services.
-func (b *Bootstrap) ListenAnsServer() error {
+func (b *Bootstrap) ListenAnsServer(port int, creds *tls.Config) error {
 	// on the local network, listen to a port
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", b.Port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		return fmt.Errorf("failed to start the core listener server: %v", err)
-	}
-
-	// load the clients keys
-	prkBytes, err := os.ReadFile(b.PrivateKey)
-	if err != nil {
-		return fmt.Errorf("failed to load private key %s: %v", b.PrivateKey, err)
-	}
-	pukBytes, err := os.ReadFile(b.PublicKey)
-	if err != nil {
-		return fmt.Errorf("failed to load public key %s: %v", b.PublicKey, err)
-	}
-
-	// load server's certificate
-	cert, err := tls.X509KeyPair(pukBytes, prkBytes)
-	if err != nil {
-		return fmt.Errorf("failed to load certificates: %v", err)
-	}
-
-	// create the CA data
-	ca := x509.NewCertPool()
-	cacBytes, err := os.ReadFile(b.CAKey)
-	if err != nil {
-		return fmt.Errorf("failed to read ca cert: %v", err)
-	}
-	if ok := ca.AppendCertsFromPEM(cacBytes); !ok {
-		return fmt.Errorf("failed to append certs: %s", b.CAKey)
-	}
-
-	// tls configs
-	tlsConfig := &tls.Config{
-		ClientAuth:         tls.RequireAndVerifyClientCert,
-		Certificates:       []tls.Certificate{cert},
-		ClientCAs:          ca,
-		InsecureSkipVerify: true,
+		return fmt.Errorf("failed to start the listener server: %v", err)
 	}
 
 	// create a new grpc instance
 	server := grpc.NewServer(
-		grpc.Creds(credentials.NewTLS(tlsConfig)),      // set the server certificates
+		grpc.Creds(credentials.NewTLS(creds)),          // set the server certificates
 		grpc.UnaryInterceptor(b.allUnaryInterceptor),   // set an unary interceptor
 		grpc.StreamInterceptor(b.allStreamInterceptor), // set a stream interceptor
 	)
@@ -95,9 +54,9 @@ func (b *Bootstrap) ListenAnsServer() error {
 	})
 
 	// starting the server
-	b.Logger.Info("gRPC server started", zap.Int("port", b.Port))
+	b.Logger.Info("gRPC server started", zap.Int("port", port))
 	if err := server.Serve(listener); err != nil {
-		return fmt.Errorf("failed to start servers: %v", err)
+		return fmt.Errorf("failed to start services: %v", err)
 	}
 
 	return nil

@@ -6,113 +6,106 @@ import (
 
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	"go.uber.org/zap"
 )
 
 // Commit calls the Commit RPC on the target machine (nodes to nodes).
-func (c *Client) Commit(target string, msg *pbft.AckMsg) {
+func (c *Client) Commit(target string, msg *pbft.AckMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call commit RPC
 	if _, err := pbft.NewPBFTClient(conn).Commit(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Commit RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
 
-	c.logger.Debug("commit sent", zap.String("to", target))
+	return nil
 }
 
 // PrePrepare calls the PrePrepare RPC on the target machine (nodes to nodes).
-func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) {
+func (c *Client) PrePrepare(target string, msg *pbft.PrePrepareMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call preprepare RPC
 	if _, err := pbft.NewPBFTClient(conn).PrePrepare(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Preprepare RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
 
-	c.logger.Debug("preprepare sent", zap.String("to", target))
+	return nil
 }
 
 // PrePrepared calls the PrePrepared RPC on the target machine (nodes to nodes).
-func (c *Client) PrePrepared(target string, msg *pbft.AckMsg) {
+func (c *Client) PrePrepared(target string, msg *pbft.AckMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call preprepare RPC
 	if _, err := pbft.NewPBFTClient(conn).PrePrepared(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Preprepared RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
 
-	c.logger.Debug("preprepared sent", zap.String("to", target))
+	return nil
 }
 
 // Prepare calls the Prepare RPC on the target machine (nodes to nodes).
-func (c *Client) Prepare(target string, msg *pbft.AckMsg) {
+func (c *Client) Prepare(target string, msg *pbft.AckMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call prepare RPC
 	if _, err := pbft.NewPBFTClient(conn).Prepare(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Prepare RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
 
-	c.logger.Debug("prepare sent", zap.String("to", target))
+	return err
 }
 
 // Prepared calls the Prepared RPC on the target machine (nodes to nodes).
-func (c *Client) Prepared(target string, msg *pbft.AckMsg) {
+func (c *Client) Prepared(target string, msg *pbft.AckMsg) error {
 	address := c.nodes[target]
 	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-		return
+		return err
 	}
 	defer conn.Close()
 
 	// call prepare RPC
 	if _, err := pbft.NewPBFTClient(conn).Prepared(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Prepared RPC", zap.String("address", address), zap.Error(err))
+		return err
 	}
 
-	c.logger.Debug("prepared sent", zap.String("to", target))
+	return err
 }
 
 // Request calls the Request RPC on the target machine (clients to nodes).
@@ -123,14 +116,12 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
 		return err
 	}
 	defer conn.Close()
 
 	// call request RPC
 	if _, err := pbft.NewPBFTClient(conn).Request(context.Background(), msg); err != nil {
-		c.logger.Debug("failed to call Request RPC", zap.String("address", address), zap.Error(err))
 		return err
 	}
 
@@ -145,8 +136,6 @@ func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
 		return list
 	}
 	defer conn.Close()
@@ -154,8 +143,6 @@ func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
 	// open a stream on print db rpc
 	stream, err := pbft.NewPBFTClient(conn).PrintDB(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		c.logger.Debug("failed to call PrintDB RPC", zap.String("address", address), zap.Error(err))
-
 		return list
 	}
 
@@ -184,8 +171,6 @@ func (c *Client) PrintLog(target string) []string {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
 		return list
 	}
 	defer conn.Close()
@@ -193,8 +178,6 @@ func (c *Client) PrintLog(target string) []string {
 	// open a stream on print log rpc
 	stream, err := pbft.NewPBFTClient(conn).PrintLog(context.Background(), &emptypb.Empty{})
 	if err != nil {
-		c.logger.Debug("failed to call PrintLog RPC", zap.String("address", address), zap.Error(err))
-
 		return list
 	}
 
@@ -222,8 +205,6 @@ func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 	// base connection
 	conn, err := c.connect(address)
 	if err != nil {
-		c.logger.Debug("failed to connect", zap.String("address", address), zap.Error(err))
-
 		return err.Error()
 	}
 	defer conn.Close()
@@ -233,8 +214,6 @@ func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 		SequenceNumber: int64(sequenceNumber),
 	})
 	if err != nil {
-		c.logger.Debug("failed to call PrintStatus RPC", zap.String("address", address), zap.Error(err))
-
 		return err.Error()
 	}
 

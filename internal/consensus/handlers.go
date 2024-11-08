@@ -1,6 +1,9 @@
 package consensus
 
 import (
+	"time"
+
+	"github.com/f24-cse535/pbft/internal/consensus/modules"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -158,4 +161,16 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	// send the sequence to the execute handler
 	c.executionChannel <- sequence
+}
+
+// timerHandler creates a new timer and monitors the timer.
+func (c *Consensus) timerHandler() {
+	// create a new timer
+	tm := modules.NewTimer(c.cfg.ViewTimeout, time.Second)
+	tm.Stop()
+
+	for {
+		tm.Notify()
+		c.logger.Debug("timer expired")
+	}
 }

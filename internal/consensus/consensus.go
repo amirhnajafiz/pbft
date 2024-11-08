@@ -63,6 +63,7 @@ func NewConsensus(
 	go c.prepareHandler()
 	go c.commitHandler()
 	go c.executeHandler()
+	go c.timerHandler()
 
 	return c
 }

@@ -18,7 +18,7 @@ func (a *App) transactionHandler(client string) {
 		// get a timestamp
 		ts := a.memory.GetTimestamp()
 
-		fmt.Printf("%d processing (%s, %s, %d)\n", ts, trx.Sender, trx.Receiver, trx.Amount)
+		fmt.Printf("\t - %d processing (%s, %s, %d)\n", ts, trx.Sender, trx.Receiver, trx.Amount)
 
 		// call requestHandler
 		resp := a.requestHandler(
@@ -31,7 +31,7 @@ func (a *App) transactionHandler(client string) {
 			},
 		)
 
-		fmt.Printf("%d done (%s, %s, %d): `%s`\n", ts, trx.Sender, trx.Receiver, trx.Amount, resp)
+		fmt.Printf("\t - %d done (%s, %s, %d): `%s`\n", ts, trx.Sender, trx.Receiver, trx.Amount, resp)
 	}
 }
 

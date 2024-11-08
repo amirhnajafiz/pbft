@@ -79,7 +79,7 @@ func (c *Communication) SendViewChangeMsg(view, sequence int) int {
 	}
 
 	// count the number of sucessful sends
-	count := 0
+	count := 1
 	for key := range c.cli.GetSystemNodes() {
 		if err := c.cli.ViewChange(key, msg); err == nil {
 			count++

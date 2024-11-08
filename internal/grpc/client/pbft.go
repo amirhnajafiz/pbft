@@ -252,7 +252,37 @@ func (c *Client) PrintStatus(target string, sequenceNumber int) string {
 	}
 }
 
-// TODO: print view
-func (c *Client) PrintView(target string) bool {
-	return false
+// PrintView gets a target to print the view change messages.
+func (c *Client) PrintView(target string) []*pbft.ViewRsp {
+	address := c.nodes[target]
+	list := make([]*pbft.ViewRsp, 0)
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return list
+	}
+	defer conn.Close()
+
+	// open a stream on print db rpc
+	stream, err := pbft.NewPBFTClient(conn).PrintView(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return list
+	}
+
+	for {
+		// get messages one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				stream.CloseSend()
+				break
+			}
+		}
+
+		// append to the list of requests
+		list = append(list, in)
+	}
+
+	return list
 }

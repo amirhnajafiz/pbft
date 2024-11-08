@@ -25,6 +25,11 @@ func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 	return make([]*pbft.ViewChangeMsg, 0)
 }
 
+// GetAllViewChanges returns a map of views and their view change messages.
+func (l *Logs) GetAllViewChanges() map[int][]*pbft.ViewChangeMsg {
+	return l.viewChanges
+}
+
 // GetLogs returns the node datalog.
 func (l *Logs) GetLogs() []string {
 	return l.logs

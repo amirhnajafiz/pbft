@@ -18,7 +18,7 @@ service PBFT {
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
-  rpc PrintView(google.protobuf.Empty) returns (ViewRsp) {}
+  rpc PrintView(google.protobuf.Empty) returns (stream ViewRsp) {}
 }
 
 // defining request status enum
@@ -82,7 +82,8 @@ message StatusRsp {
 }
 
 message ViewRsp {
-
+  int64 view = 1;
+  repeated ViewChangeMsg messages = 2;
 }
 
 message TransactionRsp {

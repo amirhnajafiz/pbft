@@ -104,7 +104,7 @@ func (a Application) terminal(app *application.App) {
 					app.Client().ChangeState(key, lists.IsInList(key, tc.LiveServers), lists.IsInList(key, tc.ByzantineServers))
 				}
 
-				fmt.Printf("running set %d\n", index)
+				fmt.Printf("- running set %d\n", index)
 				for _, trx := range tc.Transactions {
 					app.Transaction(trx)
 				}
@@ -122,7 +122,7 @@ func (a Application) terminal(app *application.App) {
 		case "printdb":
 			for _, item := range app.Client().PrintDB(parts[1]) {
 				fmt.Printf(
-					"%d : %d (%s, %s, %d) : %s\n",
+					"- %d : %d (%s, %s, %d) : %s\n",
 					item.GetSequenceNumber(),
 					item.GetTransaction().GetTimestamp(),
 					item.GetTransaction().GetSender(),
@@ -134,7 +134,17 @@ func (a Application) terminal(app *application.App) {
 		case "printstatus":
 			seq, _ := strconv.Atoi(parts[1])
 			for key := range a.Cfg.GetNodes() {
-				fmt.Printf("%s : %s\n", key, app.Client().PrintStatus(key, seq))
+				fmt.Printf("\t- %s : %s\n", key, app.Client().PrintStatus(key, seq))
+			}
+		case "printview":
+			for key := range a.Cfg.GetNodes() {
+				fmt.Printf("- node %s\n", key)
+				for _, item := range app.Client().PrintView(key) {
+					fmt.Printf("\tview %d\n", item.GetView())
+					for _, msg := range item.GetMessages() {
+						fmt.Printf("\t- from node %s: sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+					}
+				}
 			}
 		default:
 			fmt.Printf("command `%s` not found.\n", parts[1])

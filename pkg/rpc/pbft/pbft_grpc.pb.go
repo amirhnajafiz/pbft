@@ -50,7 +50,7 @@ type PBFTClient interface {
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
-	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error)
+	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ViewRsp], error)
 }
 
 type pBFTClient struct {
@@ -179,15 +179,24 @@ func (c *pBFTClient) PrintStatus(ctx context.Context, in *StatusMsg, opts ...grp
 	return out, nil
 }
 
-func (c *pBFTClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ViewRsp, error) {
+func (c *pBFTClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ViewRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ViewRsp)
-	err := c.cc.Invoke(ctx, PBFT_PrintView_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[2], PBFT_PrintView_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[emptypb.Empty, ViewRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintViewClient = grpc.ServerStreamingClient[ViewRsp]
 
 // PBFTServer is the server API for PBFT service.
 // All implementations must embed UnimplementedPBFTServer
@@ -206,7 +215,7 @@ type PBFTServer interface {
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
-	PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error)
+	PrintView(*emptypb.Empty, grpc.ServerStreamingServer[ViewRsp]) error
 	mustEmbedUnimplementedPBFTServer()
 }
 
@@ -247,8 +256,8 @@ func (UnimplementedPBFTServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServe
 func (UnimplementedPBFTServer) PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintStatus not implemented")
 }
-func (UnimplementedPBFTServer) PrintView(context.Context, *emptypb.Empty) (*ViewRsp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PrintView not implemented")
+func (UnimplementedPBFTServer) PrintView(*emptypb.Empty, grpc.ServerStreamingServer[ViewRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintView not implemented")
 }
 func (UnimplementedPBFTServer) mustEmbedUnimplementedPBFTServer() {}
 func (UnimplementedPBFTServer) testEmbeddedByValue()              {}
@@ -437,23 +446,16 @@ func _PBFT_PrintStatus_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PBFT_PrintView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
+func _PBFT_PrintView_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(PBFTServer).PrintView(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PBFT_PrintView_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PBFTServer).PrintView(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(PBFTServer).PrintView(m, &grpc.GenericServerStream[emptypb.Empty, ViewRsp]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintViewServer = grpc.ServerStreamingServer[ViewRsp]
 
 // PBFT_ServiceDesc is the grpc.ServiceDesc for PBFT service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -494,10 +496,6 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "PrintStatus",
 			Handler:    _PBFT_PrintStatus_Handler,
 		},
-		{
-			MethodName: "PrintView",
-			Handler:    _PBFT_PrintView_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -508,6 +506,11 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "PrintDB",
 			Handler:       _PBFT_PrintDB_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PrintView",
+			Handler:       _PBFT_PrintView_Handler,
 			ServerStreams: true,
 		},
 	},

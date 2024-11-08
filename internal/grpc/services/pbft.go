@@ -122,6 +122,19 @@ func (p *PBFT) PrintStatus(ctx context.Context, msg *pbft.StatusMsg) (*pbft.Stat
 	return &status, nil
 }
 
-func (p *PBFT) PrintView(ctx context.Context, msg *emptypb.Empty) (*pbft.ViewRsp, error) {
-	return nil, nil
+// PrintView exports the view messages of this node.
+func (p *PBFT) PrintView(_ *emptypb.Empty, stream pbft.PBFT_PrintViewServer) error {
+	views := p.Logs.GetAllViewChanges()
+
+	// publish views one by one
+	for key, value := range views {
+		if err := stream.Send(&pbft.ViewRsp{
+			View:     int64(key),
+			Messages: value,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

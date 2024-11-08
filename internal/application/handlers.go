@@ -57,55 +57,28 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 
 	// send the request
 	if err := a.cli.Request(currentLeader, req); err != nil {
-		// send the request to all servers
-		count := 0
-		for key := range a.cli.GetSystemNodes() {
-			if er := a.cli.Request(key, req); er == nil {
-				count++
-			}
-		}
-
 		// if the number of live servers is less than 2f+1, then raise an error
-		if count < a.cfg.Majority {
+		if count := a.broadcastRequest(req); count < a.cfg.Majority {
 			return "not enough servers are available"
 		}
 	}
 
+	// follow the reply
 	for {
 		// handle the reply
 		resp, err = a.replyHandler(ch, trx)
-		if err != nil {
-			// send the request to all servers
-			count := 0
-			for key := range a.cli.GetSystemNodes() {
-				if er := a.cli.Request(key, req); er == nil {
-					count++
-				}
-			}
-
-			// if the number of live servers is less than 2f+1, then raise an error
-			if count < a.cfg.Majority {
-				return "not enough servers are available"
-			}
-
-			continue
+		if err == nil {
+			break
 		}
 
-		break
+		// if the number of live servers is less than 2f+1, then raise an error
+		if count := a.broadcastRequest(req); count < a.cfg.Majority {
+			return "not enough servers are available"
+		}
 	}
 
 	// empty the channel
-	go func(key string) {
-		for {
-			select {
-			case <-ch:
-				continue
-			default:
-				delete(a.handlers, key)
-				return
-			}
-		}
-	}(client)
+	go a.emptyChannel(client)
 
 	// update the view
 	a.memory.SetView(int(resp.GetView()))

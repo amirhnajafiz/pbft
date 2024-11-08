@@ -200,7 +200,7 @@ func (c *Consensus) viewChangeHandler() {
 		if !c.inViewChangeMode {
 			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
-			if len(c.logs.GetViewChanges(int(msg.GetView()))) > c.cfg.Responses {
+			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
 				c.inViewChangeMode = true
 				c.newViewChangeGadget()
 			}

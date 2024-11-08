@@ -28,7 +28,7 @@ func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 		return list
 	}
 
-	return nil
+	return make([]*pbft.ViewChangeMsg, 0)
 }
 
 // GetLogs returns the node datalog.

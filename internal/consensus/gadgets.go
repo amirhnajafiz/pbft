@@ -61,11 +61,20 @@ func (c *Consensus) newViewChangeGadget() {
 
 	// change the view to stop processing requests
 	c.memory.IncView()
+	view := c.memory.GetView()
 
 	// send a view change message
-	c.communication.SendViewChangeMsg(c.memory.GetView(), c.logs.GetSequenceNumber())
+	c.communication.SendViewChangeMsg(view, c.logs.GetSequenceNumber())
 
 	// wait for 2f+1 messages
+	for {
+		msg := <-c.viewChangeGadgetChannel
+		c.logs.AppendViewChange(view, msg)
+
+		if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority-1 {
+			break
+		}
+	}
 
 	// close our channel
 	c.inViewChangeMode = false

@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"fmt"
+
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -94,5 +96,34 @@ func (c *Consensus) newViewChangeGadget() {
 
 // newLeaderGadget performs the procedure of new leader.
 func (c *Consensus) newLeaderGadget() {
-	// send new-view messages
+	// get all previous messages
+	messages := c.logs.GetViewChanges(c.memory.GetView())
+
+	minSequence := c.logs.GetSequenceNumber()
+	maxSequence := c.logs.GetSequenceNumber()
+
+	// loop in all messages
+	for _, msg := range messages {
+		sequence := int(msg.GetSequenceNumber())
+		if sequence <= minSequence {
+			minSequence = sequence
+		}
+
+		if sequence >= maxSequence {
+			maxSequence = sequence
+		}
+	}
+
+	// create an array to store sequences
+	requests := make([]int, 0)
+
+	// collect all requets that are prepared
+	for i := minSequence; i <= maxSequence; i++ {
+		if tmp := c.logs.GetRequest(i); tmp != nil && tmp.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_PP.Number() {
+			requests = append(requests, i)
+		}
+	}
+
+	// broadcase a new-view message
+	fmt.Println(requests)
 }

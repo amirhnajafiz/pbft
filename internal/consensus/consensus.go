@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"time"
+
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
 	"github.com/f24-cse535/pbft/internal/consensus/modules"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
@@ -20,6 +22,7 @@ type Consensus struct {
 	logger        *zap.Logger
 	communication *modules.Communication
 	waiter        *modules.Waiter
+	viewTimer     *modules.Timer
 
 	executionChannel chan int // execution channel is the execution handler input channel
 
@@ -46,6 +49,7 @@ func NewConsensus(
 	// create consensus modules
 	c.communication = modules.NewCommunicationModule(cli)
 	c.waiter = modules.NewWaiter(cfg)
+	c.viewTimer = modules.NewTimer(c.cfg.ViewTimeout, time.Second)
 
 	// create consensus tables
 	c.requestsHandlersTable = make(map[int]chan *models.Packet)

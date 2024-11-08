@@ -56,12 +56,21 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 
 // newViewChangeGadget gets a count number of view-change messages and starts view change procedure.
 func (c *Consensus) newViewChangeGadget() {
+	// create our channel
+	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
+
 	// change the view to stop processing requests
 	c.memory.IncView()
 
 	// create a view change message and send it to others
 
 	// wait for 2f+1 messages
+
+	// close our channel
+	c.inViewChangeMode = false
+	c.viewChangeGadgetChannel = nil
+
+	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
 		c.newLeaderGadget()
 	}

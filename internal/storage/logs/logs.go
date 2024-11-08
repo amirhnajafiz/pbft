@@ -10,7 +10,7 @@ import (
 type Logs struct {
 	logs        []string
 	datastore   map[int]*pbft.RequestMsg
-	viewChanges map[int][]interface{}
+	viewChanges map[int][]*pbft.ViewChangeMsg
 
 	lock sync.Mutex
 
@@ -23,7 +23,7 @@ func NewLogs() *Logs {
 		lock:        sync.Mutex{},
 		logs:        make([]string, 0),
 		datastore:   make(map[int]*pbft.RequestMsg),
-		viewChanges: make(map[int][]interface{}),
+		viewChanges: make(map[int][]*pbft.ViewChangeMsg),
 		index:       0,
 	}
 }

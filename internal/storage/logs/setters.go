@@ -32,9 +32,9 @@ func (l *Logs) AppendLog(prefix, log string) {
 }
 
 // AppendViewChange gets all view change messages and stores them.
-func (l *Logs) AppendViewChange(view int, msg interface{}) {
+func (l *Logs) AppendViewChange(view int, msg *pbft.ViewChangeMsg) {
 	if _, ok := l.viewChanges[view]; !ok {
-		l.viewChanges[view] = make([]interface{}, 0)
+		l.viewChanges[view] = make([]*pbft.ViewChangeMsg, 0)
 	}
 
 	l.viewChanges[view] = append(l.viewChanges[view], msg)

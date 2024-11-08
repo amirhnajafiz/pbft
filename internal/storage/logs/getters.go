@@ -23,7 +23,7 @@ func (l *Logs) GetAllRequests() []*pbft.RequestMsg {
 }
 
 // GetViewChanges returns a list of stored view changes.
-func (l *Logs) GetViewChanges(view int) []interface{} {
+func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 	if list, ok := l.viewChanges[view]; ok {
 		return list
 	}

@@ -182,7 +182,8 @@ func (c *Consensus) timerHandler() {
 		c.logger.Debug("timer expired")
 
 		// start view change
-		if c.viewChangeChannel == nil {
+		if !c.inViewChangeMode {
+			c.inViewChangeMode = true
 			c.newViewChangeGadget()
 		}
 	}
@@ -192,13 +193,21 @@ func (c *Consensus) timerHandler() {
 func (c *Consensus) viewChangeHandler() {
 	for {
 		// capture view change messages
-		msg := c.consensusHandlersTable[enum.PktCmt]
+		raw := <-c.consensusHandlersTable[enum.PktVC]
+		msg := raw.Payload.(*pbft.ViewChangeMsg)
 
 		// check the destination
-		if c.viewChangeChannel == nil {
-			c.logs.AppendViewChange(0, msg)
+		if !c.inViewChangeMode {
+			c.logs.AppendViewChange(int(msg.GetView()), msg)
+
+			if len(c.logs.GetViewChanges(int(msg.GetView()))) > c.cfg.Responses {
+				c.inViewChangeMode = true
+				c.newViewChangeGadget()
+			}
 		} else {
-			c.viewChangeChannel <- msg
+			if c.viewChangeGadgetChannel != nil {
+				c.viewChangeGadgetChannel <- msg
+			}
 		}
 	}
 }

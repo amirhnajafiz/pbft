@@ -10,6 +10,7 @@ import (
 	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
+	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
 )
@@ -24,8 +25,10 @@ type Consensus struct {
 	waiter        *modules.Waiter
 	viewTimer     *modules.Timer
 
-	executionChannel  chan int         // execution channel is the execution handler input channel
-	viewChangeChannel chan interface{} // view change channel is used to send view change messages to its gadget
+	inViewChangeMode        bool // a flag for in view change mode
+	viewChangeGadgetChannel chan *pbft.ViewChangeMsg
+
+	executionChannel chan int // execution channel is the execution handler input channel
 
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
@@ -41,10 +44,11 @@ func NewConsensus(
 ) *Consensus {
 	// create a new consensus instance
 	c := &Consensus{
-		logs:   logs,
-		memory: mem,
-		logger: logr,
-		cfg:    cfg,
+		logs:             logs,
+		memory:           mem,
+		logger:           logr,
+		cfg:              cfg,
+		inViewChangeMode: false,
 	}
 
 	// create consensus modules
@@ -58,6 +62,7 @@ func NewConsensus(
 		enum.PktPP:  make(chan *models.Packet, cfg.Total), // size of total
 		enum.PktP:   make(chan *models.Packet, cfg.Total), // size of total
 		enum.PktCmt: make(chan *models.Packet, cfg.Total), // size of total
+		enum.PktVC:  make(chan *models.Packet, cfg.Total), // size of total
 	}
 
 	// create side channels

@@ -61,7 +61,13 @@ func (c *Consensus) newViewChangeGadget() {
 	view := c.memory.GetView()
 
 	// send a view change message
-	c.communication.SendViewChangeMsg(view, c.logs.GetSequenceNumber())
+	if count := c.communication.SendViewChangeMsg(view, c.logs.GetSequenceNumber()); count < c.cfg.Majority {
+		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
+
+		return
+	}
+
+	c.logger.Debug("view change started")
 
 	// wait for 2f+1 messages
 	for {
@@ -72,6 +78,8 @@ func (c *Consensus) newViewChangeGadget() {
 			break
 		}
 	}
+
+	c.logger.Debug("view change end")
 
 	// close our channel
 	c.inViewChangeMode = false

@@ -22,10 +22,3 @@ func (c *Client) BroadcastCommit(msg *pbft.AckMsg) {
 		c.Commit(key, msg)
 	}
 }
-
-// BroadcastViewChange sends a view change message to all nodes.
-func (c *Client) BroadcastViewChange(msg *pbft.ViewChangeMsg) {
-	for key := range c.nodes {
-		c.ViewChange(key, msg)
-	}
-}

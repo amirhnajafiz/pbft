@@ -71,9 +71,20 @@ func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
 }
 
 // SendViewChangeMsg gets view and sequence and uses client.go to broadcase a view change message.
-func (c *Communication) SendViewChangeMsg(view, sequence int) {
-	c.cli.BroadcastViewChange(&pbft.ViewChangeMsg{
-		View:           int64(view),
+func (c *Communication) SendViewChangeMsg(view, sequence int) int {
+	// create a new pbft view change message
+	msg := &pbft.ViewChangeMsg{
 		SequenceNumber: int64(sequence),
-	})
+		View:           int64(view),
+	}
+
+	// count the number of sucessful sends
+	count := 0
+	for key := range c.cli.GetSystemNodes() {
+		if err := c.cli.ViewChange(key, msg); err == nil {
+			count++
+		}
+	}
+
+	return count
 }

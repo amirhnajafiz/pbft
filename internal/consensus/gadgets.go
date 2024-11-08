@@ -12,10 +12,6 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	// get the message from our datastore
 	message := c.logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
-		c.logger.Debug(
-			"request not found",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
 		return nil
 	}
 
@@ -24,10 +20,6 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 
 	// validate the message
 	if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
-		c.logger.Debug(
-			"ack message is not valid",
-			zap.Int64("sequence number", msg.GetSequenceNumber()),
-		)
 		return nil
 	}
 
@@ -53,7 +45,7 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
 
 		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
-		c.logger.Info("request executed", zap.Int("sequence number", index))
+		c.logger.Debug("request executed", zap.Int("sequence number", index))
 
 		index++
 		if msg = c.logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {

@@ -125,7 +125,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// store it into datastore
 	c.logs.SetRequest(sequence, msg)
 
-	c.logger.Info("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
+	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
 	// send preprepare messages
 	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())

@@ -45,6 +45,11 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 		SequenceNumber: -1,
 	}
 
+	var (
+		resp *app.ReplyMsg
+		err  error
+	)
+
 	currentLeader := a.getCurrentLeader() // get current leader id
 
 	a.handlers[client] = make(chan *app.ReplyMsg, a.cfg.Total) // get our channel
@@ -66,27 +71,27 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 		}
 	}
 
-	// handle the reply
-	resp, err := a.replyHandler(ch, trx)
-	if err != nil {
-		// send the request to all servers
-		count := 0
-		for key := range a.cli.GetSystemNodes() {
-			if er := a.cli.Request(key, req); er == nil {
-				count++
-			}
-		}
-
-		// if the number of live servers is less than 2f+1, then raise an error
-		if count < a.cfg.Majority {
-			return "not enough servers are available"
-		}
-
-		// again, wait for replys
+	for {
+		// handle the reply
 		resp, err = a.replyHandler(ch, trx)
 		if err != nil {
-			return "servers are not responding"
+			// send the request to all servers
+			count := 0
+			for key := range a.cli.GetSystemNodes() {
+				if er := a.cli.Request(key, req); er == nil {
+					count++
+				}
+			}
+
+			// if the number of live servers is less than 2f+1, then raise an error
+			if count < a.cfg.Majority {
+				return "not enough servers are available"
+			}
+
+			continue
 		}
+
+		break
 	}
 
 	// empty the channel

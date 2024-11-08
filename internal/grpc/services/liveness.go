@@ -42,8 +42,6 @@ func (l *Liveness) ChangeStatus(ctx context.Context, input *liveness.StatusMsg) 
 func (l *Liveness) Flush(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	l.Memory.Reset()
 	l.Logs.Reset()
-	l.Memory.SetStatus(true)
-	l.Memory.SetByzantine(false)
 
 	return &emptypb.Empty{}, nil
 }

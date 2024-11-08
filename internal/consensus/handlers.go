@@ -184,7 +184,9 @@ func (c *Consensus) timerHandler() {
 		// start view change
 		if !c.inViewChangeMode {
 			c.inViewChangeMode = true
-			c.newViewChangeGadget()
+			c.logger.Debug("timeout starting gadget")
+			c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
+			go c.newViewChangeGadget()
 		}
 	}
 }
@@ -196,13 +198,24 @@ func (c *Consensus) viewChangeHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktVC]
 		msg := raw.Payload.(*pbft.ViewChangeMsg)
 
+		c.logger.Debug("new view change", zap.Int64("view", msg.GetView()), zap.String("from", msg.GetNodeId()))
+
 		// check the destination
 		if !c.inViewChangeMode {
 			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
+			c.logger.Debug("append view change")
+
+			if msg.GetView() == int64(c.memory.GetView()) {
+				c.logger.Debug("previous message received")
+				continue
+			}
+
 			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
 				c.inViewChangeMode = true
-				c.newViewChangeGadget()
+				c.logger.Debug("f+1 messages starting gadget")
+				c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
+				go c.newViewChangeGadget()
 			}
 		} else {
 			if c.viewChangeGadgetChannel != nil {

@@ -109,11 +109,11 @@ func (a Application) terminal(app *application.App) {
 					app.Transaction(trx)
 				}
 
-				for key := range a.Cfg.GetNodes() {
-					app.Client().ChangeState(key, true, false)
-				}
-
 				index++
+			}
+		case "unblock":
+			for key := range a.Cfg.GetNodes() {
+				app.Client().ChangeState(key, true, false)
 			}
 		case "printlog":
 			for _, item := range app.Client().PrintLog(parts[1]) {

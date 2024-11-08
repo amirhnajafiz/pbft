@@ -25,6 +25,7 @@ func (a *App) transactionHandler(client string) {
 
 		// call requestHandler
 		resp := a.requestHandler(
+			client,
 			&pbft.TransactionMsg{
 				Sender:    trx.Sender,
 				Reciever:  trx.Receiver,
@@ -41,7 +42,7 @@ func (a *App) transactionHandler(client string) {
 }
 
 // requestHandler gets a transaction and starts PBFT procedures.
-func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
+func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	// create a pbft request
 	req := &pbft.RequestMsg{
 		Transaction:    trx,
@@ -51,6 +52,9 @@ func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 	}
 
 	currentLeader := a.getCurrentLeader() // get current leader id
+
+	a.handlers[client] = make(chan *app.ReplyMsg, a.cfg.Total) // get our channel
+	ch := a.handlers[client]
 
 	// send the request
 	if err := a.cli.Request(currentLeader, req); err != nil {
@@ -74,7 +78,7 @@ func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 	}
 
 	// handle the reply
-	resp, err := a.replyHandler(trx)
+	resp, err := a.replyHandler(ch, trx)
 	if err != nil {
 		a.logger.Debug("request blocked or got timeout", zap.Error(err))
 
@@ -95,13 +99,26 @@ func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 		}
 
 		// again, wait for replys
-		resp, err = a.replyHandler(trx)
+		resp, err = a.replyHandler(ch, trx)
 		if err != nil {
 			a.logger.Debug("servers are not responding", zap.Error(err))
 
 			return "servers are not responding"
 		}
 	}
+
+	// empty the channel
+	go func(key string) {
+		for {
+			select {
+			case <-ch:
+				continue
+			default:
+				delete(a.clients, key)
+				return
+			}
+		}
+	}(client)
 
 	// update the view
 	a.memory.SetView(int(resp.GetView()))
@@ -110,16 +127,13 @@ func (a *App) requestHandler(trx *pbft.TransactionMsg) string {
 }
 
 // replyHandler waits for f+1 messages. it will raise an error if it get's timeout.
-func (a *App) replyHandler(trx *pbft.TransactionMsg) (*app.ReplyMsg, error) {
+func (a *App) replyHandler(ch chan *app.ReplyMsg, trx *pbft.TransactionMsg) (*app.ReplyMsg, error) {
 	// create a map
 	replyMap := make(map[int]*app.ReplyMsg)
 	countMap := make(map[int]int)
 
 	// create a new timer
 	timer := time.NewTimer(time.Duration(a.cfg.RequestTimeout) * time.Millisecond)
-
-	// get the response channel
-	ch := a.handlers[trx.GetSender()]
 
 	// reply handler loop
 	for {

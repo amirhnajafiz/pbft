@@ -50,8 +50,6 @@ func NewApp(
 	// for each client, run a transaction handler
 	for key := range clients {
 		a.clients[key] = make(chan *models.Transaction)
-		a.handlers[key] = make(chan *app.ReplyMsg)
-
 		go a.transactionHandler(key)
 	}
 

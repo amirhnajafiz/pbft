@@ -107,8 +107,18 @@ func (c *Consensus) commitHandler() {
 			zap.Int("sequence number", raw.Sequence),
 		)
 
+		// send the sequence to the execute handler
+		c.executionChannel <- raw.Sequence
+	}
+}
+
+// executeHandler gets sequence numbers from handlers and executes a request.
+func (c *Consensus) executeHandler() {
+	for {
+		seq := <-c.executionChannel
+
 		// execute the request
-		c.newExecutionGadget(raw.Sequence)
+		c.newExecutionGadget(seq)
 	}
 }
 
@@ -199,6 +209,6 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// update our own status
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
-	// execute our own requests
-	c.newExecutionGadget(sequence)
+	// send the sequence to the execute handler
+	c.executionChannel <- sequence
 }

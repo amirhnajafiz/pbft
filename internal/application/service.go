@@ -17,7 +17,9 @@ type service struct {
 
 // Reply RPC forwards the reply message to the apps request handlers.
 func (s *service) Reply(ctx context.Context, msg *app.ReplyMsg) (*emptypb.Empty, error) {
-	s.channels[msg.GetSender()] <- msg
+	if ch, ok := s.channels[msg.GetSender()]; ok {
+		ch <- msg
+	}
 
 	return &emptypb.Empty{}, nil
 }

@@ -21,6 +21,8 @@ type Consensus struct {
 	communication *modules.Communication
 	waiter        *modules.Waiter
 
+	executionChannel chan int // execution channel is the execution handler input channel
+
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
 }
@@ -53,10 +55,14 @@ func NewConsensus(
 		enum.PktCmt: make(chan *models.Packet, cfg.Total), // size of total
 	}
 
-	// start handlers go-routines
+	// create side channels
+	c.executionChannel = make(chan int)
+
+	// start handlers in go-routines
 	go c.preprepareHandler()
 	go c.prepareHandler()
 	go c.commitHandler()
+	go c.executeHandler()
 
 	return c
 }
@@ -70,9 +76,9 @@ func (c *Consensus) SignalToHandlers(pkt *models.Packet) {
 
 // SignalToReqHandlers sends a packet from gRPC level to request handlers without waiting for a response.
 func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
-	if ch, ok := c.requestsHandlersTable[pkt.Sequence]; ok {
+	if pkt.Type == enum.PktReq {
+		go c.requestHandler(pkt)
+	} else if ch, ok := c.requestsHandlersTable[pkt.Sequence]; ok {
 		ch <- pkt // if the request handler exists, pass the packet to it
-	} else if pkt.Type == enum.PktReq {
-		go c.requestHandler(pkt) // if a new request is arrived create handler
 	}
 }

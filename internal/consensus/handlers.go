@@ -180,5 +180,25 @@ func (c *Consensus) timerHandler() {
 	for {
 		c.viewTimer.Notify()
 		c.logger.Debug("timer expired")
+
+		// start view change
+		if c.viewChangeChannel == nil {
+			c.newViewChangeGadget()
+		}
+	}
+}
+
+// viewChangeHandler waits for f+1 view changes, then it will start view change procedure.
+func (c *Consensus) viewChangeHandler() {
+	for {
+		// capture view change messages
+		msg := c.consensusHandlersTable[enum.PktCmt]
+
+		// check the destination
+		if c.viewChangeChannel == nil {
+			c.logs.AppendViewChange(0, msg)
+		} else {
+			c.viewChangeChannel <- msg
+		}
 	}
 }

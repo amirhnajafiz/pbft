@@ -22,6 +22,15 @@ func (l *Logs) GetAllRequests() []*pbft.RequestMsg {
 	return list
 }
 
+// GetViewChanges returns a list of stored view changes.
+func (l *Logs) GetViewChanges(view int) []interface{} {
+	if list, ok := l.viewChanges[view]; ok {
+		return list
+	}
+
+	return nil
+}
+
 // GetLogs returns the node datalog.
 func (l *Logs) GetLogs() []string {
 	return l.logs

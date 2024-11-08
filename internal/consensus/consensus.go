@@ -24,7 +24,8 @@ type Consensus struct {
 	waiter        *modules.Waiter
 	viewTimer     *modules.Timer
 
-	executionChannel chan int // execution channel is the execution handler input channel
+	executionChannel  chan int         // execution channel is the execution handler input channel
+	viewChangeChannel chan interface{} // view change channel is used to send view change messages to its gadget
 
 	consensusHandlersTable map[enum.PacketType]chan *models.Packet // a map of consensus handlers and their input channels
 	requestsHandlersTable  map[int]chan *models.Packet             // a map of requests handlers and their input channels
@@ -68,6 +69,7 @@ func NewConsensus(
 	go c.commitHandler()
 	go c.executeHandler()
 	go c.timerHandler()
+	go c.viewChangeHandler()
 
 	return c
 }

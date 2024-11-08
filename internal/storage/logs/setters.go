@@ -31,6 +31,15 @@ func (l *Logs) AppendLog(prefix, log string) {
 	l.logs = append(l.logs, fmt.Sprintf("[%s] %s", prefix, log))
 }
 
+// AppendViewChange gets all view change messages and stores them.
+func (l *Logs) AppendViewChange(view int, msg interface{}) {
+	if _, ok := l.viewChanges[view]; !ok {
+		l.viewChanges[view] = make([]interface{}, 0)
+	}
+
+	l.viewChanges[view] = append(l.viewChanges[view], msg)
+}
+
 // Reset turns the values back to initial state.
 func (l *Logs) Reset() {
 	l.datastore = make(map[int]*pbft.RequestMsg)

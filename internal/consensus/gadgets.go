@@ -53,3 +53,20 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 		}
 	}
 }
+
+// newViewChangeGadget gets a count number of view-change messages and starts view change procedure.
+func (c *Consensus) newViewChangeGadget() {
+	// change the view to stop processing requests
+	c.memory.IncView()
+
+	// create a view change message and send it to others
+
+	// wait for 2f+1 messages
+	if c.getCurrentLeader() == c.memory.GetNodeId() {
+		c.newLeaderGadget()
+	}
+}
+
+func (c *Consensus) newLeaderGadget() {
+	// send new-view messages
+}

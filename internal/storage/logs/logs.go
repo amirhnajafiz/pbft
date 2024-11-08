@@ -8,8 +8,9 @@ import (
 
 // Logs is a memory type that stores the node's logs and datastore.
 type Logs struct {
-	logs      []string
-	datastore map[int]*pbft.RequestMsg
+	logs        []string
+	datastore   map[int]*pbft.RequestMsg
+	viewChanges map[int][]interface{}
 
 	lock sync.Mutex
 
@@ -19,9 +20,10 @@ type Logs struct {
 // NewLogs returns a new logs instance.
 func NewLogs() *Logs {
 	return &Logs{
-		lock:      sync.Mutex{},
-		logs:      make([]string, 0),
-		datastore: make(map[int]*pbft.RequestMsg),
-		index:     0,
+		lock:        sync.Mutex{},
+		logs:        make([]string, 0),
+		datastore:   make(map[int]*pbft.RequestMsg),
+		viewChanges: make(map[int][]interface{}),
+		index:       0,
 	}
 }

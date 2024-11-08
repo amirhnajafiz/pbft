@@ -5,6 +5,7 @@ import (
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+
 	"go.uber.org/zap"
 )
 
@@ -24,6 +25,9 @@ func (c *Consensus) preprepareHandler() {
 		// update the request and set the status of preprepared
 		c.logs.SetRequest(raw.Sequence, msg.GetRequest())
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+
+		// start the timer
+		c.viewTimer.Start(true)
 
 		// call preprepared RPC to notify the sender
 		c.communication.Client().PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
@@ -76,6 +80,9 @@ func (c *Consensus) commitHandler() {
 		// update the request and set the status of prepare
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
+		// stop the timer
+		c.viewTimer.Stop(true)
+
 		// send the sequence to the execute handler
 		c.executionChannel <- raw.Sequence
 	}
@@ -97,8 +104,10 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	msg := pkt.Payload.(*pbft.RequestMsg)
 
 	// check if we had a request with the given timestamp
-	if req := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
-		c.communication.SendReplyMsg(req, c.memory.GetView())
+	if req, ok := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
+		if ok {
+			c.communication.SendReplyMsg(req, c.memory.GetView())
+		}
 
 		return
 	}
@@ -107,6 +116,9 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	if c.getCurrentLeader() != c.memory.GetNodeId() {
 		// send the request to leader
 		c.communication.Client().Request(c.getCurrentLeader(), msg)
+
+		// start the timer
+		c.viewTimer.Start(false)
 
 		return
 	}
@@ -163,7 +175,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 // timerHandler creates a new timer and monitors the timer.
 func (c *Consensus) timerHandler() {
 	// stop the timer so that others can start it
-	c.viewTimer.Stop()
+	c.viewTimer.Stop(false)
 
 	for {
 		c.viewTimer.Notify()

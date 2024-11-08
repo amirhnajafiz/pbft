@@ -41,3 +41,4 @@ node:
     majority: 3
     responses: 2
     majority_timeout: 100 # in milliseconds
+    view_timeout: 1 # in seconds

@@ -24,14 +24,18 @@ func (c *Consensus) validateMsg(digest, msgDigest string, msgView int64) bool {
 }
 
 // checkRequestExecution checks the timestamps to see if a request is executed or not.
-func (c *Consensus) checkRequestExecution(ts int64) *pbft.RequestMsg {
+func (c *Consensus) checkRequestExecution(ts int64) (*pbft.RequestMsg, bool) {
 	for _, key := range c.logs.GetAllRequests() {
-		if key.GetTransaction().GetTimestamp() == ts && key.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
-			return key
+		if key.GetTransaction().GetTimestamp() == ts {
+			if key.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+				return key, true
+			} else {
+				return key, false
+			}
 		}
 	}
 
-	return nil
+	return nil, false
 }
 
 // canExecuteRequest gets a sequence number and checks if all requests before that are executed or not.

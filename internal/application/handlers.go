@@ -115,7 +115,7 @@ func (a *App) replyHandler(ch chan *app.ReplyMsg, trx *pbft.TransactionMsg) (*ap
 	countMap := make(map[int]int)
 
 	// create a new timer
-	timer := time.NewTimer(time.Duration(a.cfg.RequestTimeout) * time.Millisecond)
+	timer := time.NewTimer(time.Duration(a.cfg.RequestTimeout) * time.Second)
 
 	// reply handler loop
 	for {

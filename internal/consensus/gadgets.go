@@ -16,7 +16,7 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	}
 
 	// get the digest of input request
-	digest := hashing.MD5(message)
+	digest := hashing.MD5Req(message)
 
 	// validate the message
 	if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {

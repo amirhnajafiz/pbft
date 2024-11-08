@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"fmt"
+
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
@@ -26,6 +28,7 @@ func (c *Communication) Client() *client.Client {
 
 // SendReplyMsg gets a request message and uses client.go to send a reply message.
 func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
+	fmt.Printf("replying seq %d, ts %d to %s\n", msg.GetSequenceNumber(), msg.Transaction.GetTimestamp(), msg.GetClientId())
 	c.cli.Reply(
 		msg.GetClientId(),
 		&app.ReplyMsg{
@@ -45,7 +48,7 @@ func (c *Communication) SendPreprepareMsg(msg *pbft.RequestMsg, view int) {
 		Request:        msg,
 		SequenceNumber: msg.GetSequenceNumber(),
 		View:           int64(view),
-		Digest:         hashing.MD5(msg),
+		Digest:         hashing.MD5Req(msg),
 	})
 }
 
@@ -54,7 +57,7 @@ func (c *Communication) SendPrepareMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.BroadcastPrepare(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
 		View:           int64(view),
-		Digest:         hashing.MD5(msg),
+		Digest:         hashing.MD5Req(msg),
 	})
 }
 
@@ -63,7 +66,7 @@ func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.BroadcastCommit(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
 		View:           int64(view),
-		Digest:         hashing.MD5(msg),
+		Digest:         hashing.MD5Req(msg),
 	})
 }
 

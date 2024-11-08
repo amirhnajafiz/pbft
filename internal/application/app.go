@@ -25,6 +25,7 @@ type App struct {
 
 	clients  map[string]chan *models.Transaction // for each client there is go-routine that accepts using these channels
 	handlers map[string]chan *app.ReplyMsg       // handlers is a channel to get gRPC messages
+	replys   chan *app.ReplyMsg                  // a big buffer to keep all replys
 }
 
 // NewApp returns a new app instance.
@@ -46,12 +47,16 @@ func NewApp(
 	// initial channels
 	a.clients = make(map[string]chan *models.Transaction)
 	a.handlers = make(map[string]chan *app.ReplyMsg)
+	a.replys = make(chan *app.ReplyMsg, len(clients)*cfg.Total)
 
 	// for each client, run a transaction handler
 	for key := range clients {
 		a.clients[key] = make(chan *models.Transaction)
 		go a.transactionHandler(key)
 	}
+
+	// start the grpc handler
+	go a.gRPCHandler()
 
 	return a
 }
@@ -81,7 +86,7 @@ func (a *App) Service(port int, tlsConfig *tls.Config) error {
 
 	// register all gRPC services
 	app.RegisterAppServer(server, &service{
-		channels: a.handlers,
+		channels: a.replys,
 	})
 
 	// starting the server

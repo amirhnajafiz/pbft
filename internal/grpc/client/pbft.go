@@ -111,7 +111,7 @@ func (c *Client) Prepared(target string, msg *pbft.AckMsg) error {
 // Request calls the Request RPC on the target machine (clients to nodes).
 func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	address := c.nodes[target]
-	msg.ClientId = c.nodeId
+	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)

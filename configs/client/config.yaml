@@ -40,5 +40,5 @@ node:
     total: 4
     majority: 3
     responses: 2
-    request_timeout: 10 # in seconds
+    request_timeout: 6 # in seconds
     majority_timeout: 100 # in milliseconds

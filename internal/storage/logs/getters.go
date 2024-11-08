@@ -12,14 +12,8 @@ func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
 }
 
 // GetAllRequests returns an array of the node requests.
-func (l *Logs) GetAllRequests() []*pbft.RequestMsg {
-	list := make([]*pbft.RequestMsg, len(l.datastore))
-
-	for key, value := range l.datastore {
-		list[key] = value
-	}
-
-	return list
+func (l *Logs) GetAllRequests() map[int]*pbft.RequestMsg {
+	return l.datastore
 }
 
 // GetViewChanges returns a list of stored view changes.

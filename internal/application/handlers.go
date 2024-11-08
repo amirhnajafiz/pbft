@@ -18,7 +18,7 @@ func (a *App) transactionHandler(client string) {
 		// get a timestamp
 		ts := a.memory.GetTimestamp()
 
-		fmt.Printf("processing (%s, %s, %d)\n", trx.Sender, trx.Receiver, trx.Amount)
+		fmt.Printf("%d processing (%s, %s, %d)\n", ts, trx.Sender, trx.Receiver, trx.Amount)
 
 		// call requestHandler
 		resp := a.requestHandler(
@@ -31,7 +31,7 @@ func (a *App) transactionHandler(client string) {
 			},
 		)
 
-		fmt.Printf("done (%s, %s, %d) at %d : `%s`\n", trx.Sender, trx.Receiver, trx.Amount, ts, resp)
+		fmt.Printf("%d done (%s, %s, %d): `%s`\n", ts, trx.Sender, trx.Receiver, trx.Amount, resp)
 	}
 }
 
@@ -89,6 +89,7 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 // replyHandler waits for f+1 messages. it will raise an error if it get's timeout.
 func (a *App) replyHandler(ch chan *app.ReplyMsg, trx *pbft.TransactionMsg) (*app.ReplyMsg, error) {
 	// create a map
+	hashMap := make(map[string]bool)
 	replyMap := make(map[int]*app.ReplyMsg)
 	countMap := make(map[int]int)
 
@@ -105,6 +106,14 @@ func (a *App) replyHandler(ch chan *app.ReplyMsg, trx *pbft.TransactionMsg) (*ap
 				continue
 			}
 
+			// drop redundunt messages from servers
+			node := reply.GetNodeId()
+			if _, ok := hashMap[node]; ok {
+				continue
+			}
+
+			hashMap[node] = true
+
 			// a logic to count the number of unique replys
 			key := int(reply.GetTimestamp() + reply.GetSequenceNumber())
 			if _, ok := countMap[key]; !ok {
@@ -119,6 +128,21 @@ func (a *App) replyHandler(ch chan *app.ReplyMsg, trx *pbft.TransactionMsg) (*ap
 					return replyMap[key], nil
 				}
 			}
+		}
+	}
+}
+
+// gRPCHandler dispatchs all reply messages to their handlers.
+func (a *App) gRPCHandler() {
+	for {
+		// get the message from replys
+		msg := <-a.replys
+
+		fmt.Println(msg.String())
+
+		// publish to the right handler
+		if ch, ok := a.handlers[msg.GetSender()]; ok {
+			ch <- msg
 		}
 	}
 }

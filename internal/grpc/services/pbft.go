@@ -73,6 +73,13 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, 
 	return &emptypb.Empty{}, nil
 }
 
+func (p *PBFT) ViewChange(ctx context.Context, msg *pbft.ViewChangeMsg) (*emptypb.Empty, error) {
+	p.Logs.AppendLog("ViewChange", msg.String())
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktVC, int(msg.GetSequenceNumber())))
+
+	return &emptypb.Empty{}, nil
+}
+
 // PrintDB returns the current datastore of this node.
 func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 	ds := p.Logs.GetAllRequests()

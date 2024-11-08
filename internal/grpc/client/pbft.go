@@ -128,6 +128,26 @@ func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	return nil
 }
 
+// ViewChange calls the view change RPC on the target machine (nodes to nodes).
+func (c *Client) ViewChange(target string, msg *pbft.ViewChangeMsg) error {
+	address := c.nodes[target]
+	msg.NodeId = c.nodeId
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call view change RPC
+	if _, err := pbft.NewPBFTClient(conn).ViewChange(context.Background(), msg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // PrintDB gets a target datastore.
 func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
 	address := c.nodes[target]

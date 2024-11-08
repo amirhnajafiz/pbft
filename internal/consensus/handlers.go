@@ -1,8 +1,6 @@
 package consensus
 
 import (
-	"fmt"
-
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -107,10 +105,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	// check if we had a request with the given timestamp
 	if req, ok := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
-		c.logger.Debug("request is already executed", zap.Int64("sequece", req.GetSequenceNumber()), zap.Int64("ts", req.Transaction.GetTimestamp()))
 		if ok {
-			c.logger.Debug("an executed request reply is sent")
-			fmt.Println(req.String())
 			c.communication.SendReplyMsg(req, c.memory.GetView())
 		}
 

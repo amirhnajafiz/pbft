@@ -35,3 +35,22 @@ func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 func (l *Logs) GetLogs() []string {
 	return l.logs
 }
+
+// GetSequenceNumber returns the minimun executed sequence number.
+func (l *Logs) GetSequenceNumber() int {
+	index := 0
+
+	for {
+		if req := l.GetRequest(index); req == nil {
+			break
+		} else {
+			if req.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+				index++
+			} else {
+				break
+			}
+		}
+	}
+
+	return index
+}

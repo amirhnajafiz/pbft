@@ -62,7 +62,8 @@ func (c *Consensus) newViewChangeGadget() {
 	// change the view to stop processing requests
 	c.memory.IncView()
 
-	// create a view change message and send it to others
+	// send a view change message
+	c.communication.SendViewChangeMsg(c.memory.GetView(), c.logs.GetSequenceNumber())
 
 	// wait for 2f+1 messages
 

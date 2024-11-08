@@ -24,7 +24,7 @@ func (c *Communication) Client() *client.Client {
 	return c.cli
 }
 
-// sendReplyMsg gets a request message and uses client.go to send a reply message.
+// SendReplyMsg gets a request message and uses client.go to send a reply message.
 func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.Reply(
 		msg.GetClientId(),
@@ -39,7 +39,7 @@ func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 	)
 }
 
-// sendPreprepareMsg gets a request message and uses client.go to broadcast a preprepare message.
+// SendPreprepareMsg gets a request message and uses client.go to broadcast a preprepare message.
 func (c *Communication) SendPreprepareMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.BroadcastPrePrepare(&pbft.PrePrepareMsg{
 		Request:        msg,
@@ -49,7 +49,7 @@ func (c *Communication) SendPreprepareMsg(msg *pbft.RequestMsg, view int) {
 	})
 }
 
-// sendPrepareMsg gets a request message and uses client.go to broadcast a prepare message.
+// SendPrepareMsg gets a request message and uses client.go to broadcast a prepare message.
 func (c *Communication) SendPrepareMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.BroadcastPrepare(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
@@ -58,11 +58,19 @@ func (c *Communication) SendPrepareMsg(msg *pbft.RequestMsg, view int) {
 	})
 }
 
-// sendCommitMsg gets a request message and uses client.go to broadcast a commit message.
+// SendCommitMsg gets a request message and uses client.go to broadcast a commit message.
 func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
 	c.cli.BroadcastCommit(&pbft.AckMsg{
 		SequenceNumber: msg.GetSequenceNumber(),
 		View:           int64(view),
 		Digest:         hashing.MD5(msg),
+	})
+}
+
+// SendViewChangeMsg gets view and sequence and uses client.go to broadcase a view change message.
+func (c *Communication) SendViewChangeMsg(view, sequence int) {
+	c.cli.BroadcastViewChange(&pbft.ViewChangeMsg{
+		View:           int64(view),
+		SequenceNumber: int64(sequence),
 	})
 }

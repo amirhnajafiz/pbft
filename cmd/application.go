@@ -11,6 +11,7 @@ import (
 	"github.com/f24-cse535/pbft/internal/config"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/storage/local"
+	"github.com/f24-cse535/pbft/internal/utils/lists"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
 
 	"go.uber.org/zap"
@@ -96,9 +97,20 @@ func (a Application) terminal(app *application.App) {
 			os.Exit(0)
 		case "next":
 			if index < len(ts) {
+				tc := ts[index]
+
+				for key := range a.Cfg.GetNodes() {
+					app.Client().Flush(key)
+					app.Client().ChangeState(key, lists.IsInList(key, tc.LiveServers), lists.IsInList(key, tc.ByzantineServers))
+				}
+
 				fmt.Printf("running set %d\n", index)
-				for _, trx := range ts[index].Transactions {
+				for _, trx := range tc.Transactions {
 					app.Transaction(trx)
+				}
+
+				for key := range a.Cfg.GetNodes() {
+					app.Client().ChangeState(key, true, false)
 				}
 
 				index++

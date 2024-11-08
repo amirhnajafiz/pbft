@@ -117,7 +117,7 @@ func (a Application) terminal(app *application.App) {
 			}
 		case "printlog":
 			for _, item := range app.Client().PrintLog(parts[1]) {
-				fmt.Println(item)
+				fmt.Printf("- %s\n", item)
 			}
 		case "printdb":
 			for _, item := range app.Client().PrintDB(parts[1]) {

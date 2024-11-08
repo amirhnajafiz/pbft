@@ -7,15 +7,12 @@ import (
 
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
-	"go.uber.org/zap"
 )
 
 // transactionHandler gets client transactions and call request handler.
 func (a *App) transactionHandler(client string) {
 	// timestamp variable
 	ts := 10
-
-	a.logger.Debug("transaction handler started", zap.String("client", client))
 
 	for {
 		// get model transactions
@@ -58,21 +55,16 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 
 	// send the request
 	if err := a.cli.Request(currentLeader, req); err != nil {
-		a.logger.Debug("failed to send the request", zap.String("leader", currentLeader))
-
 		// send the request to all servers
 		count := 0
 		for key := range a.cli.GetSystemNodes() {
-			if er := a.cli.Request(key, req); er != nil {
-				a.logger.Debug("failed to resend the request", zap.String("target", key))
-			} else {
+			if er := a.cli.Request(key, req); er == nil {
 				count++
 			}
 		}
 
 		// if the number of live servers is less than 2f+1, then raise an error
 		if count < a.cfg.Majority {
-			a.logger.Debug("majority of servers are unavailable", zap.Int("servers", count))
 			return "not enough servers are available"
 		}
 	}
@@ -80,29 +72,22 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	// handle the reply
 	resp, err := a.replyHandler(ch, trx)
 	if err != nil {
-		a.logger.Debug("request blocked or got timeout", zap.Error(err))
-
 		// send the request to all servers
 		count := 0
 		for key := range a.cli.GetSystemNodes() {
-			if er := a.cli.Request(key, req); er != nil {
-				a.logger.Debug("failed to resend the request", zap.String("target", key))
-			} else {
+			if er := a.cli.Request(key, req); er == nil {
 				count++
 			}
 		}
 
 		// if the number of live servers is less than 2f+1, then raise an error
 		if count < a.cfg.Majority {
-			a.logger.Debug("majority of servers are unavailable", zap.Int("servers", count))
 			return "not enough servers are available"
 		}
 
 		// again, wait for replys
 		resp, err = a.replyHandler(ch, trx)
 		if err != nil {
-			a.logger.Debug("servers are not responding", zap.Error(err))
-
 			return "servers are not responding"
 		}
 	}
@@ -114,7 +99,7 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 			case <-ch:
 				continue
 			default:
-				delete(a.clients, key)
+				delete(a.handlers, key)
 				return
 			}
 		}

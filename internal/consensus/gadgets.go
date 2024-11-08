@@ -60,8 +60,6 @@ func (c *Consensus) newViewChangeGadget() {
 	c.memory.IncView()
 	view := c.memory.GetView()
 
-	c.logger.Debug("in view change gadget", zap.Int64("view", int64(view)))
-
 	// send a view change message
 	c.communication.SendViewChangeMsg(view, c.logs.GetSequenceNumber())
 
@@ -81,7 +79,7 @@ func (c *Consensus) newViewChangeGadget() {
 
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
-		c.logger.Debug("i am a new leader and I got it")
+		c.logger.Debug("new leader", zap.String("id", c.memory.GetNodeId()))
 		c.newLeaderGadget()
 	}
 }

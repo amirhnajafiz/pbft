@@ -5,6 +5,7 @@ import (
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+	"go.uber.org/zap"
 )
 
 // preprepareHandler gets gRPC packets of type PP and handles them.
@@ -123,6 +124,8 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	// store it into datastore
 	c.logs.SetRequest(sequence, msg)
+
+	c.logger.Info("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
 	// send preprepare messages
 	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())

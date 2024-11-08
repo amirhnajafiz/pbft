@@ -29,3 +29,13 @@ func (m *Memory) GetNodeByIndex(index int) string {
 func (m *Memory) GetBalance(key string) int {
 	return m.balances[key]
 }
+
+// GetTimestamp returns a unique timestamp.
+func (m *Memory) GetTimestamp() int {
+	m.tslock.Lock()
+	value := m.timestamp
+	m.timestamp++
+	m.tslock.Unlock()
+
+	return value
+}

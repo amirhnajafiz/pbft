@@ -11,12 +11,12 @@ import (
 
 // transactionHandler gets client transactions and call request handler.
 func (a *App) transactionHandler(client string) {
-	// timestamp variable
-	ts := 10
-
 	for {
 		// get model transactions
 		trx := <-a.clients[client]
+
+		// get a timestamp
+		ts := a.memory.GetTimestamp()
 
 		fmt.Printf("processing (%s, %s, %d)\n", trx.Sender, trx.Receiver, trx.Amount)
 
@@ -32,9 +32,6 @@ func (a *App) transactionHandler(client string) {
 		)
 
 		fmt.Printf("done (%s, %s, %d) at %d : `%s`\n", trx.Sender, trx.Receiver, trx.Amount, ts, resp)
-
-		// increase timestamp
-		ts++
 	}
 }
 

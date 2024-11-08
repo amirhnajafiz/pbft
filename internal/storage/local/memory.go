@@ -10,7 +10,9 @@ type Memory struct {
 	view       int    // systems view
 	totalNodes int    // number of total-nodes
 
-	lock sync.Mutex
+	timestamp int
+	tslock    sync.Mutex
+	lock      sync.Mutex
 
 	balances map[string]int // balances is the holder for clients and their balance value
 	nodes    map[int]string // nodes is map used for tracking leaders
@@ -20,10 +22,12 @@ type Memory struct {
 func NewMemory(nodeId string, totalNodes int) *Memory {
 	return &Memory{
 		lock:       sync.Mutex{},
+		tslock:     sync.Mutex{},
 		status:     true,  // the init status of node is true
 		byzantine:  false, // the init behavior node is non-byzantine
 		nodeId:     nodeId,
 		view:       0,
 		totalNodes: totalNodes,
+		timestamp:  10,
 	}
 }

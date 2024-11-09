@@ -62,6 +62,8 @@ node:
   port: 5003
   node_id: S3
   bft: # pbft configs
+    k_watermark: 10
+    checkpoint: 2
     total: 7
     majority: 5
     responses: 3

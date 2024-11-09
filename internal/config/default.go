@@ -16,6 +16,8 @@ func Default() Config {
 			Port:   80,
 			NodeId: "unique",
 			BFT: bft.Config{
+				KWatermark:        0,
+				Checkpoint:        0,
 				Total:             0,
 				Majority:          0,
 				Responses:         0,

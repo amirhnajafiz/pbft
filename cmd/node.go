@@ -24,7 +24,7 @@ type Node struct {
 
 func (n Node) Main() error {
 	// create a memory instance
-	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total)
+	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total, n.Cfg.Node.BFT.KWatermark)
 	mem.SetBalances(n.Cfg.GetClients())
 	mem.SetNodes(n.Cfg.GetNodesMeta())
 

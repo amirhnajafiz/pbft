@@ -10,6 +10,9 @@ type Memory struct {
 	view       int    // systems view
 	totalNodes int    // number of total-nodes
 
+	kvalue int // the distance between low and high water marks
+	lowWm  int // low water mark
+
 	timestamp int
 	tslock    sync.Mutex
 	lock      sync.Mutex
@@ -19,7 +22,7 @@ type Memory struct {
 }
 
 // NewMemory returns an instance of the memory struct.
-func NewMemory(nodeId string, totalNodes int) *Memory {
+func NewMemory(nodeId string, totalNodes int, kvalue int) *Memory {
 	return &Memory{
 		lock:       sync.Mutex{},
 		tslock:     sync.Mutex{},
@@ -29,5 +32,7 @@ func NewMemory(nodeId string, totalNodes int) *Memory {
 		view:       0,
 		totalNodes: totalNodes,
 		timestamp:  10,
+		kvalue:     kvalue,
+		lowWm:      0,
 	}
 }

@@ -1,6 +1,8 @@
 package logs
 
 import (
+	"math"
+
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
@@ -54,9 +56,7 @@ func (l *Logs) GetLogs() []string {
 }
 
 // GetSequenceNumber returns the minimun executed sequence number.
-func (l *Logs) GetSequenceNumber() int {
-	index := 0
-
+func (l *Logs) GetSequenceNumber(index int) int {
 	for {
 		if req := l.GetRequest(index); req == nil {
 			break
@@ -73,11 +73,13 @@ func (l *Logs) GetSequenceNumber() int {
 }
 
 // GetPreprepares returns a list of preprepare messages from the given sequence.
-func (l *Logs) GetPreprepares(from int) []*pbft.PrePrepareMsg {
+func (l *Logs) GetPreprepares(from int, index int) []*pbft.PrePrepareMsg {
 	list := make([]*pbft.PrePrepareMsg, 0)
 
+	limit := int(math.Max(float64(from), float64(l.index)))
+
 	for key, value := range l.datastore {
-		if key >= from && value.Request.GetStatus() > pbft.RequestStatus_REQUEST_STATUS_PP {
+		if key >= limit && value.Request.GetStatus() > pbft.RequestStatus_REQUEST_STATUS_PP {
 			list = append(list, value.PrePrepare)
 		}
 	}

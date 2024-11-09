@@ -15,6 +15,7 @@ func (m *Memory) Reset() {
 	m.status = true
 	m.byzantine = false
 	m.view = 0
+	m.lowWm = 0
 
 	for key := range m.balances {
 		m.balances[key] = 10
@@ -56,4 +57,11 @@ func (m *Memory) SetNodes(nodes map[string]int) {
 // SetBalance updates a client balance.
 func (m *Memory) SetBalance(key string, value int) {
 	m.balances[key] = value
+}
+
+// IncLowWaterMark increases low water mark by one point.
+func (m *Memory) IncLowWaterMark() {
+	m.lock.Lock()
+	m.lowWm++
+	m.lock.Unlock()
 }

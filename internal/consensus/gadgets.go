@@ -136,14 +136,15 @@ func (c *Consensus) newViewChangeGadget() error {
 	c.memory.IncView()
 
 	view := c.memory.GetView()
-	seq := c.logs.GetSequenceNumber()
+	lwm := c.memory.GetLowWaterMark()
+	seq := c.logs.GetSequenceNumber(lwm)
 
 	// create a new view change msg
 	message := pbft.ViewChangeMsg{
 		NodeId:         c.memory.GetNodeId(),
 		View:           int64(view),
 		SequenceNumber: int64(seq),
-		Preprepares:    c.logs.GetPreprepares(seq),
+		Preprepares:    c.logs.GetPreprepares(seq, lwm),
 	}
 
 	// sign the message
@@ -244,8 +245,9 @@ func (c *Consensus) newLeaderGadget() {
 	logsMap := make(map[int]*pbft.PrePrepareMsg)
 
 	// set the min and max
-	minSequence := c.logs.GetSequenceNumber()
-	maxSequence := c.logs.GetSequenceNumber()
+	lwm := c.memory.GetLowWaterMark()
+	minSequence := c.logs.GetSequenceNumber(lwm)
+	maxSequence := c.logs.GetSequenceNumber(lwm)
 
 	var (
 		message   *pbft.ViewChangeMsg

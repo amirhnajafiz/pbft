@@ -26,7 +26,7 @@ type Application struct {
 
 func (a Application) Main() error {
 	// create a memory instance
-	mem := local.NewMemory(a.Cfg.Node.NodeId, a.Cfg.Node.BFT.Total)
+	mem := local.NewMemory(a.Cfg.Node.NodeId, a.Cfg.Node.BFT.Total, 0)
 	mem.SetNodes(a.Cfg.GetNodesMeta())
 
 	// load tls configs

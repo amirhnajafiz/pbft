@@ -21,6 +21,7 @@ service PBFT {
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
   rpc PrintView(google.protobuf.Empty) returns (stream ViewRsp) {}
+  rpc PrintCheckpoints(google.protobuf.Empty) returns (stream CheckpointRsp) {}
 }
 
 // defining request status enum
@@ -69,12 +70,18 @@ message StatusMsg {
   int64 sequence_number = 1;
 }
 
+message CheckpointMsg {
+  int64 sequence_number = 1;
+  string node_id = 2;
+}
+
 message ViewChangeMsg {
   int64 view = 1;
   int64 sequence_number = 2;
   repeated PrePrepareMsg preprepares = 3;
   string node_id = 4;
   bytes signature = 5;
+  repeated CheckpointMsg checkpoints = 6;
 }
 
 message NewViewMsg {
@@ -84,11 +91,6 @@ message NewViewMsg {
   string node_id = 4;
   string message = 5;
   repeated bytes shares = 6;
-}
-
-message CheckpointMsg {
-  int64 sequence_number = 1;
-  string node_id = 2;
 }
 
 message LogRsp {
@@ -103,6 +105,11 @@ message ViewRsp {
   int64 view = 1;
   NewViewMsg new_view = 2;
   repeated ViewChangeMsg messages = 3;
+}
+
+message CheckpointRsp {
+  int64 sequence_number = 1;
+  repeated CheckpointMsg checkpoints = 2;
 }
 
 message TransactionRsp {

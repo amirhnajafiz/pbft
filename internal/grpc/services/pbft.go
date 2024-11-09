@@ -156,3 +156,20 @@ func (p *PBFT) PrintView(_ *emptypb.Empty, stream pbft.PBFT_PrintViewServer) err
 
 	return nil
 }
+
+// PrintCheckpoints exports the checkpoint messages of this node.
+func (p *PBFT) PrintCheckpoints(_ *emptypb.Empty, stream pbft.PBFT_PrintCheckpointsServer) error {
+	views := p.Logs.GetCheckpoints()
+
+	// publish views one by one
+	for key, value := range views {
+		if err := stream.Send(&pbft.CheckpointRsp{
+			SequenceNumber: int64(key),
+			Checkpoints:    value,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -152,6 +152,7 @@ func (c *Consensus) newViewChangeGadget() error {
 		View:           int64(view),
 		SequenceNumber: int64(seq),
 		Preprepares:    c.logs.GetPreprepares(seq, lwm),
+		Checkpoints:    c.logs.GetCheckpoints()[lwm],
 	}
 
 	// sign the message

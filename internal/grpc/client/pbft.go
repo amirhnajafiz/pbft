@@ -304,8 +304,43 @@ func (c *Client) PrintView(target string) []*pbft.ViewRsp {
 	}
 	defer conn.Close()
 
-	// open a stream on print db rpc
+	// open a stream on print view rpc
 	stream, err := pbft.NewPBFTClient(conn).PrintView(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return list
+	}
+
+	for {
+		// get messages one by one
+		in, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				stream.CloseSend()
+				break
+			}
+		}
+
+		// append to the list of requests
+		list = append(list, in)
+	}
+
+	return list
+}
+
+// PrintCheckpoints gets a target to print checkpoint messages.
+func (c *Client) PrintCheckpoints(target string) []*pbft.CheckpointRsp {
+	address := c.nodes[target]
+	list := make([]*pbft.CheckpointRsp, 0)
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return list
+	}
+	defer conn.Close()
+
+	// open a stream on print checkpoints rpc
+	stream, err := pbft.NewPBFTClient(conn).PrintCheckpoints(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return list
 	}

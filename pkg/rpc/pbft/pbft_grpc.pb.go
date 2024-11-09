@@ -20,19 +20,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PBFT_Request_FullMethodName     = "/pbft.PBFT/Request"
-	PBFT_PrePrepare_FullMethodName  = "/pbft.PBFT/PrePrepare"
-	PBFT_PrePrepared_FullMethodName = "/pbft.PBFT/PrePrepared"
-	PBFT_Prepare_FullMethodName     = "/pbft.PBFT/Prepare"
-	PBFT_Prepared_FullMethodName    = "/pbft.PBFT/Prepared"
-	PBFT_Commit_FullMethodName      = "/pbft.PBFT/Commit"
-	PBFT_ViewChange_FullMethodName  = "/pbft.PBFT/ViewChange"
-	PBFT_NewView_FullMethodName     = "/pbft.PBFT/NewView"
-	PBFT_Checkpoint_FullMethodName  = "/pbft.PBFT/Checkpoint"
-	PBFT_PrintLog_FullMethodName    = "/pbft.PBFT/PrintLog"
-	PBFT_PrintDB_FullMethodName     = "/pbft.PBFT/PrintDB"
-	PBFT_PrintStatus_FullMethodName = "/pbft.PBFT/PrintStatus"
-	PBFT_PrintView_FullMethodName   = "/pbft.PBFT/PrintView"
+	PBFT_Request_FullMethodName          = "/pbft.PBFT/Request"
+	PBFT_PrePrepare_FullMethodName       = "/pbft.PBFT/PrePrepare"
+	PBFT_PrePrepared_FullMethodName      = "/pbft.PBFT/PrePrepared"
+	PBFT_Prepare_FullMethodName          = "/pbft.PBFT/Prepare"
+	PBFT_Prepared_FullMethodName         = "/pbft.PBFT/Prepared"
+	PBFT_Commit_FullMethodName           = "/pbft.PBFT/Commit"
+	PBFT_ViewChange_FullMethodName       = "/pbft.PBFT/ViewChange"
+	PBFT_NewView_FullMethodName          = "/pbft.PBFT/NewView"
+	PBFT_Checkpoint_FullMethodName       = "/pbft.PBFT/Checkpoint"
+	PBFT_PrintLog_FullMethodName         = "/pbft.PBFT/PrintLog"
+	PBFT_PrintDB_FullMethodName          = "/pbft.PBFT/PrintDB"
+	PBFT_PrintStatus_FullMethodName      = "/pbft.PBFT/PrintStatus"
+	PBFT_PrintView_FullMethodName        = "/pbft.PBFT/PrintView"
+	PBFT_PrintCheckpoints_FullMethodName = "/pbft.PBFT/PrintCheckpoints"
 )
 
 // PBFTClient is the client API for PBFT service.
@@ -55,6 +56,7 @@ type PBFTClient interface {
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
 	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ViewRsp], error)
+	PrintCheckpoints(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CheckpointRsp], error)
 }
 
 type pBFTClient struct {
@@ -222,6 +224,25 @@ func (c *pBFTClient) PrintView(ctx context.Context, in *emptypb.Empty, opts ...g
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PBFT_PrintViewClient = grpc.ServerStreamingClient[ViewRsp]
 
+func (c *pBFTClient) PrintCheckpoints(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CheckpointRsp], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[3], PBFT_PrintCheckpoints_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[emptypb.Empty, CheckpointRsp]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintCheckpointsClient = grpc.ServerStreamingClient[CheckpointRsp]
+
 // PBFTServer is the server API for PBFT service.
 // All implementations must embed UnimplementedPBFTServer
 // for forward compatibility.
@@ -242,6 +263,7 @@ type PBFTServer interface {
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
 	PrintView(*emptypb.Empty, grpc.ServerStreamingServer[ViewRsp]) error
+	PrintCheckpoints(*emptypb.Empty, grpc.ServerStreamingServer[CheckpointRsp]) error
 	mustEmbedUnimplementedPBFTServer()
 }
 
@@ -290,6 +312,9 @@ func (UnimplementedPBFTServer) PrintStatus(context.Context, *StatusMsg) (*Status
 }
 func (UnimplementedPBFTServer) PrintView(*emptypb.Empty, grpc.ServerStreamingServer[ViewRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintView not implemented")
+}
+func (UnimplementedPBFTServer) PrintCheckpoints(*emptypb.Empty, grpc.ServerStreamingServer[CheckpointRsp]) error {
+	return status.Errorf(codes.Unimplemented, "method PrintCheckpoints not implemented")
 }
 func (UnimplementedPBFTServer) mustEmbedUnimplementedPBFTServer() {}
 func (UnimplementedPBFTServer) testEmbeddedByValue()              {}
@@ -525,6 +550,17 @@ func _PBFT_PrintView_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PBFT_PrintViewServer = grpc.ServerStreamingServer[ViewRsp]
 
+func _PBFT_PrintCheckpoints_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PBFTServer).PrintCheckpoints(m, &grpc.GenericServerStream[emptypb.Empty, CheckpointRsp]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PBFT_PrintCheckpointsServer = grpc.ServerStreamingServer[CheckpointRsp]
+
 // PBFT_ServiceDesc is the grpc.ServiceDesc for PBFT service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -587,6 +623,11 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "PrintView",
 			Handler:       _PBFT_PrintView_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PrintCheckpoints",
+			Handler:       _PBFT_PrintCheckpoints_Handler,
 			ServerStreams: true,
 		},
 	},

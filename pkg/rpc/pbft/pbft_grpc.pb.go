@@ -28,6 +28,7 @@ const (
 	PBFT_Commit_FullMethodName      = "/pbft.PBFT/Commit"
 	PBFT_ViewChange_FullMethodName  = "/pbft.PBFT/ViewChange"
 	PBFT_NewView_FullMethodName     = "/pbft.PBFT/NewView"
+	PBFT_Checkpoint_FullMethodName  = "/pbft.PBFT/Checkpoint"
 	PBFT_PrintLog_FullMethodName    = "/pbft.PBFT/PrintLog"
 	PBFT_PrintDB_FullMethodName     = "/pbft.PBFT/PrintDB"
 	PBFT_PrintStatus_FullMethodName = "/pbft.PBFT/PrintStatus"
@@ -49,6 +50,7 @@ type PBFTClient interface {
 	Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ViewChange(ctx context.Context, in *ViewChangeMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	NewView(ctx context.Context, in *NewViewMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Checkpoint(ctx context.Context, in *CheckpointMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
@@ -143,6 +145,16 @@ func (c *pBFTClient) NewView(ctx context.Context, in *NewViewMsg, opts ...grpc.C
 	return out, nil
 }
 
+func (c *pBFTClient) Checkpoint(ctx context.Context, in *CheckpointMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_Checkpoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[0], PBFT_PrintLog_FullMethodName, cOpts...)
@@ -225,6 +237,7 @@ type PBFTServer interface {
 	Commit(context.Context, *AckMsg) (*emptypb.Empty, error)
 	ViewChange(context.Context, *ViewChangeMsg) (*emptypb.Empty, error)
 	NewView(context.Context, *NewViewMsg) (*emptypb.Empty, error)
+	Checkpoint(context.Context, *CheckpointMsg) (*emptypb.Empty, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
@@ -262,6 +275,9 @@ func (UnimplementedPBFTServer) ViewChange(context.Context, *ViewChangeMsg) (*emp
 }
 func (UnimplementedPBFTServer) NewView(context.Context, *NewViewMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewView not implemented")
+}
+func (UnimplementedPBFTServer) Checkpoint(context.Context, *CheckpointMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Checkpoint not implemented")
 }
 func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
@@ -440,6 +456,24 @@ func _PBFT_NewView_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PBFT_Checkpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckpointMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).Checkpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_Checkpoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).Checkpoint(ctx, req.(*CheckpointMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PBFT_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -529,6 +563,10 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewView",
 			Handler:    _PBFT_NewView_Handler,
+		},
+		{
+			MethodName: "Checkpoint",
+			Handler:    _PBFT_Checkpoint_Handler,
 		},
 		{
 			MethodName: "PrintStatus",

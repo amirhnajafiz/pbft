@@ -60,6 +60,7 @@ func (l *Logs) Reset() {
 	l.datastore = make(map[int]*models.Log)
 	l.logs = make([]string, 0)
 	l.viewChanges = make(map[int]*models.ViewLog)
+	l.checkpoints = make(map[int][]*pbft.CheckpointMsg)
 	l.index = 0
 }
 
@@ -68,4 +69,9 @@ func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
 	if l.datastore[index].Request.GetStatus().Number() <= status.Number() {
 		l.datastore[index].Request.Status = status
 	}
+}
+
+// AppendCheckpoint adds a new checkpoint log.
+func (l *Logs) AppendCheckpoint(key int, list []*pbft.CheckpointMsg) {
+	l.checkpoints[key] = list
 }

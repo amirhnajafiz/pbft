@@ -16,6 +16,7 @@ service PBFT {
   rpc Commit(AckMsg) returns (google.protobuf.Empty) {}
   rpc ViewChange(ViewChangeMsg) returns (google.protobuf.Empty) {}
   rpc NewView(NewViewMsg) returns (google.protobuf.Empty) {}
+  rpc Checkpoint(CheckpointMsg) returns (google.protobuf.Empty) {}
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
@@ -83,6 +84,11 @@ message NewViewMsg {
   string node_id = 4;
   string message = 5;
   repeated bytes shares = 6;
+}
+
+message CheckpointMsg {
+  int64 sequence_number = 1;
+  string node_id = 2;
 }
 
 message LogRsp {

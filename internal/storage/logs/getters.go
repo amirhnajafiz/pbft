@@ -86,3 +86,8 @@ func (l *Logs) GetPreprepares(from int, index int) []*pbft.PrePrepareMsg {
 
 	return list
 }
+
+// GetCheckpoints returns the checkpoints log.
+func (l *Logs) GetCheckpoints() map[int][]*pbft.CheckpointMsg {
+	return l.checkpoints
+}

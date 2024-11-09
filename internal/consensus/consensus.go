@@ -79,7 +79,8 @@ func NewConsensus(
 		enum.PktP:   make(chan *models.Packet, cfg.Total), // size of total
 		enum.PktCmt: make(chan *models.Packet, cfg.Total), // size of total
 		enum.PktVC:  make(chan *models.Packet, cfg.Total), // size of total
-		enum.PktNV:  make(chan *models.Packet, cfg.Total), // sie of total
+		enum.PktNV:  make(chan *models.Packet, cfg.Total), // size of total
+		enum.PktCP:  make(chan *models.Packet, cfg.Total), // size of total
 	}
 
 	// create side channels
@@ -92,6 +93,7 @@ func NewConsensus(
 	go c.executeHandler()
 	go c.timerHandler()
 	go c.viewChangeHandler()
+	go c.checkpointHandler()
 
 	return c
 }

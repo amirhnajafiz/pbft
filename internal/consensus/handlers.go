@@ -213,3 +213,31 @@ func (c *Consensus) viewChangeHandler() {
 		}
 	}
 }
+
+// checkpointHandler captures checkpoint messages until it gets 2f+1 matches.
+func (c *Consensus) checkpointHandler() {
+	checkpoints := make(map[int][]*pbft.CheckpointMsg)
+
+	for {
+		// capture raw checkpoint messages
+		raw := <-c.consensusHandlersTable[enum.PktCP]
+		msg := raw.Payload.(*pbft.CheckpointMsg)
+
+		// collect 2f+1 checkpoints
+		if _, ok := checkpoints[int(msg.GetSequenceNumber())]; !ok {
+			checkpoints[int(msg.GetSequenceNumber())] = make([]*pbft.CheckpointMsg, 0)
+		}
+
+		// append the message
+		checkpoints[raw.Sequence] = append(checkpoints[raw.Sequence], msg)
+
+		// check if 2f+1 matching
+		for key, value := range checkpoints {
+			if len(value) >= c.cfg.Checkpoint {
+				c.memory.SetLowWaterMakr(key)
+				c.logs.AppendCheckpoint(key, value)
+				delete(checkpoints, key)
+			}
+		}
+	}
+}

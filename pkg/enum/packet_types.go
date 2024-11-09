@@ -13,4 +13,5 @@ const (
 	PktCmt
 	PktVC
 	PktNV
+	PktCP
 )

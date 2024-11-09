@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"sync"
 	"time"
 
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
@@ -24,6 +25,8 @@ type Consensus struct {
 	communication *modules.Communication
 	waiter        *modules.Waiter
 	viewTimer     *modules.Timer
+
+	lock sync.Mutex
 
 	inViewChangeMode        bool // a flag for in view change mode
 	viewChangeGadgetChannel chan *pbft.ViewChangeMsg
@@ -49,6 +52,7 @@ func NewConsensus(
 		logger:           logr,
 		cfg:              cfg,
 		inViewChangeMode: false,
+		lock:             sync.Mutex{},
 	}
 
 	// create consensus modules

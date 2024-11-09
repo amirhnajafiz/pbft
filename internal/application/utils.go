@@ -21,14 +21,18 @@ func (a *App) broadcastRequest(req *pbft.RequestMsg) int {
 
 // emptyChannel gets all input messages from a channel and deletes it.
 func (a *App) emptyChannel(client string) {
+	a.lock.Lock()
 	ch := a.handlers[client]
+	a.lock.Unlock()
 
 	for {
 		select {
 		case <-ch:
 			continue
 		default:
+			a.lock.Lock()
 			delete(a.handlers, client)
+			a.lock.Unlock()
 			return
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/f24-cse535/pbft/internal/config/node/bft"
 	"github.com/f24-cse535/pbft/internal/grpc/client"
@@ -22,6 +23,8 @@ type App struct {
 	cli    *client.Client
 	cfg    *bft.Config
 	logger *zap.Logger
+
+	lock sync.Mutex
 
 	clients  map[string]chan *models.Transaction // for each client there is go-routine that accepts using these channels
 	handlers map[string]chan *app.ReplyMsg       // handlers is a channel to get gRPC messages
@@ -42,6 +45,7 @@ func NewApp(
 		memory: mem,
 		cfg:    cfg,
 		cli:    cli,
+		lock:   sync.Mutex{},
 	}
 
 	// initial channels

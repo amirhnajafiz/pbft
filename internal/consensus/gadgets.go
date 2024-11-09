@@ -35,7 +35,9 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	// open a communication channel
 	channel := make(chan *models.Packet, c.cfg.Total*2)
+	c.lock.Lock()
 	c.requestsHandlersTable[sequence] = channel
+	c.lock.Unlock()
 
 	// send preprepare messages
 	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())
@@ -66,7 +68,9 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	go c.communication.SendCommitMsg(msg.GetRequest(), c.memory.GetView())
 
 	// delete our input channel as soon as possible
+	c.lock.Lock()
 	delete(c.requestsHandlersTable, sequence)
+	c.lock.Unlock()
 
 	// update our own status
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)

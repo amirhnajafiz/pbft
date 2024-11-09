@@ -53,8 +53,10 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 
 	currentLeader := a.getCurrentLeader() // get current leader id
 
+	a.lock.Lock()
 	a.handlers[client] = make(chan *app.ReplyMsg, a.cfg.Total) // get our channel
 	ch := a.handlers[client]
+	a.lock.Unlock()
 
 	// send the request
 	if err := a.cli.Request(currentLeader, req); err != nil {
@@ -140,8 +142,10 @@ func (a *App) gRPCHandler() {
 		msg := <-a.replys
 
 		// publish to the right handler
+		a.lock.Lock()
 		if ch, ok := a.handlers[msg.GetSender()]; ok {
 			ch <- msg
 		}
+		a.lock.Unlock()
 	}
 }

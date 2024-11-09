@@ -27,7 +27,7 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	return msg
 }
 
-func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.RequestMsg) {
+func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	// open a communication channel
 	channel := make(chan *models.Packet, c.cfg.Total*2)
 	c.requestsHandlersTable[sequence] = channel
@@ -42,7 +42,7 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.RequestMsg) {
 	c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
 
 	// broadcast to all using prepare
-	go c.communication.SendPrepareMsg(msg, c.memory.GetView())
+	go c.communication.SendPrepareMsg(msg.GetRequest(), c.memory.GetView())
 
 	// update our own status
 	if !c.memory.GetByzantine() {
@@ -53,7 +53,7 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.RequestMsg) {
 	c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
 
 	// broadcast to all using commit, make sure everyone get's it
-	go c.communication.SendCommitMsg(msg, c.memory.GetView())
+	go c.communication.SendCommitMsg(msg.GetRequest(), c.memory.GetView())
 
 	// delete our input channel as soon as possible
 	delete(c.requestsHandlersTable, sequence)
@@ -98,37 +98,36 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 func (c *Consensus) newViewChangeGadget() {
 	// change the view to stop processing requests
 	c.memory.IncView()
-	view := c.memory.GetView()
-	sequence := c.logs.GetSequenceNumber()
-	preprepares := c.logs.GetPreprepares(sequence)
 
-	c.logs.AppendViewChange(view, &pbft.ViewChangeMsg{
+	view := c.memory.GetView()
+	seq := c.logs.GetSequenceNumber()
+
+	// create a new view change msg
+	message := pbft.ViewChangeMsg{
 		NodeId:         c.memory.GetNodeId(),
 		View:           int64(view),
-		SequenceNumber: int64(sequence),
-		Preprepares:    preprepares,
-	})
-
-	// send a view change message
-	if count := c.communication.SendViewChangeMsg(view, sequence, preprepares); count < c.cfg.Majority {
-		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
-
-		return
+		SequenceNumber: int64(seq),
+		Preprepares:    c.logs.GetPreprepares(seq),
 	}
 
-	c.logger.Debug("view change started")
+	// append own view change msg
+	c.logs.AppendViewChange(view, &message)
+
+	// send a view change message
+	if count := c.communication.SendViewChangeMsg(&message); count < c.cfg.Majority {
+		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
+		return
+	}
 
 	// wait for 2f+1 messages
 	for {
 		msg := <-c.viewChangeGadgetChannel
 		c.logs.AppendViewChange(view, msg)
 
-		if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority-1 {
+		if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
 			break
 		}
 	}
-
-	c.logger.Debug("view change end")
 
 	// close our channel
 	c.inViewChangeMode = false
@@ -146,19 +145,29 @@ func (c *Consensus) newLeaderGadget() {
 	// get current view
 	view := c.memory.GetView()
 
-	// get all previous messages
+	// get all view change messages from other nodes
 	messages := c.logs.GetViewChanges(view)
 
+	// create a log map to get requests
+	logsMap := make(map[int]*pbft.PrePrepareMsg)
+
+	// set the min and max
 	minSequence := c.logs.GetSequenceNumber()
 	maxSequence := c.logs.GetSequenceNumber()
 
 	// loop in all messages
 	for _, msg := range messages {
 		sequence := int(msg.GetSequenceNumber())
+
+		// loop over preprepares to insert them inside a logs map
+		for _, pp := range msg.GetPreprepares() {
+			logsMap[int(pp.GetSequenceNumber())] = pp
+		}
+
+		// update the minimum and maximum bounds
 		if sequence <= minSequence {
 			minSequence = sequence
 		}
-
 		if sequence >= maxSequence {
 			maxSequence = sequence
 		}
@@ -169,27 +178,29 @@ func (c *Consensus) newLeaderGadget() {
 
 	// collect all requets that are prepared
 	for i := minSequence; i <= maxSequence; i++ {
-		for _, msg := range messages {
-			for _, pp := range msg.GetPreprepares() {
-				if int(pp.GetSequenceNumber()) == i {
-					requests = append(requests, pp)
-				}
-			}
+		if item := c.logs.GetPreprepare(i); item != nil {
+			requests = append(requests, item)
+		} else if item, ok := logsMap[i]; ok {
+			requests = append(requests, item)
 		}
 	}
 
-	c.logs.AppendNewView(view, &pbft.NewViewMsg{
+	// create a new view message
+	newViewMsg := pbft.NewViewMsg{
 		View:        int64(view),
 		NodeId:      c.memory.GetNodeId(),
 		Preprepares: requests,
 		Messages:    messages,
-	})
+	}
+
+	// save the entry
+	c.logs.AppendNewView(view, &newViewMsg)
 
 	// send new view
-	c.communication.SendNewViewMsg(view, requests, messages)
+	c.communication.SendNewViewMsg(&newViewMsg)
 
 	// start the protocol for every request
 	for _, req := range requests {
-		c.newProcessingGadet(int(req.GetSequenceNumber()), req.Request)
+		c.newProcessingGadet(int(req.GetSequenceNumber()), req)
 	}
 }

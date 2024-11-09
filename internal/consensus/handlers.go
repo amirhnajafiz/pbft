@@ -131,18 +131,23 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	msg.SequenceNumber = int64(sequence)
 	msg.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
-	// store it into datastore
+	// create a preprepare message
+	ppMessage := pbft.PrePrepareMsg{
+		Request:        msg,
+		View:           int64(c.memory.GetView()),
+		NodeId:         c.memory.GetNodeId(),
+		SequenceNumber: int64(sequence),
+		Digest:         hashing.MD5Req(msg),
+	}
+
+	// store messages into datastore
 	c.logs.SetRequest(sequence, msg)
-	c.logs.SetPreprepare(sequence, &pbft.PrePrepareMsg{
-		Request: msg,
-		View:    int64(c.memory.GetView()),
-		NodeId:  c.memory.GetNodeId(),
-	})
+	c.logs.SetPreprepare(sequence, &ppMessage)
 
 	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
 	// run a processing gadget
-	c.newProcessingGadet(sequence, msg)
+	c.newProcessingGadet(sequence, &ppMessage)
 }
 
 // timerHandler creates a new timer and monitors the timer.

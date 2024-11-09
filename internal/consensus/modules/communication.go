@@ -40,13 +40,8 @@ func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 }
 
 // SendPreprepareMsg gets a request message and uses client.go to broadcast a preprepare message.
-func (c *Communication) SendPreprepareMsg(msg *pbft.RequestMsg, view int) {
-	c.cli.BroadcastPrePrepare(&pbft.PrePrepareMsg{
-		Request:        msg,
-		SequenceNumber: msg.GetSequenceNumber(),
-		View:           int64(view),
-		Digest:         hashing.MD5Req(msg),
-	})
+func (c *Communication) SendPreprepareMsg(msg *pbft.PrePrepareMsg, view int) {
+	c.cli.BroadcastPrePrepare(msg)
 }
 
 // SendPrepareMsg gets a request message and uses client.go to broadcast a prepare message.
@@ -68,14 +63,7 @@ func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
 }
 
 // SendViewChangeMsg gets view and sequence and uses client.go to broadcase a view change message.
-func (c *Communication) SendViewChangeMsg(view, sequence int, preprepares []*pbft.PrePrepareMsg) int {
-	// create a new pbft view change message
-	msg := &pbft.ViewChangeMsg{
-		SequenceNumber: int64(sequence),
-		View:           int64(view),
-		Preprepares:    preprepares,
-	}
-
+func (c *Communication) SendViewChangeMsg(msg *pbft.ViewChangeMsg) int {
 	// count the number of sucessful sends
 	count := 1
 	for key := range c.cli.GetSystemNodes() {
@@ -88,14 +76,8 @@ func (c *Communication) SendViewChangeMsg(view, sequence int, preprepares []*pbf
 }
 
 // SendNewViewMsg broadcasts a new view message to all nodes.
-func (c *Communication) SendNewViewMsg(view int, preprepares []*pbft.PrePrepareMsg, messages []*pbft.ViewChangeMsg) {
-	msg := pbft.NewViewMsg{
-		View:        int64(view),
-		Preprepares: preprepares,
-		Messages:    messages,
-	}
-
+func (c *Communication) SendNewViewMsg(msg *pbft.NewViewMsg) {
 	for key := range c.cli.GetSystemNodes() {
-		c.cli.NewView(key, &msg)
+		c.cli.NewView(key, msg)
 	}
 }

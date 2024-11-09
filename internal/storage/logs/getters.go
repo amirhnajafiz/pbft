@@ -14,6 +14,15 @@ func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
 	return nil
 }
 
+// GetPreprepare returns the preprepare message of a request.
+func (l *Logs) GetPreprepare(index int) *pbft.PrePrepareMsg {
+	if value, ok := l.datastore[index]; ok {
+		return value.PrePrepare
+	}
+
+	return nil
+}
+
 // GetAllRequests returns an array of the node requests.
 func (l *Logs) GetAllRequests() map[int]*pbft.RequestMsg {
 	list := make(map[int]*pbft.RequestMsg)
@@ -68,7 +77,7 @@ func (l *Logs) GetPreprepares(from int) []*pbft.PrePrepareMsg {
 	list := make([]*pbft.PrePrepareMsg, 0)
 
 	for key, value := range l.datastore {
-		if key >= from {
+		if key >= from && value.Request.GetStatus() > pbft.RequestStatus_REQUEST_STATUS_PP {
 			list = append(list, value.PrePrepare)
 		}
 	}

@@ -5,6 +5,8 @@ import (
 
 	"github.com/f24-cse535/pbft/internal/config"
 
+	"go.dedis.ch/kyber/v4/pairing/bn256"
+	"go.dedis.ch/kyber/v4/share"
 	"go.uber.org/zap"
 )
 
@@ -18,8 +20,18 @@ func (c Controller) Main() error {
 	// init a waitgroup
 	var wg sync.WaitGroup
 
+	// create threshold signature keys
+	suite := bn256.NewSuite()
+	n := c.Cfg.Node.BFT.Total
+	t := c.Cfg.Node.BFT.Majority
+
+	// generate the shared secret and ploynomial
+	secret := suite.G1().Scalar().Pick(suite.RandomStream())
+	priPoly := share.NewPriPoly(suite.G2(), t, secret, suite.RandomStream())
+	pubPoly := priPoly.Commit(suite.G2().Point().Base())
+
 	// loop over config files and run each node
-	for _, key := range c.Cfg.CtlFiles {
+	for index, key := range c.Cfg.CtlFiles {
 		wg.Add(1)
 		go func(path string, waitGroup *sync.WaitGroup) {
 			// release waitgroup
@@ -32,6 +44,9 @@ func (c Controller) Main() error {
 			node := Node{
 				Cfg:    cfg,
 				Logger: c.Logger.Named("node." + cfg.Node.NodeId),
+				Suite:  suite,
+				Share:  priPoly.Shares(n)[index],
+				Pub:    pubPoly,
 			}
 
 			c.Logger.Info("instance started", zap.String("instance", cfg.Node.NodeId), zap.String("file", path))

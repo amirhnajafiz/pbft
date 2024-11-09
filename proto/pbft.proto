@@ -73,6 +73,7 @@ message ViewChangeMsg {
   int64 sequence_number = 2;
   repeated PrePrepareMsg preprepares = 3;
   string node_id = 4;
+  string signature = 5;
 }
 
 message NewViewMsg {
@@ -80,6 +81,8 @@ message NewViewMsg {
   repeated ViewChangeMsg messages = 2;
   repeated PrePrepareMsg preprepares = 3;
   string node_id = 4;
+  string message = 5;
+  repeated string shares = 6;
 }
 
 message LogRsp {

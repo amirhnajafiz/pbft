@@ -9,6 +9,8 @@ import (
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+	"go.dedis.ch/kyber/v4/sign/bls"
+	"go.dedis.ch/kyber/v4/sign/tbls"
 
 	"go.uber.org/zap"
 )
@@ -144,6 +146,15 @@ func (c *Consensus) newViewChangeGadget() error {
 		Preprepares:    c.logs.GetPreprepares(seq),
 	}
 
+	// sign the message
+	sig, err := tbls.Sign(c.suite, c.tss, []byte(hashing.MD5View(&message)))
+	if err != nil {
+		c.logger.Error("failed to sign the view message", zap.Error(err))
+	}
+
+	// set the signature
+	message.Signature = string(sig)
+
 	// append own view change msg
 	c.logs.AppendViewChange(view, &message)
 
@@ -236,9 +247,19 @@ func (c *Consensus) newLeaderGadget() {
 	minSequence := c.logs.GetSequenceNumber()
 	maxSequence := c.logs.GetSequenceNumber()
 
+	var (
+		message      *pbft.ViewChangeMsg
+		sigShares    [][]byte
+		sigSharesStr []string
+	)
+
 	// loop in all messages
 	for _, msg := range messages {
 		sequence := int(msg.GetSequenceNumber())
+
+		message = msg
+		sigShares = append(sigShares, []byte(msg.GetSignature()))
+		sigSharesStr = append(sigSharesStr, msg.GetSignature())
 
 		// loop over preprepares to insert them inside a logs map
 		for _, pp := range msg.GetPreprepares() {
@@ -266,12 +287,29 @@ func (c *Consensus) newLeaderGadget() {
 		}
 	}
 
+	// get view digest
+	digest := hashing.MD5View(message)
+
+	// recover the full signature
+	sig, err := tbls.Recover(c.suite, c.pub, []byte(digest), sigShares[:c.cfg.Majority], c.cfg.Majority, c.cfg.Total)
+	if err != nil {
+		c.logger.Error("failed to recover signature", zap.Error(err))
+	}
+
+	// verify the record signature
+	public := c.pub.Commit()
+	if err := bls.Verify(c.suite, public, []byte(digest), sig); err != nil {
+		c.logger.Error("failed to verify the signature", zap.Error(err))
+	}
+
 	// create a new view message
 	newViewMsg := pbft.NewViewMsg{
 		View:        int64(view),
 		NodeId:      c.memory.GetNodeId(),
 		Preprepares: requests,
 		Messages:    messages,
+		Message:     digest,
+		Shares:      sigSharesStr,
 	}
 
 	// save the entry

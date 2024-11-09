@@ -7,3 +7,9 @@ ctl_files:
   - "configs/nodes/S5/config.yaml"
   - "configs/nodes/S6/config.yaml"
   - "configs/nodes/S7/config.yaml"
+
+# bft configs
+node:
+  bft:
+    total: 7
+    majority: 5

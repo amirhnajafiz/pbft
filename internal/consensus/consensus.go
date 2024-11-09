@@ -13,6 +13,8 @@ import (
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
+	"go.dedis.ch/kyber/v4/pairing/bn256"
+	"go.dedis.ch/kyber/v4/share"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +29,10 @@ type Consensus struct {
 	viewTimer     *modules.Timer
 
 	lock sync.Mutex
+
+	tss   *share.PriShare
+	suite *bn256.Suite
+	pub   *share.PubPoly
 
 	inViewChangeMode        bool // a flag for in view change mode
 	viewChangeGadgetChannel chan *pbft.ViewChangeMsg
@@ -44,6 +50,9 @@ func NewConsensus(
 	logr *zap.Logger,
 	cfg *bft.Config,
 	cli *client.Client,
+	suite *bn256.Suite,
+	share *share.PriShare,
+	pub *share.PubPoly,
 ) *Consensus {
 	// create a new consensus instance
 	c := &Consensus{
@@ -53,6 +62,9 @@ func NewConsensus(
 		cfg:              cfg,
 		inViewChangeMode: false,
 		lock:             sync.Mutex{},
+		suite:            suite,
+		tss:              share,
+		pub:              pub,
 	}
 
 	// create consensus modules

@@ -150,6 +150,10 @@ func (a Application) terminal(app *application.App) {
 							fmt.Printf("\t\t- %s\n", pp.String())
 						}
 					}
+					fmt.Printf("\t- tts: %s\n", item.GetNewView().GetMessage())
+					for _, sh := range item.GetNewView().GetShares() {
+						fmt.Printf("\t\t- %s\n", sh)
+					}
 				}
 			}
 		default:

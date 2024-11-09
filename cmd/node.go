@@ -8,6 +8,8 @@ import (
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
 
+	"go.dedis.ch/kyber/v4/pairing/bn256"
+	"go.dedis.ch/kyber/v4/share"
 	"go.uber.org/zap"
 )
 
@@ -15,6 +17,9 @@ import (
 type Node struct {
 	Cfg    config.Config
 	Logger *zap.Logger
+	Suite  *bn256.Suite
+	Share  *share.PriShare
+	Pub    *share.PubPoly
 }
 
 func (n Node) Main() error {
@@ -41,10 +46,19 @@ func (n Node) Main() error {
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
-		Memory:    mem,
-		Logs:      datalog,
-		Logger:    n.Logger.Named("grpc"),
-		Consensus: consensus.NewConsensus(datalog, mem, n.Logger.Named("consensus"), &n.Cfg.Node.BFT, cli),
+		Memory: mem,
+		Logs:   datalog,
+		Logger: n.Logger.Named("grpc"),
+		Consensus: consensus.NewConsensus(
+			datalog,
+			mem,
+			n.Logger.Named("consensus"),
+			&n.Cfg.Node.BFT,
+			cli,
+			n.Suite,
+			n.Share,
+			n.Pub,
+		),
 	}
 
 	// start the gRPC server

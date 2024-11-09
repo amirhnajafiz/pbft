@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -152,7 +153,7 @@ func (a Application) terminal(app *application.App) {
 					}
 					fmt.Printf("\t- tts: %s\n", item.GetNewView().GetMessage())
 					for _, sh := range item.GetNewView().GetShares() {
-						fmt.Printf("\t\t- %s\n", sh)
+						fmt.Printf("\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
 					}
 				}
 			}

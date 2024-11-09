@@ -153,7 +153,7 @@ func (c *Consensus) newViewChangeGadget() error {
 	}
 
 	// set the signature
-	message.Signature = string(sig)
+	message.Signature = sig
 
 	// append own view change msg
 	c.logs.AppendViewChange(view, &message)
@@ -248,9 +248,8 @@ func (c *Consensus) newLeaderGadget() {
 	maxSequence := c.logs.GetSequenceNumber()
 
 	var (
-		message      *pbft.ViewChangeMsg
-		sigShares    [][]byte
-		sigSharesStr []string
+		message   *pbft.ViewChangeMsg
+		sigShares [][]byte
 	)
 
 	// loop in all messages
@@ -259,7 +258,6 @@ func (c *Consensus) newLeaderGadget() {
 
 		message = msg
 		sigShares = append(sigShares, []byte(msg.GetSignature()))
-		sigSharesStr = append(sigSharesStr, msg.GetSignature())
 
 		// loop over preprepares to insert them inside a logs map
 		for _, pp := range msg.GetPreprepares() {
@@ -309,7 +307,7 @@ func (c *Consensus) newLeaderGadget() {
 		Preprepares: requests,
 		Messages:    messages,
 		Message:     digest,
-		Shares:      sigSharesStr,
+		Shares:      sigShares,
 	}
 
 	// save the entry

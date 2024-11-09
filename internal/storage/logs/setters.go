@@ -74,4 +74,8 @@ func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
 // AppendCheckpoint adds a new checkpoint log.
 func (l *Logs) AppendCheckpoint(key int, list []*pbft.CheckpointMsg) {
 	l.checkpoints[key] = list
+
+	if l.lastCheckpoint < key {
+		l.lastCheckpoint = key
+	}
 }

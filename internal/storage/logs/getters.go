@@ -36,6 +36,19 @@ func (l *Logs) GetAllRequests() map[int]*pbft.RequestMsg {
 	return list
 }
 
+// GetPartialRequests accepts a from index and returns the requests pass that index.
+func (l *Logs) GetPartialRequests(from int) map[int]*pbft.RequestMsg {
+	list := make(map[int]*pbft.RequestMsg)
+
+	for key, value := range l.datastore {
+		if key >= from {
+			list[key] = value.Request
+		}
+	}
+
+	return list
+}
+
 // GetViewChanges returns a list of stored view changes.
 func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 	if list, ok := l.viewChanges[view]; ok {
@@ -90,4 +103,9 @@ func (l *Logs) GetPreprepares(from int, index int) []*pbft.PrePrepareMsg {
 // GetCheckpoints returns the checkpoints log.
 func (l *Logs) GetCheckpoints() map[int][]*pbft.CheckpointMsg {
 	return l.checkpoints
+}
+
+// GetLastCheckpoint returns the sequence number of the last checkpoint.
+func (l *Logs) GetLastCheckpoint() int {
+	return l.lastCheckpoint
 }

@@ -42,3 +42,5 @@ node:
     responses: 2
     majority_timeout: 100 # in milliseconds
     view_timeout: 3 # in seconds
+    viewchange_timeout: 100 # in milliseconds
+    newview_timeout: 100 # in milliseconds

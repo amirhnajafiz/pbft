@@ -1,6 +1,9 @@
 package consensus
 
 import (
+	"time"
+
+	"github.com/f24-cse535/pbft/internal/consensus/modules"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
@@ -120,13 +123,28 @@ func (c *Consensus) newViewChangeGadget() {
 		return
 	}
 
-	// wait for 2f+1 messages
-	for {
-		msg := <-c.viewChangeGadgetChannel
-		c.logs.AppendViewChange(view, msg)
+	// create a new timer
+	timer := modules.NewTimer(c.cfg.ViewChangeTimeout, time.Millisecond)
+	timer.Start(false)
 
-		if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
+	// wait for 2f+1 messages
+	flag := true
+	for {
+		if !flag {
 			break
+		}
+
+		select {
+		case msg := <-c.viewChangeGadgetChannel:
+			c.logs.AppendViewChange(view, msg)
+
+			if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
+				flag = false
+				timer.Stop(false)
+			}
+		case <-timer.Notify(): // if the timer expired, return and reset the view timer
+			c.viewTimer.Start(false)
+			return
 		}
 	}
 
@@ -137,14 +155,30 @@ func (c *Consensus) newViewChangeGadget() {
 			c.newLeaderGadget()
 		}
 	} else { // if the node is primary, it needs new-view message
-		raw := <-c.consensusHandlersTable[enum.PktNV]
-		msg := raw.Payload.(*pbft.NewViewMsg)
+		timer = modules.NewTimer(c.cfg.ViewChangeTimeout, time.Millisecond)
+		flag = true
 
-		// update the view
-		c.memory.SetView(int(msg.GetView()))
+		for {
+			if !flag {
+				break
+			}
 
-		// set the message for view change
-		c.logs.AppendNewView(int(msg.GetView()), msg)
+			select {
+			case raw := <-c.consensusHandlersTable[enum.PktNV]:
+				msg := raw.Payload.(*pbft.NewViewMsg)
+
+				// update the view
+				c.memory.SetView(int(msg.GetView()))
+
+				// set the message for view change
+				c.logs.AppendNewView(int(msg.GetView()), msg)
+
+				flag = false
+			case <-timer.Notify(): // if the timer expired, return and reset the view timer
+				c.viewTimer.Start(false)
+				return
+			}
+		}
 	}
 
 	// close our channel

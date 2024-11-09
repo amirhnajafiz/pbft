@@ -156,7 +156,7 @@ func (c *Consensus) timerHandler() {
 	c.viewTimer.Stop(false)
 
 	for {
-		c.viewTimer.Notify()
+		<-c.viewTimer.Notify()
 		c.logger.Debug("timer expired")
 
 		// start view change

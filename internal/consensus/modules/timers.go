@@ -54,6 +54,6 @@ func (t *Timer) Stop(flag bool) {
 }
 
 // Notify when timer expires.
-func (t *Timer) Notify() {
-	<-t.clock.C
+func (t *Timer) Notify() <-chan time.Time {
+	return t.clock.C
 }

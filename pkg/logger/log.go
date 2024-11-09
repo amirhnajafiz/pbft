@@ -18,7 +18,7 @@ func NewLogger(level string) *zap.Logger {
 		lvl = zapcore.WarnLevel
 	}
 
-	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile("logs.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}

@@ -153,7 +153,7 @@ func (a Application) terminal(app *application.App) {
 				}
 			}
 		default:
-			fmt.Printf("command `%s` not found.\n", parts[1])
+			fmt.Printf("command `%s` not found.\n", parts[0])
 		}
 	}
 }

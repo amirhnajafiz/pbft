@@ -1,6 +1,7 @@
 # exported files
 main
 main~
+logs.csv
 logs.txt
 
 # build files

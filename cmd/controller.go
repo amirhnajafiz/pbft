@@ -18,6 +18,7 @@ func (c Controller) Main() error {
 	// init a waitgroup
 	var wg sync.WaitGroup
 
+	// loop over config files and run each node
 	for _, key := range c.Cfg.CtlFiles {
 		wg.Add(1)
 		go func(path string, waitGroup *sync.WaitGroup) {

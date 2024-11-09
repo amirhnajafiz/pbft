@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
@@ -62,7 +63,7 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	if err := a.cli.Request(currentLeader, req); err != nil {
 		// if the number of live servers is less than 2f+1, then raise an error
 		if count := a.broadcastRequest(req); count < a.cfg.Majority {
-			return "not enough servers are available"
+			return enum.RespNotEnoughServers
 		}
 	}
 
@@ -76,7 +77,7 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 
 		// if the number of live servers is less than 2f+1, then raise an error
 		if count := a.broadcastRequest(req); count < a.cfg.Majority {
-			return "not enough servers are available"
+			return enum.RespNotEnoughServers
 		}
 	}
 

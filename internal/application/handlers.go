@@ -138,8 +138,6 @@ func (a *App) gRPCHandler() {
 		// get the message from replys
 		msg := <-a.replys
 
-		fmt.Println(msg.String())
-
 		// publish to the right handler
 		if ch, ok := a.handlers[msg.GetSender()]; ok {
 			ch <- msg

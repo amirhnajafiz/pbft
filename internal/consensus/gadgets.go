@@ -1,8 +1,6 @@
 package consensus
 
 import (
-	"fmt"
-
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -62,9 +60,16 @@ func (c *Consensus) newViewChangeGadget() {
 	c.memory.IncView()
 	view := c.memory.GetView()
 	sequence := c.logs.GetSequenceNumber()
+	preprepares := c.logs.GetPreprepares(sequence)
+
+	c.logs.AppendViewChange(view, &pbft.ViewChangeMsg{
+		View:           int64(view),
+		SequenceNumber: int64(sequence),
+		Preprepares:    preprepares,
+	})
 
 	// send a view change message
-	if count := c.communication.SendViewChangeMsg(view, sequence, c.logs.GetPreprepares(sequence)); count < c.cfg.Majority {
+	if count := c.communication.SendViewChangeMsg(view, sequence, preprepares); count < c.cfg.Majority {
 		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
 
 		return
@@ -116,15 +121,19 @@ func (c *Consensus) newLeaderGadget() {
 	}
 
 	// create an array to store sequences
-	requests := make([]int, 0)
+	requests := make([]*pbft.PrePrepareMsg, 0)
 
 	// collect all requets that are prepared
 	for i := minSequence; i <= maxSequence; i++ {
-		if tmp := c.logs.GetRequest(i); tmp != nil && tmp.GetStatus().Number() > pbft.RequestStatus_REQUEST_STATUS_PP.Number() {
-			requests = append(requests, i)
+		for _, msg := range messages {
+			for _, pp := range msg.GetPreprepares() {
+				if int(pp.GetView()) == i {
+					requests = append(requests, pp)
+				}
+			}
 		}
 	}
 
-	// broadcase a new-view message
-	fmt.Println(requests)
+	// send new view
+	c.communication.SendNewViewMsg(c.memory.GetView(), requests)
 }

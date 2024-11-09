@@ -86,3 +86,15 @@ func (c *Communication) SendViewChangeMsg(view, sequence int, preprepares []*pbf
 
 	return count
 }
+
+// SendNewViewMsg broadcasts a new view message to all nodes.
+func (c *Communication) SendNewViewMsg(view int, preprepares []*pbft.PrePrepareMsg) {
+	msg := pbft.NewViewMsg{
+		View:        int64(view),
+		Preprepares: preprepares,
+	}
+
+	for key := range c.cli.GetSystemNodes() {
+		c.cli.NewView(key, &msg)
+	}
+}

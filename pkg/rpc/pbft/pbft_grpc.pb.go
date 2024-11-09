@@ -27,6 +27,7 @@ const (
 	PBFT_Prepared_FullMethodName    = "/pbft.PBFT/Prepared"
 	PBFT_Commit_FullMethodName      = "/pbft.PBFT/Commit"
 	PBFT_ViewChange_FullMethodName  = "/pbft.PBFT/ViewChange"
+	PBFT_NewView_FullMethodName     = "/pbft.PBFT/NewView"
 	PBFT_PrintLog_FullMethodName    = "/pbft.PBFT/PrintLog"
 	PBFT_PrintDB_FullMethodName     = "/pbft.PBFT/PrintDB"
 	PBFT_PrintStatus_FullMethodName = "/pbft.PBFT/PrintStatus"
@@ -47,6 +48,7 @@ type PBFTClient interface {
 	Prepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Commit(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ViewChange(ctx context.Context, in *ViewChangeMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	NewView(ctx context.Context, in *NewViewMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
@@ -125,6 +127,16 @@ func (c *pBFTClient) ViewChange(ctx context.Context, in *ViewChangeMsg, opts ...
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, PBFT_ViewChange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pBFTClient) NewView(ctx context.Context, in *NewViewMsg, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PBFT_NewView_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +224,7 @@ type PBFTServer interface {
 	Prepared(context.Context, *AckMsg) (*emptypb.Empty, error)
 	Commit(context.Context, *AckMsg) (*emptypb.Empty, error)
 	ViewChange(context.Context, *ViewChangeMsg) (*emptypb.Empty, error)
+	NewView(context.Context, *NewViewMsg) (*emptypb.Empty, error)
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
@@ -246,6 +259,9 @@ func (UnimplementedPBFTServer) Commit(context.Context, *AckMsg) (*emptypb.Empty,
 }
 func (UnimplementedPBFTServer) ViewChange(context.Context, *ViewChangeMsg) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ViewChange not implemented")
+}
+func (UnimplementedPBFTServer) NewView(context.Context, *NewViewMsg) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewView not implemented")
 }
 func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
@@ -406,6 +422,24 @@ func _PBFT_ViewChange_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PBFT_NewView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewViewMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PBFTServer).NewView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PBFT_NewView_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PBFTServer).NewView(ctx, req.(*NewViewMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PBFT_PrintLog_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -491,6 +525,10 @@ var PBFT_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ViewChange",
 			Handler:    _PBFT_ViewChange_Handler,
+		},
+		{
+			MethodName: "NewView",
+			Handler:    _PBFT_NewView_Handler,
 		},
 		{
 			MethodName: "PrintStatus",

@@ -15,6 +15,7 @@ service PBFT {
   rpc Prepared(AckMsg) returns (google.protobuf.Empty) {}
   rpc Commit(AckMsg) returns (google.protobuf.Empty) {}
   rpc ViewChange(ViewChangeMsg) returns (google.protobuf.Empty) {}
+  rpc NewView(NewViewMsg) returns (google.protobuf.Empty) {}
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
@@ -70,7 +71,15 @@ message StatusMsg {
 message ViewChangeMsg {
   int64 view = 1;
   int64 sequence_number = 2;
-  string node_id = 3;
+  repeated PrePrepareMsg preprepares = 3;
+  string node_id = 4;
+}
+
+message NewViewMsg {
+  int64 view = 1;
+  repeated ViewChangeMsg messages = 2;
+  repeated PrePrepareMsg preprepares = 3;
+  string node_id = 4;
 }
 
 message LogRsp {

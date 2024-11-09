@@ -15,6 +15,10 @@ func (m *Memory) Reset() {
 	m.status = true
 	m.byzantine = false
 	m.view = 0
+
+	for key := range m.balances {
+		m.balances[key] = 10
+	}
 }
 
 // IncView increases the view one unit.

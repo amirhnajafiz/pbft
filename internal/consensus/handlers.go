@@ -127,10 +127,6 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// find a sequence number for this request
 	sequence := c.logs.InitRequest()
 
-	// open a communication channel
-	channel := make(chan *models.Packet, c.cfg.Total*2)
-	c.requestsHandlersTable[sequence] = channel
-
 	// update request metadata
 	msg.SequenceNumber = int64(sequence)
 	msg.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
@@ -145,37 +141,8 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
-	// send preprepare messages
-	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())
-
-	// update our own status
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
-
-	// wait for 2f+1 preprepared messages (count our own)
-	c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
-
-	// broadcast to all using prepare
-	go c.communication.SendPrepareMsg(msg, c.memory.GetView())
-
-	// update our own status
-	if !c.memory.GetByzantine() {
-		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
-	}
-
-	// wait for 2f+1 prepared messages (count our own)
-	c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
-
-	// broadcast to all using commit, make sure everyone get's it
-	go c.communication.SendCommitMsg(msg, c.memory.GetView())
-
-	// delete our input channel as soon as possible
-	delete(c.requestsHandlersTable, sequence)
-
-	// update our own status
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
-
-	// send the sequence to the execute handler
-	c.executionChannel <- sequence
+	// run a processing gadget
+	c.newProcessingGadet(sequence, msg)
 }
 
 // timerHandler creates a new timer and monitors the timer.

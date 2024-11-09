@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
+	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
 	"go.uber.org/zap"
@@ -26,19 +27,58 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	return msg
 }
 
+func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.RequestMsg) {
+	// open a communication channel
+	channel := make(chan *models.Packet, c.cfg.Total*2)
+	c.requestsHandlersTable[sequence] = channel
+
+	// send preprepare messages
+	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())
+
+	// update our own status
+	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+
+	// wait for 2f+1 preprepared messages (count our own)
+	c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
+
+	// broadcast to all using prepare
+	go c.communication.SendPrepareMsg(msg, c.memory.GetView())
+
+	// update our own status
+	if !c.memory.GetByzantine() {
+		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+	}
+
+	// wait for 2f+1 prepared messages (count our own)
+	c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
+
+	// broadcast to all using commit, make sure everyone get's it
+	go c.communication.SendCommitMsg(msg, c.memory.GetView())
+
+	// delete our input channel as soon as possible
+	delete(c.requestsHandlersTable, sequence)
+
+	// update our own status
+	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+
+	// send the sequence to the execute handler
+	c.executionChannel <- sequence
+}
+
 // newExecutionGadget gets a sequence number and performs the execution logic.
 func (c *Consensus) newExecutionGadget(sequence int) {
 	if !c.memory.GetByzantine() && !c.canExecuteRequest(sequence) {
-		c.logger.Debug(
-			"cannot execute the request yet",
-			zap.Int("sequence number", sequence),
-		)
 		return
 	}
 
 	// follow sequence until one is not committed, execute them
 	index := sequence
 	msg := c.logs.GetRequest(index)
+
+	// don't reexecute a request
+	if msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+		return
+	}
 
 	for {
 		c.executeRequest(msg)                                               // execute request
@@ -102,8 +142,11 @@ func (c *Consensus) newViewChangeGadget() {
 
 // newLeaderGadget performs the procedure of new leader.
 func (c *Consensus) newLeaderGadget() {
+	// get current view
+	view := c.memory.GetView()
+
 	// get all previous messages
-	messages := c.logs.GetViewChanges(c.memory.GetView())
+	messages := c.logs.GetViewChanges(view)
 
 	minSequence := c.logs.GetSequenceNumber()
 	maxSequence := c.logs.GetSequenceNumber()
@@ -136,4 +179,9 @@ func (c *Consensus) newLeaderGadget() {
 
 	// send new view
 	c.communication.SendNewViewMsg(c.memory.GetView(), requests)
+
+	// start the protocol for every request
+	for _, req := range requests {
+		c.newProcessingGadet(int(req.GetSequenceNumber()), req.Request)
+	}
 }

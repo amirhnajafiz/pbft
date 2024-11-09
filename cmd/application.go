@@ -104,7 +104,7 @@ func (a Application) terminal(app *application.App) {
 					app.Client().ChangeState(key, lists.IsInList(key, tc.LiveServers), lists.IsInList(key, tc.ByzantineServers))
 				}
 
-				fmt.Printf("- running set %d\n", index)
+				fmt.Printf("- running set %s\n", tc.Index)
 				for _, trx := range tc.Transactions {
 					app.Transaction(trx)
 				}

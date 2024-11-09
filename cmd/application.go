@@ -140,19 +140,15 @@ func (a Application) terminal(app *application.App) {
 			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("- node %s\n", key)
 				for _, item := range app.Client().PrintView(key) {
-					fmt.Printf("\tview %d\n", item.GetView())
+					fmt.Printf("\tnew view: %d\n", item.GetNewView().GetView())
+					for _, msg := range item.GetNewView().GetPreprepares() {
+						fmt.Printf("\t- preprepare messages: %s\n", msg.String())
+					}
 					for _, msg := range item.GetMessages() {
-						fmt.Printf("\t- from node %s: sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+						fmt.Printf("\t- viewchange %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
 						for _, pp := range msg.GetPreprepares() {
 							fmt.Printf("\t\t- %s\n", pp.String())
 						}
-					}
-					fmt.Printf("\tnew view: %s\n", item.GetNewView().String())
-					for _, msg := range item.GetNewView().GetPreprepares() {
-						fmt.Printf("\t- preprepare: %s\n", msg.String())
-					}
-					for _, msg := range item.GetNewView().GetMessages() {
-						fmt.Printf("\t- viewchange: %s\n", msg.String())
 					}
 				}
 			}

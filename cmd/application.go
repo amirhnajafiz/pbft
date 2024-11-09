@@ -163,7 +163,7 @@ func (a Application) terminal(app *application.App) {
 			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("- node %s\n", key)
 				for _, item := range app.Client().PrintCheckpoints(key) {
-					fmt.Printf("\t- %s", item.String())
+					fmt.Printf("\t- %s\n", item.String())
 				}
 			}
 		default:

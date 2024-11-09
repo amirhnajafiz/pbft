@@ -21,6 +21,15 @@ iptable:
   - key: "S4"
     value: "127.0.0.1:5004"
     metadata: 3
+  - key: "S5"
+    value: "127.0.0.1:5005"
+    metadata: 4
+  - key: "S6"
+    value: "127.0.0.1:5006"
+    metadata: 5
+  - key: "S7"
+    value: "127.0.0.1:5007"
+    metadata: 6
   - key: "client"
     value: "127.0.0.1:6001"
     metadata: -1
@@ -31,16 +40,32 @@ clients:
     metadata: 10
   - key: "B"
     metadata: 10
+  - key: "C"
+    metadata: 10
+  - key: "D"
+    metadata: 10
+  - key: "E"
+    metadata: 10
+  - key: "F"
+    metadata: 10
+  - key: "G"
+    metadata: 10
+  - key: "H"
+    metadata: 10
+  - key: "I"
+    metadata: 10
+  - key: "J"
+    metadata: 10
 
 # node app configs
 node:
   port: 5004
   node_id: S4
   bft: # pbft configs
-    total: 4
-    majority: 3
-    responses: 2
+    total: 7
+    majority: 5
+    responses: 3
     majority_timeout: 100 # in milliseconds
-    view_timeout: 3 # in seconds
+    view_timeout: 1 # in seconds
     viewchange_timeout: 100 # in milliseconds
     newview_timeout: 100 # in milliseconds

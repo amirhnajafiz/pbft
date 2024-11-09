@@ -1,13 +1,10 @@
 # log level can be (debug, info, warn, error, panic, fatal)
 log_level: "debug"
 
-# the testcase file path
-csv: "tests/vc.csv"
-
 # certificates and keys
 tls:
-  private_key: "configs/client/client.key"
-  public_key: "configs/client/client.crt"
+  private_key: "configs/nodes/S5/server.key"
+  public_key: "configs/nodes/S5/server.crt"
   ca_key: "configs/ca.crt"
 
 # iptable maps all clients and nodes to their ip and metadata
@@ -33,8 +30,11 @@ iptable:
   - key: "S7"
     value: "127.0.0.1:5007"
     metadata: 6
+  - key: "client"
+    value: "127.0.0.1:6001"
+    metadata: -1
 
-# list of the systems clients
+# list of clients
 clients:
   - key: "A"
     metadata: 10
@@ -59,10 +59,13 @@ clients:
 
 # node app configs
 node:
-  port: 6001
-  node_id: client
+  port: 5005
+  node_id: S5
   bft: # pbft configs
     total: 7
     majority: 5
     responses: 3
-    request_timeout: 3 # in seconds
+    majority_timeout: 100 # in milliseconds
+    view_timeout: 1 # in seconds
+    viewchange_timeout: 100 # in milliseconds
+    newview_timeout: 100 # in milliseconds

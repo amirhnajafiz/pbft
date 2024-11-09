@@ -20,6 +20,10 @@ func (c *Consensus) preprepareHandler() {
 			continue
 		}
 
+		if raw.Sequence < c.memory.GetLowWaterMark() || raw.Sequence > c.memory.GetHighWaterMark() {
+			continue
+		}
+
 		digest := hashing.MD5Req(msg.GetRequest()) // get the digest of request
 
 		if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {

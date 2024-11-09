@@ -62,7 +62,7 @@ node:
   port: 5006
   node_id: S6
   bft: # pbft configs
-    k_watermark: 10
+    k_watermark: 100
     checkpoint: 2
     total: 7
     majority: 5

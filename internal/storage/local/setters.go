@@ -59,9 +59,9 @@ func (m *Memory) SetBalance(key string, value int) {
 	m.balances[key] = value
 }
 
-// IncLowWaterMark increases low water mark by one point.
-func (m *Memory) IncLowWaterMark() {
+// SetLowWaterMakr sets low water mark.
+func (m *Memory) SetLowWaterMakr(in int) {
 	m.lock.Lock()
-	m.lowWm++
+	m.lowWm = in
 	m.lock.Unlock()
 }

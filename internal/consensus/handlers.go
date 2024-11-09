@@ -16,6 +16,10 @@ func (c *Consensus) preprepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktPP]
 		msg := raw.Payload.(*pbft.PrePrepareMsg)
 
+		if c.inViewChangeMode {
+			continue
+		}
+
 		digest := hashing.MD5Req(msg.GetRequest()) // get the digest of request
 
 		if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
@@ -45,6 +49,10 @@ func (c *Consensus) prepareHandler() {
 		// get raw P packets and cast them
 		raw := <-c.consensusHandlersTable[enum.PktP]
 		msg := raw.Payload.(*pbft.AckMsg)
+
+		if c.inViewChangeMode {
+			continue
+		}
 
 		// get the message from our datastore
 		message := c.logs.GetRequest(raw.Sequence)
@@ -78,6 +86,10 @@ func (c *Consensus) commitHandler() {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
 
+		if c.inViewChangeMode {
+			continue
+		}
+
 		// update the request and set the status of prepare
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
@@ -103,6 +115,10 @@ func (c *Consensus) executeHandler() {
 func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// parse the input message
 	msg := pkt.Payload.(*pbft.RequestMsg)
+
+	if c.inViewChangeMode {
+		return
+	}
 
 	// check if we had a request with the given timestamp
 	if req, ok := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
@@ -161,10 +177,7 @@ func (c *Consensus) timerHandler() {
 
 		// start view change
 		if !c.inViewChangeMode {
-			c.inViewChangeMode = true
-			c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
-
-			go c.newViewChangeGadget()
+			c.newViewChangeModeGadget()
 		}
 	}
 }
@@ -185,10 +198,7 @@ func (c *Consensus) viewChangeHandler() {
 			}
 
 			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
-				c.inViewChangeMode = true
-				c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
-
-				go c.newViewChangeGadget()
+				c.newViewChangeModeGadget()
 			}
 		} else {
 			if c.viewChangeGadgetChannel != nil {

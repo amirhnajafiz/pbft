@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"errors"
 	"time"
 
 	"github.com/f24-cse535/pbft/internal/consensus/modules"
@@ -98,8 +99,24 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 	}
 }
 
+// newViewChangeModeGadget stops the node for view change.
+func (c *Consensus) newViewChangeModeGadget() {
+	c.inViewChangeMode = true
+	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
+
+	go func() {
+		for {
+			if err := c.newViewChangeGadget(); err == nil {
+				return
+			}
+
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+}
+
 // newViewChangeGadget gets a count number of view-change messages and starts view change procedure.
-func (c *Consensus) newViewChangeGadget() {
+func (c *Consensus) newViewChangeGadget() error {
 	// change the view to stop processing requests
 	c.memory.IncView()
 
@@ -120,7 +137,7 @@ func (c *Consensus) newViewChangeGadget() {
 	// send a view change message
 	if count := c.communication.SendViewChangeMsg(&message); count < c.cfg.Majority {
 		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
-		return
+		return nil
 	}
 
 	// create a new timer
@@ -143,8 +160,7 @@ func (c *Consensus) newViewChangeGadget() {
 				timer.Stop(false)
 			}
 		case <-timer.Notify(): // if the timer expired, return and reset the view timer
-			c.viewTimer.Start(false)
-			return
+			return errors.New("view change failed")
 		}
 	}
 
@@ -173,10 +189,14 @@ func (c *Consensus) newViewChangeGadget() {
 				// set the message for view change
 				c.logs.AppendNewView(int(msg.GetView()), msg)
 
+				// update the log
+				for _, msg := range msg.GetPreprepares() {
+					c.logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
+				}
+
 				flag = false
 			case <-timer.Notify(): // if the timer expired, return and reset the view timer
-				c.viewTimer.Start(false)
-				return
+				return errors.New("view change failed")
 			}
 		}
 	}
@@ -184,6 +204,8 @@ func (c *Consensus) newViewChangeGadget() {
 	// close our channel
 	c.inViewChangeMode = false
 	c.viewChangeGadgetChannel = nil
+
+	return nil
 }
 
 // newLeaderGadget performs the procedure of new leader.

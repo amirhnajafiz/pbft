@@ -37,6 +37,7 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	// open a communication channel
 	channel := make(chan *models.Packet, c.cfg.Total*2)
+
 	c.lock.Lock()
 	c.requestsHandlersTable[sequence] = channel
 	c.lock.Unlock()
@@ -114,10 +115,14 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 	}
 
 	// check the number of executions
-	if c.shouldCheckpoint() {
-		c.communication.SendCheckpoint(&pbft.CheckpointMsg{
-			SequenceNumber: int64(c.memory.GetLowWaterMark()),
-		})
+	if sequence := c.shouldCheckpoint(); sequence > 0 {
+		checkpointMsg := pbft.CheckpointMsg{
+			SequenceNumber: int64(sequence),
+			NodeId:         c.memory.GetNodeId(),
+		}
+
+		c.communication.SendCheckpoint(&checkpointMsg)
+		c.consensusHandlersTable[enum.PktCP] <- models.NewPacket(&checkpointMsg, enum.PktCP, sequence)
 	}
 }
 

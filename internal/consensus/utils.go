@@ -64,17 +64,22 @@ func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
 }
 
 // shouldCheckpoint checks the number of executions to see if checkpoint is needed or not.
-func (c *Consensus) shouldCheckpoint() bool {
-	lwm := c.memory.GetLowWaterMark()
-	requests := c.logs.GetAllRequests()
+func (c *Consensus) shouldCheckpoint() int {
+	requests := c.logs.GetPartialRequests(c.memory.GetLowWaterMark())
 
 	count := 0
+	target := 0
 
 	for key, value := range requests {
-		if key >= lwm && value.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+		if value.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
 			count++
+			target = key
 		}
 	}
 
-	return count >= c.cfg.Checkpoint
+	if count >= c.cfg.Checkpoint {
+		return target
+	}
+
+	return 0
 }

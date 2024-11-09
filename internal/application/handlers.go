@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
 // transactionHandler gets client transactions and call request handler.
-func (a *App) transactionHandler(client string) {
+func (a *App) transactionHandler(client string, ch chan *models.Transaction) {
 	for {
 		// get model transactions
-		trx := <-a.clients[client]
+		trx := <-ch
 
 		// get a timestamp
 		ts := a.memory.GetTimestamp()

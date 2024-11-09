@@ -52,7 +52,7 @@ func NewApp(
 	// for each client, run a transaction handler
 	for key := range clients {
 		a.clients[key] = make(chan *models.Transaction)
-		go a.transactionHandler(key)
+		go a.transactionHandler(key, a.clients[key])
 	}
 
 	// start the grpc handler

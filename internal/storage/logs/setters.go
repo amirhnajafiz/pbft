@@ -3,6 +3,7 @@ package logs
 import (
 	"fmt"
 
+	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
@@ -23,7 +24,14 @@ func (l *Logs) InitRequest() int {
 
 // SetRequest adds a new request into the datastore.
 func (l *Logs) SetRequest(index int, req *pbft.RequestMsg) {
-	l.datastore[index] = req
+	l.datastore[index] = &models.Log{
+		Request: req,
+	}
+}
+
+// SetPreprepare sets the preprepare message of a request.
+func (l *Logs) SetPreprepare(index int, pp *pbft.PrePrepareMsg) {
+	l.datastore[index].PrePrepare = pp
 }
 
 // AppendLog adds a new log entry to the logs.
@@ -42,14 +50,14 @@ func (l *Logs) AppendViewChange(view int, msg *pbft.ViewChangeMsg) {
 
 // Reset turns the values back to initial state.
 func (l *Logs) Reset() {
-	l.datastore = make(map[int]*pbft.RequestMsg)
+	l.datastore = make(map[int]*models.Log)
 	l.logs = make([]string, 0)
 	l.index = 0
 }
 
 // SetRequestStatus accepts an index and status, and updates it if the new status is higher than what it is.
 func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
-	if l.datastore[index].GetStatus().Number()+1 == status.Number() {
-		l.datastore[index].Status = status
+	if l.datastore[index].Request.GetStatus().Number()+1 == status.Number() {
+		l.datastore[index].Request.Status = status
 	}
 }

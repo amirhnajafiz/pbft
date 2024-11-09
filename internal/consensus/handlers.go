@@ -25,6 +25,7 @@ func (c *Consensus) preprepareHandler() {
 		// update the request and set the status of preprepared
 		c.logs.SetRequest(raw.Sequence, msg.GetRequest())
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+		c.logs.SetPreprepare(raw.Sequence, msg)
 
 		// start the timer
 		c.viewTimer.Start(true)
@@ -136,6 +137,11 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	// store it into datastore
 	c.logs.SetRequest(sequence, msg)
+	c.logs.SetPreprepare(sequence, &pbft.PrePrepareMsg{
+		Request: msg,
+		View:    int64(c.memory.GetView()),
+		NodeId:  c.memory.GetNodeId(),
+	})
 
 	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 

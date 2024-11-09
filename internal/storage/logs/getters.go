@@ -5,7 +5,7 @@ import "github.com/f24-cse535/pbft/pkg/rpc/pbft"
 // GetRequest is returns a request by its index.
 func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
 	if value, ok := l.datastore[index]; ok {
-		return value
+		return value.Request
 	}
 
 	return nil
@@ -13,7 +13,13 @@ func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
 
 // GetAllRequests returns an array of the node requests.
 func (l *Logs) GetAllRequests() map[int]*pbft.RequestMsg {
-	return l.datastore
+	list := make(map[int]*pbft.RequestMsg)
+
+	for key, value := range l.datastore {
+		list[key] = value.Request
+	}
+
+	return list
 }
 
 // GetViewChanges returns a list of stored view changes.

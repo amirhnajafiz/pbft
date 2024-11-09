@@ -103,6 +103,7 @@ func (c *Consensus) newViewChangeGadget() {
 	preprepares := c.logs.GetPreprepares(sequence)
 
 	c.logs.AppendViewChange(view, &pbft.ViewChangeMsg{
+		NodeId:         c.memory.GetNodeId(),
 		View:           int64(view),
 		SequenceNumber: int64(sequence),
 		Preprepares:    preprepares,
@@ -170,15 +171,22 @@ func (c *Consensus) newLeaderGadget() {
 	for i := minSequence; i <= maxSequence; i++ {
 		for _, msg := range messages {
 			for _, pp := range msg.GetPreprepares() {
-				if int(pp.GetView()) == i {
+				if int(pp.GetSequenceNumber()) == i {
 					requests = append(requests, pp)
 				}
 			}
 		}
 	}
 
+	c.logs.AppendNewView(view, &pbft.NewViewMsg{
+		View:        int64(view),
+		NodeId:      c.memory.GetNodeId(),
+		Preprepares: requests,
+		Messages:    messages,
+	})
+
 	// send new view
-	c.communication.SendNewViewMsg(c.memory.GetView(), requests)
+	c.communication.SendNewViewMsg(view, requests, messages)
 
 	// start the protocol for every request
 	for _, req := range requests {

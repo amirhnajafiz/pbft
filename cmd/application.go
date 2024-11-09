@@ -147,6 +147,13 @@ func (a Application) terminal(app *application.App) {
 							fmt.Printf("\t\t- %s\n", pp.String())
 						}
 					}
+					fmt.Printf("\tnew view: %s\n", item.GetNewView().String())
+					for _, msg := range item.GetNewView().GetPreprepares() {
+						fmt.Printf("\t- preprepare: %s\n", msg.String())
+					}
+					for _, msg := range item.GetNewView().GetMessages() {
+						fmt.Printf("\t- viewchange: %s\n", msg.String())
+					}
 				}
 			}
 		default:

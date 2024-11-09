@@ -42,10 +42,17 @@ func (l *Logs) AppendLog(prefix, log string) {
 // AppendViewChange gets all view change messages and stores them.
 func (l *Logs) AppendViewChange(view int, msg *pbft.ViewChangeMsg) {
 	if _, ok := l.viewChanges[view]; !ok {
-		l.viewChanges[view] = make([]*pbft.ViewChangeMsg, 0)
+		l.viewChanges[view] = &models.ViewLog{
+			ViewChangeMsgs: make([]*pbft.ViewChangeMsg, 0),
+		}
 	}
 
-	l.viewChanges[view] = append(l.viewChanges[view], msg)
+	l.viewChanges[view].ViewChangeMsgs = append(l.viewChanges[view].ViewChangeMsgs, msg)
+}
+
+// AppendNewView adds a new view message to a view log.
+func (l *Logs) AppendNewView(view int, msg *pbft.NewViewMsg) {
+	l.viewChanges[view].NewViewMsg = msg
 }
 
 // Reset turns the values back to initial state.

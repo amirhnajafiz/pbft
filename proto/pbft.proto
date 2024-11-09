@@ -92,7 +92,8 @@ message StatusRsp {
 
 message ViewRsp {
   int64 view = 1;
-  repeated ViewChangeMsg messages = 2;
+  NewViewMsg new_view = 2;
+  repeated ViewChangeMsg messages = 3;
 }
 
 message TransactionRsp {

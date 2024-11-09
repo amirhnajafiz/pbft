@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
@@ -27,14 +28,14 @@ func (l *Logs) GetAllRequests() map[int]*pbft.RequestMsg {
 // GetViewChanges returns a list of stored view changes.
 func (l *Logs) GetViewChanges(view int) []*pbft.ViewChangeMsg {
 	if list, ok := l.viewChanges[view]; ok {
-		return list
+		return list.ViewChangeMsgs
 	}
 
 	return make([]*pbft.ViewChangeMsg, 0)
 }
 
 // GetAllViewChanges returns a map of views and their view change messages.
-func (l *Logs) GetAllViewChanges() map[int][]*pbft.ViewChangeMsg {
+func (l *Logs) GetAllViewChanges() map[int]*models.ViewLog {
 	return l.viewChanges
 }
 

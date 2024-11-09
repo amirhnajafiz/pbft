@@ -12,4 +12,5 @@ const (
 	PktPed
 	PktCmt
 	PktVC
+	PktNV
 )

@@ -192,3 +192,18 @@ func (c *Consensus) viewChangeHandler() {
 		}
 	}
 }
+
+// newViewHandler captures all new view messages and updates the node status.
+func (c *Consensus) newViewHandler() {
+	for {
+		// capture view change messages
+		raw := <-c.consensusHandlersTable[enum.PktNV]
+		msg := raw.Payload.(*pbft.NewViewMsg)
+
+		// update the view
+		c.memory.SetView(int(msg.GetView()))
+
+		// set the message for view change
+		c.logs.AppendNewView(int(msg.GetView()), msg)
+	}
+}

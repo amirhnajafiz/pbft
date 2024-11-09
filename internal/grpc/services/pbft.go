@@ -72,9 +72,18 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, 
 	return &emptypb.Empty{}, nil
 }
 
+// ViewChange RPC generates a packet for consensus' view change handler.
 func (p *PBFT) ViewChange(ctx context.Context, msg *pbft.ViewChangeMsg) (*emptypb.Empty, error) {
 	p.Logs.AppendLog("ViewChange", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktVC, int(msg.GetSequenceNumber())))
+
+	return &emptypb.Empty{}, nil
+}
+
+// NewView RPC generates a packet for consensus' new view handler.
+func (p *PBFT) NewView(ctx context.Context, msg *pbft.NewViewMsg) (*emptypb.Empty, error) {
+	p.Logs.AppendLog("NewView", msg.String())
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktNV, 0))
 
 	return &emptypb.Empty{}, nil
 }
@@ -130,7 +139,8 @@ func (p *PBFT) PrintView(_ *emptypb.Empty, stream pbft.PBFT_PrintViewServer) err
 	for key, value := range views {
 		if err := stream.Send(&pbft.ViewRsp{
 			View:     int64(key),
-			Messages: value,
+			Messages: value.ViewChangeMsgs,
+			NewView:  value.NewViewMsg,
 		}); err != nil {
 			return err
 		}

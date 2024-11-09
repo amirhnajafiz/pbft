@@ -7,3 +7,9 @@ type Log struct {
 	Request    *pbft.RequestMsg
 	PrePrepare *pbft.PrePrepareMsg
 }
+
+// ViewLog is used as a wrapper for view messages.
+type ViewLog struct {
+	ViewChangeMsgs []*pbft.ViewChangeMsg
+	NewViewMsg     *pbft.NewViewMsg
+}

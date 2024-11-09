@@ -59,6 +59,7 @@ func (l *Logs) AppendNewView(view int, msg *pbft.NewViewMsg) {
 func (l *Logs) Reset() {
 	l.datastore = make(map[int]*models.Log)
 	l.logs = make([]string, 0)
+	l.viewChanges = make(map[int]*models.ViewLog)
 	l.index = 0
 }
 

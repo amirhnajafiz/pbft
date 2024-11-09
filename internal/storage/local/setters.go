@@ -14,6 +14,7 @@ func (m *Memory) SetByzantine(in bool) {
 func (m *Memory) Reset() {
 	m.status = true
 	m.byzantine = false
+	m.view = 0
 }
 
 // IncView increases the view one unit.

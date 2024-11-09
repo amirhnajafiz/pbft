@@ -44,18 +44,21 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 
 	// wait for 2f+1 preprepared messages (count our own)
-	c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
+	count := c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
 
-	// broadcast to all using prepare
-	go c.communication.SendPrepareMsg(msg.GetRequest(), c.memory.GetView())
+	// optimized mode
+	if count+1 < c.cfg.Total {
+		// broadcast to all using prepare
+		go c.communication.SendPrepareMsg(msg.GetRequest(), c.memory.GetView())
 
-	// update our own status
-	if !c.memory.GetByzantine() {
-		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+		// update our own status
+		if !c.memory.GetByzantine() {
+			c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+		}
+
+		// wait for 2f+1 prepared messages (count our own)
+		c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
 	}
-
-	// wait for 2f+1 prepared messages (count our own)
-	c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
 
 	// broadcast to all using commit, make sure everyone get's it
 	go c.communication.SendCommitMsg(msg.GetRequest(), c.memory.GetView())

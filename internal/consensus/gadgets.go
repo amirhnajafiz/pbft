@@ -58,6 +58,8 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 
 		// wait for 2f+1 prepared messages (count our own)
 		c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
+	} else {
+		c.logger.Info("optimized mode", zap.Int("count", count+1))
 	}
 
 	// broadcast to all using commit, make sure everyone get's it
@@ -89,8 +91,11 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 	}
 
 	for {
-		c.executeRequest(msg)                                               // execute request
-		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
+		c.executeRequest(msg) // execute request
+
+		if !c.memory.GetByzantine() {
+			c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
+		}
 
 		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
 		c.logger.Debug("request executed", zap.Int("sequence number", index))

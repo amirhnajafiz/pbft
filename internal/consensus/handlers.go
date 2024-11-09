@@ -91,7 +91,9 @@ func (c *Consensus) commitHandler() {
 		}
 
 		// update the request and set the status of prepare
-		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		if !c.memory.GetByzantine() {
+			c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		}
 
 		// stop the timer
 		c.viewTimer.Stop(true)

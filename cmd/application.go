@@ -143,6 +143,9 @@ func (a Application) terminal(app *application.App) {
 					fmt.Printf("\tview %d\n", item.GetView())
 					for _, msg := range item.GetMessages() {
 						fmt.Printf("\t- from node %s: sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+						for _, pp := range msg.GetPreprepares() {
+							fmt.Printf("\t\t- %s\n", pp.String())
+						}
 					}
 				}
 			}

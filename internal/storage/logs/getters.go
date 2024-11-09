@@ -1,6 +1,8 @@
 package logs
 
-import "github.com/f24-cse535/pbft/pkg/rpc/pbft"
+import (
+	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+)
 
 // GetRequest is returns a request by its index.
 func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
@@ -58,4 +60,17 @@ func (l *Logs) GetSequenceNumber() int {
 	}
 
 	return index
+}
+
+// GetPreprepares returns a list of preprepare messages from the given sequence.
+func (l *Logs) GetPreprepares(from int) []*pbft.PrePrepareMsg {
+	list := make([]*pbft.PrePrepareMsg, 0)
+
+	for key, value := range l.datastore {
+		if key >= from {
+			list = append(list, value.PrePrepare)
+		}
+	}
+
+	return list
 }

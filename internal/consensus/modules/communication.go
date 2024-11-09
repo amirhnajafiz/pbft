@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"fmt"
-
 	"github.com/f24-cse535/pbft/internal/grpc/client"
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
@@ -28,7 +26,6 @@ func (c *Communication) Client() *client.Client {
 
 // SendReplyMsg gets a request message and uses client.go to send a reply message.
 func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
-	fmt.Printf("replying seq %d, ts %d to %s\n", msg.GetSequenceNumber(), msg.Transaction.GetTimestamp(), msg.GetClientId())
 	c.cli.Reply(
 		msg.GetClientId(),
 		&app.ReplyMsg{
@@ -71,11 +68,12 @@ func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
 }
 
 // SendViewChangeMsg gets view and sequence and uses client.go to broadcase a view change message.
-func (c *Communication) SendViewChangeMsg(view, sequence int) int {
+func (c *Communication) SendViewChangeMsg(view, sequence int, preprepares []*pbft.PrePrepareMsg) int {
 	// create a new pbft view change message
 	msg := &pbft.ViewChangeMsg{
 		SequenceNumber: int64(sequence),
 		View:           int64(view),
+		Preprepares:    preprepares,
 	}
 
 	// count the number of sucessful sends

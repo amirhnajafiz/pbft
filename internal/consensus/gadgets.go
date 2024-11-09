@@ -61,9 +61,10 @@ func (c *Consensus) newViewChangeGadget() {
 	// change the view to stop processing requests
 	c.memory.IncView()
 	view := c.memory.GetView()
+	sequence := c.logs.GetSequenceNumber()
 
 	// send a view change message
-	if count := c.communication.SendViewChangeMsg(view, c.logs.GetSequenceNumber()); count < c.cfg.Majority {
+	if count := c.communication.SendViewChangeMsg(view, sequence, c.logs.GetPreprepares(sequence)); count < c.cfg.Majority {
 		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
 
 		return

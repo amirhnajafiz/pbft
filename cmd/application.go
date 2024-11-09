@@ -142,19 +142,28 @@ func (a Application) terminal(app *application.App) {
 				fmt.Printf("- node %s\n", key)
 				for _, item := range app.Client().PrintView(key) {
 					fmt.Printf("\tnew view: %d\n", item.GetNewView().GetView())
+					fmt.Printf("\tpreprepares:\n")
 					for _, msg := range item.GetNewView().GetPreprepares() {
-						fmt.Printf("\t- preprepare messages: %s\n", msg.String())
+						fmt.Printf("\t\t- preprepare messages: %s\n", msg.String())
 					}
+					fmt.Printf("\tviewchanges:\n")
 					for _, msg := range item.GetMessages() {
-						fmt.Printf("\t- viewchange %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+						fmt.Printf("\t\t- viewchange %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
 						for _, pp := range msg.GetPreprepares() {
-							fmt.Printf("\t\t- %s\n", pp.String())
+							fmt.Printf("\t\t\t- %s\n", pp.String())
 						}
 					}
 					fmt.Printf("\t- tts: %s\n", item.GetNewView().GetMessage())
 					for _, sh := range item.GetNewView().GetShares() {
 						fmt.Printf("\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
 					}
+				}
+			}
+		case "printcheckpoint":
+			for key := range a.Cfg.GetNodes() {
+				fmt.Printf("- node %s\n", key)
+				for _, item := range app.Client().PrintCheckpoints(key) {
+					fmt.Printf("\t- %s", item.String())
 				}
 			}
 		default:

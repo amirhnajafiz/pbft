@@ -88,6 +88,14 @@ func (p *PBFT) NewView(ctx context.Context, msg *pbft.NewViewMsg) (*emptypb.Empt
 	return &emptypb.Empty{}, nil
 }
 
+// Checkpoint RPC generates a packet for consensus' checkpoint handler.
+func (p *PBFT) Checkpoint(ctx context.Context, msg *pbft.CheckpointMsg) (*emptypb.Empty, error) {
+	p.Logs.AppendLog("Checkpoint", msg.String())
+	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktCP, int(msg.GetSequenceNumber())))
+
+	return &emptypb.Empty{}, nil
+}
+
 // PrintDB returns the current datastore of this node.
 func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 	ds := p.Logs.GetAllRequests()

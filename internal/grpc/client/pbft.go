@@ -168,6 +168,26 @@ func (c *Client) NewView(target string, msg *pbft.NewViewMsg) error {
 	return nil
 }
 
+// Checkpoint calls the new checkpoint RPC on the target machine.
+func (c *Client) Checkpoint(target string, msg *pbft.CheckpointMsg) error {
+	address := c.nodes[target]
+	msg.NodeId = c.nodeId
+
+	// base connection
+	conn, err := c.connect(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// call checkpoint RPC
+	if _, err := pbft.NewPBFTClient(conn).Checkpoint(context.Background(), msg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // PrintDB gets a target datastore.
 func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
 	address := c.nodes[target]

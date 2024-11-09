@@ -81,3 +81,10 @@ func (c *Communication) SendNewViewMsg(msg *pbft.NewViewMsg) {
 		c.cli.NewView(key, msg)
 	}
 }
+
+// SendCheckpoint broadcasts a checkpoint message to all nodes.
+func (c *Communication) SendCheckpoint(msg *pbft.CheckpointMsg) {
+	for key := range c.cli.GetSystemNodes() {
+		c.cli.Checkpoint(key, msg)
+	}
+}

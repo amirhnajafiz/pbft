@@ -109,8 +109,15 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 
 		index++
 		if msg = c.logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
-			return
+			break
 		}
+	}
+
+	// check the number of executions
+	if c.shouldCheckpoint() {
+		c.communication.SendCheckpoint(&pbft.CheckpointMsg{
+			SequenceNumber: int64(c.memory.GetLowWaterMark()),
+		})
 	}
 }
 

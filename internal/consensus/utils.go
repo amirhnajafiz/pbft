@@ -37,8 +37,8 @@ func (c *Consensus) checkRequestExecution(ts int64) (*pbft.RequestMsg, bool) {
 // canExecuteRequest gets a sequence number and checks if all requests before that are executed or not.
 func (c *Consensus) canExecuteRequest(sequence int) bool {
 	// loop from the first sequence and check the execution status
-	for i := 0; i < sequence; i++ {
-		if tmp := c.logs.GetRequest(i); tmp != nil && tmp.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
+	for key, value := range c.logs.GetAllRequests() {
+		if key < sequence && value.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
 			return false
 		}
 	}

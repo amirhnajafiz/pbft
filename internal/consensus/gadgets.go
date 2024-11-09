@@ -78,6 +78,7 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 // newExecutionGadget gets a sequence number and performs the execution logic.
 func (c *Consensus) newExecutionGadget(sequence int) {
 	if !c.memory.GetByzantine() && !c.canExecuteRequest(sequence) {
+		c.logger.Debug("cannot execute this request yet", zap.Int("sequence", sequence))
 		return
 	}
 

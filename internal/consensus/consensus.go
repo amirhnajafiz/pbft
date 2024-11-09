@@ -76,7 +76,6 @@ func NewConsensus(
 	go c.executeHandler()
 	go c.timerHandler()
 	go c.viewChangeHandler()
-	go c.newViewHandler()
 
 	return c
 }

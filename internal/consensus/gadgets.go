@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/f24-cse535/pbft/internal/utils/hashing"
+	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
@@ -129,15 +130,26 @@ func (c *Consensus) newViewChangeGadget() {
 		}
 	}
 
-	// close our channel
-	c.inViewChangeMode = false
-	c.viewChangeGadgetChannel = nil
-
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
 		c.logger.Debug("new leader", zap.String("id", c.memory.GetNodeId()))
-		c.newLeaderGadget()
+		if !c.memory.GetByzantine() {
+			c.newLeaderGadget()
+		}
+	} else { // if the node is primary, it needs new-view message
+		raw := <-c.consensusHandlersTable[enum.PktNV]
+		msg := raw.Payload.(*pbft.NewViewMsg)
+
+		// update the view
+		c.memory.SetView(int(msg.GetView()))
+
+		// set the message for view change
+		c.logs.AppendNewView(int(msg.GetView()), msg)
 	}
+
+	// close our channel
+	c.inViewChangeMode = false
+	c.viewChangeGadgetChannel = nil
 }
 
 // newLeaderGadget performs the procedure of new leader.

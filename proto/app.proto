@@ -5,12 +5,12 @@ import "google/protobuf/empty.proto";
 
 option go_package = "./rpc/app";
 
-// creating rpc services for client's application.
+// App service is for client's program.
 service App {
   rpc Reply(ReplyMsg) returns (google.protobuf.Empty) {}
 }
 
-// client reply message
+// app service reply message
 message ReplyMsg {
   int64 sequence_number = 1;
   int64 view = 2;

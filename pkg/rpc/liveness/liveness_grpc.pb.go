@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// this service is for node's liveness status handling.
+// Liveness service is for node's liveness status management.
 type LivenessClient interface {
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ChangeStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -78,7 +78,7 @@ func (c *livenessClient) Flush(ctx context.Context, in *emptypb.Empty, opts ...g
 // All implementations must embed UnimplementedLivenessServer
 // for forward compatibility.
 //
-// this service is for node's liveness status handling.
+// Liveness service is for node's liveness status management.
 type LivenessServer interface {
 	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	ChangeStatus(context.Context, *StatusMsg) (*emptypb.Empty, error)

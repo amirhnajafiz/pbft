@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// client reply message
+// app service reply message
 type ReplyMsg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

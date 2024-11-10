@@ -5,9 +5,11 @@ import "google/protobuf/empty.proto";
 
 option go_package = "./rpc/pbft";
 
-// creating rpc services for transactions and pbft.
-// this service is for handling internal node calls for performing pbft.
+// PBFT rpc services for transactions and pbft protocol.
+// this service is used for handling internal node calls,
+// and client to node rpc calls.
 service PBFT {
+  // internal calls
   rpc Request(RequestMsg) returns (google.protobuf.Empty) {}
   rpc PrePrepare(PrePrepareMsg) returns (google.protobuf.Empty) {}
   rpc PrePrepared(AckMsg) returns (google.protobuf.Empty) {}
@@ -17,6 +19,7 @@ service PBFT {
   rpc ViewChange(ViewChangeMsg) returns (google.protobuf.Empty) {}
   rpc NewView(NewViewMsg) returns (google.protobuf.Empty) {}
   rpc Checkpoint(CheckpointMsg) returns (google.protobuf.Empty) {}
+  // client calls
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
   rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
@@ -24,9 +27,9 @@ service PBFT {
   rpc PrintCheckpoints(google.protobuf.Empty) returns (stream CheckpointRsp) {}
 }
 
-// defining request status enum
+// defining request's status enum
 enum RequestStatus {
-  REQUEST_STATUS_UNSPECIFIED = 0;
+  REQUEST_STATUS_UNSPECIFIED = 0; // undefined
   REQUEST_STATUS_PP = 1; // preprepared
   REQUEST_STATUS_P = 2; // prepared
   REQUEST_STATUS_C = 3; // committed
@@ -34,6 +37,7 @@ enum RequestStatus {
 }
 
 // defining messages that are used in PBFT service
+// transaction contains a request operations.
 message TransactionMsg {
   string sender = 1;
   string reciever = 2;
@@ -41,16 +45,15 @@ message TransactionMsg {
   int64 timestamp = 4;
 }
 
+// request will be sent by application to nodes.
 message RequestMsg {
   TransactionMsg transaction = 1;
-  RequestStatus status = 2;
-  TransactionRsp response = 3;
-  int64 sequence_number = 4;
-  int64 view = 5;
-  string client_id = 6;
-  string node_id = 7;
+  TransactionRsp response = 2;
+  RequestStatus status = 3;
+  string client_id = 4;
 }
 
+// preprepare will be sent by the leader to all other nodes.
 message PrePrepareMsg {
   RequestMsg request = 1;
   int64 sequence_number = 2;
@@ -59,6 +62,7 @@ message PrePrepareMsg {
   string node_id = 5;
 }
 
+// ack messages will be used in pbft stages to continue the protocol.
 message AckMsg {
   int64 sequence_number = 1;
   int64 view = 2;
@@ -66,52 +70,64 @@ message AckMsg {
   string node_id = 4;
 }
 
+// checkpoint message will be used in checkpointing procedure.
+message CheckpointMsg {
+  int64 sequence_number = 1;
+  string node_id = 2;
+  string preprepare_message = 3;
+  repeated bytes shares = 4;
+  repeated PrePrepareMsg preprepare_messages = 5;
+}
+
+// view chane message will be used in view changing procedure.
+message ViewChangeMsg {
+  CheckpointMsg checkpoint = 1;
+  int64 view = 2;
+  int64 sequence_number = 3;
+  string node_id = 4;
+  bytes signature = 5;
+  repeated PrePrepareMsg preprepare_messages = 6;
+}
+
+// new view message will be sent by the new leader to update other nodes logs.
+message NewViewMsg {
+  int64 view = 1;
+  string node_id = 2;
+  string viewchange_message = 3;
+  repeated bytes shares = 4;
+  repeated ViewChangeMsg viewchange_messages = 5;
+  repeated PrePrepareMsg preprepare_messages = 6;
+}
+
+// status message will be sent by application to nodes.
 message StatusMsg {
   int64 sequence_number = 1;
 }
 
-message CheckpointMsg {
-  int64 sequence_number = 1;
-  string node_id = 2;
-}
-
-message ViewChangeMsg {
-  int64 view = 1;
-  int64 sequence_number = 2;
-  repeated PrePrepareMsg preprepares = 3;
-  string node_id = 4;
-  bytes signature = 5;
-  repeated CheckpointMsg checkpoints = 6;
-}
-
-message NewViewMsg {
-  int64 view = 1;
-  repeated ViewChangeMsg messages = 2;
-  repeated PrePrepareMsg preprepares = 3;
-  string node_id = 4;
-  string message = 5;
-  repeated bytes shares = 6;
-}
-
+// log response will be sent to the user.
 message LogRsp {
   string text = 1;
 }
 
+// status response will be sent to the user.
 message StatusRsp {
   RequestStatus status = 1;
 }
 
+// view response will be sent to the user.
 message ViewRsp {
+  NewViewMsg newview_message = 2;
   int64 view = 1;
-  NewViewMsg new_view = 2;
-  repeated ViewChangeMsg messages = 3;
+  repeated ViewChangeMsg viewchange_messages = 3;
 }
 
+// checkpoint response will be sent to the user.
 message CheckpointRsp {
   int64 sequence_number = 1;
-  repeated CheckpointMsg checkpoints = 2;
+  repeated CheckpointMsg checkpoint_messages = 2;
 }
 
+// transaction response will be sent to the user.
 message TransactionRsp {
   string text = 1;
 }

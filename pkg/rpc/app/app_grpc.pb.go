@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// creating rpc services client's application.
+// App service is for client's program.
 type AppClient interface {
 	Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -54,7 +54,7 @@ func (c *appClient) Reply(ctx context.Context, in *ReplyMsg, opts ...grpc.CallOp
 // All implementations must embed UnimplementedAppServer
 // for forward compatibility.
 //
-// creating rpc services client's application.
+// App service is for client's program.
 type AppServer interface {
 	Reply(context.Context, *ReplyMsg) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAppServer()

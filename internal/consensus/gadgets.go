@@ -117,12 +117,14 @@ func (c *Consensus) executionGadget(sequence int) {
 // enterViewChangeGadget stops the node for a new view change process.
 func (c *Consensus) enterViewChangeGadget() {
 	c.inViewChangeMode = true
-	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
+	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg, 2*c.cfg.Total)
 
 	go func() {
 		for {
 			if err := c.viewChangeGadget(); err == nil {
 				return
+			} else {
+				c.logger.Error("view change failed", zap.Error(err))
 			}
 
 			time.Sleep(100 * time.Millisecond)
@@ -159,7 +161,7 @@ func (c *Consensus) viewChangeGadget() error {
 
 	// send a view change message
 	if count := c.communication.SendViewChangeMsg(&message); count < c.cfg.Majority {
-		c.logger.Info("not enough available servers to start view change", zap.Int("live servers", count))
+		c.logger.Warn("not enough available servers to start view change", zap.Int("live servers", count))
 		return nil
 	}
 
@@ -217,7 +219,7 @@ func (c *Consensus) viewChangeGadget() error {
 // newViewBackupGadget waits for a new view message from new leader.
 func (c *Consensus) newViewBackupGadget(view int) error {
 	var (
-		timer = modules.NewTimer(100*c.cfg.ViewChangeTimeout, time.Millisecond)
+		timer = modules.NewTimer(10*c.cfg.ViewChangeTimeout, time.Millisecond)
 		msg   *pbft.NewViewMsg
 	)
 

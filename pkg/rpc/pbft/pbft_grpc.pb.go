@@ -40,9 +40,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// creating rpc services for transactions and pbft.
-// this service is for handling internal node calls for performing pbft.
+// PBFT rpc services for transactions and pbft protocol.
+// this service is used for handling internal node calls,
+// and client to node rpc calls.
 type PBFTClient interface {
+	// internal calls
 	Request(ctx context.Context, in *RequestMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrePrepare(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrePrepared(ctx context.Context, in *AckMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -52,6 +54,7 @@ type PBFTClient interface {
 	ViewChange(ctx context.Context, in *ViewChangeMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	NewView(ctx context.Context, in *NewViewMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Checkpoint(ctx context.Context, in *CheckpointMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// client calls
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
 	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
@@ -247,9 +250,11 @@ type PBFT_PrintCheckpointsClient = grpc.ServerStreamingClient[CheckpointRsp]
 // All implementations must embed UnimplementedPBFTServer
 // for forward compatibility.
 //
-// creating rpc services for transactions and pbft.
-// this service is for handling internal node calls for performing pbft.
+// PBFT rpc services for transactions and pbft protocol.
+// this service is used for handling internal node calls,
+// and client to node rpc calls.
 type PBFTServer interface {
+	// internal calls
 	Request(context.Context, *RequestMsg) (*emptypb.Empty, error)
 	PrePrepare(context.Context, *PrePrepareMsg) (*emptypb.Empty, error)
 	PrePrepared(context.Context, *AckMsg) (*emptypb.Empty, error)
@@ -259,6 +264,7 @@ type PBFTServer interface {
 	ViewChange(context.Context, *ViewChangeMsg) (*emptypb.Empty, error)
 	NewView(context.Context, *NewViewMsg) (*emptypb.Empty, error)
 	Checkpoint(context.Context, *CheckpointMsg) (*emptypb.Empty, error)
+	// client calls
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
 	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)

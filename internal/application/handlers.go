@@ -69,13 +69,23 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	// wait for the reply
 	resp, err = a.replyHandler(ch, trx)
 	if err != nil {
-		// if the number of live servers is less than 2f+1, then raise an error
-		if count := a.broadcastRequest(req); count < a.cfg.Majority {
-			return enum.RespNotEnoughServers
+		flag := false
+
+		for i := 0; i < 3; i++ {
+			// if the number of live servers is less than 2f+1, then raise an error
+			if count := a.broadcastRequest(req); count < a.cfg.Majority {
+				return enum.RespNotEnoughServers
+			}
+
+			// wait for f+1 messages
+			resp, err = a.replyHandler(ch, trx)
+			if err == nil {
+				flag = true
+				break
+			}
 		}
 
-		resp, err = a.replyHandler(ch, trx)
-		if err != nil {
+		if !flag {
 			return enum.RespSystemFailed
 		}
 	}

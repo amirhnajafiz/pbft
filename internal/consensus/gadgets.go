@@ -119,6 +119,8 @@ func (c *Consensus) enterViewChangeGadget() {
 	c.inViewChangeMode = true
 	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg, 2*c.cfg.Total)
 
+	c.logger.Debug("node entered the view change mode")
+
 	go func() {
 		for {
 			if err := c.viewChangeGadget(); err == nil {
@@ -137,6 +139,8 @@ func (c *Consensus) viewChangeGadget() error {
 	// get the current view and increase it
 	view := c.memory.GetView()
 	view++
+
+	c.logger.Debug("node started view chaning", zap.Int("for view", view))
 
 	// create a view change message
 	message := pbft.ViewChangeMsg{
@@ -178,11 +182,7 @@ func (c *Consensus) viewChangeGadget() error {
 
 		select {
 		case msg := <-c.viewChangeGadgetChannel:
-			if msg.GetView() != int64(view) {
-				continue
-			}
-
-			c.logs.AppendViewChange(view, msg)
+			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
 			if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
 				flag = false
@@ -195,6 +195,7 @@ func (c *Consensus) viewChangeGadget() error {
 
 	// update the node view
 	c.memory.SetView(view)
+	c.logger.Debug("node view update", zap.Int("view", view))
 
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
@@ -213,6 +214,8 @@ func (c *Consensus) viewChangeGadget() error {
 	c.inViewChangeMode = false
 	c.viewChangeGadgetChannel = nil
 
+	c.logger.Debug("view change is over")
+
 	return nil
 }
 
@@ -222,6 +225,8 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 		timer = modules.NewTimer(10*c.cfg.ViewChangeTimeout, time.Millisecond)
 		msg   *pbft.NewViewMsg
 	)
+
+	c.logger.Debug("node entered backup gadget", zap.Int("view", view))
 
 	// leader should response before timeout
 	select {
@@ -239,6 +244,8 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 
 // newLeaderGadget performs the procedure of new leader.
 func (c *Consensus) newViewLeaderGadget(view int) {
+	c.logger.Debug("node entered leader gadget", zap.Int("view", view))
+
 	// get all view change messages from other nodes
 	messages := c.logs.GetViewChanges(view)
 

@@ -65,6 +65,14 @@ func NewApp(
 	return a
 }
 
+// Reset the app values.
+func (a *App) Reset() {
+	a.memory.Reset()
+
+	a.handlers = make(map[string]chan *app.ReplyMsg)
+	a.replys = make(chan *app.ReplyMsg, len(a.clients)*a.cfg.Total)
+}
+
 // Client returns the app client for direct calls.
 func (a *App) Client() *client.Client {
 	return a.cli

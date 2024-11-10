@@ -98,6 +98,9 @@ func (a Application) terminal(app *application.App) {
 			if testCaseIndex < len(testCases) {
 				currentTestSet := testCases[testCaseIndex]
 
+				// reset the app
+				app.Reset()
+
 				// flush and reset our nodes status
 				for key := range a.Cfg.GetNodes() {
 					app.Client().Flush(key)

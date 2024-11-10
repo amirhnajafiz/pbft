@@ -74,7 +74,6 @@ func (p *PBFT) Prepared(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, 
 
 // ViewChange RPC generates a packet for consensus' view change handler.
 func (p *PBFT) ViewChange(ctx context.Context, msg *pbft.ViewChangeMsg) (*emptypb.Empty, error) {
-	p.Logs.AppendLog("ViewChange", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktVC, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil
@@ -82,7 +81,6 @@ func (p *PBFT) ViewChange(ctx context.Context, msg *pbft.ViewChangeMsg) (*emptyp
 
 // NewView RPC generates a packet for consensus' new view handler.
 func (p *PBFT) NewView(ctx context.Context, msg *pbft.NewViewMsg) (*emptypb.Empty, error) {
-	p.Logs.AppendLog("NewView", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktNV, 0))
 
 	return &emptypb.Empty{}, nil
@@ -90,7 +88,6 @@ func (p *PBFT) NewView(ctx context.Context, msg *pbft.NewViewMsg) (*emptypb.Empt
 
 // Checkpoint RPC generates a packet for consensus' checkpoint handler.
 func (p *PBFT) Checkpoint(ctx context.Context, msg *pbft.CheckpointMsg) (*emptypb.Empty, error) {
-	p.Logs.AppendLog("Checkpoint", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktCP, int(msg.GetSequenceNumber())))
 
 	return &emptypb.Empty{}, nil

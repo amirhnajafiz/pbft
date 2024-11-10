@@ -2,12 +2,11 @@ package modules
 
 import (
 	"github.com/f24-cse535/pbft/internal/grpc/client"
-	"github.com/f24-cse535/pbft/internal/utils/hashing"
 	"github.com/f24-cse535/pbft/pkg/rpc/app"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
-// Communication is a module that uses client.go to send messages.
+// Communication is a module that uses client.go to make RPC calls for consensus module.
 type Communication struct {
 	cli *client.Client
 }
@@ -25,11 +24,11 @@ func (c *Communication) Client() *client.Client {
 }
 
 // SendReplyMsg gets a request message and uses client.go to send a reply message.
-func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
+func (c *Communication) SendReplyMsg(sequence, view int, msg *pbft.RequestMsg) {
 	c.cli.Reply(
 		msg.GetClientId(),
 		&app.ReplyMsg{
-			SequenceNumber: msg.GetSequenceNumber(),
+			SequenceNumber: int64(sequence),
 			View:           int64(view),
 			Timestamp:      msg.GetTransaction().GetTimestamp(),
 			ClientId:       msg.GetClientId(),
@@ -39,32 +38,41 @@ func (c *Communication) SendReplyMsg(msg *pbft.RequestMsg, view int) {
 	)
 }
 
-// SendPreprepareMsg gets a request message and uses client.go to broadcast a preprepare message.
-func (c *Communication) SendPreprepareMsg(msg *pbft.PrePrepareMsg, view int) {
-	c.cli.BroadcastPrePrepare(msg)
+// SendPreprepareMsg gets a preprepare message and uses client.go to broadcast that message.
+func (c *Communication) SendPreprepareMsg(msg *pbft.PrePrepareMsg) {
+	for key := range c.cli.GetSystemNodes() {
+		c.cli.PrePrepare(key, msg)
+	}
 }
 
-// SendPrepareMsg gets a request message and uses client.go to broadcast a prepare message.
-func (c *Communication) SendPrepareMsg(msg *pbft.RequestMsg, view int) {
-	c.cli.BroadcastPrepare(&pbft.AckMsg{
-		SequenceNumber: msg.GetSequenceNumber(),
+// SendPrepareMsg gets parameters needed to broadcast a prepare message and sends it.
+func (c *Communication) SendPrepareMsg(sequence, view int, digest string) {
+	msg := pbft.AckMsg{
+		SequenceNumber: int64(sequence),
 		View:           int64(view),
-		Digest:         hashing.MD5Req(msg),
-	})
+		Digest:         digest,
+	}
+
+	for key := range c.cli.GetSystemNodes() {
+		c.cli.Prepare(key, &msg)
+	}
 }
 
 // SendCommitMsg gets a request message and uses client.go to broadcast a commit message.
-func (c *Communication) SendCommitMsg(msg *pbft.RequestMsg, view int) {
-	c.cli.BroadcastCommit(&pbft.AckMsg{
-		SequenceNumber: msg.GetSequenceNumber(),
+func (c *Communication) SendCommitMsg(sequence, view int, digest string) {
+	msg := pbft.AckMsg{
+		SequenceNumber: int64(sequence),
 		View:           int64(view),
-		Digest:         hashing.MD5Req(msg),
-	})
+		Digest:         digest,
+	}
+
+	for key := range c.cli.GetSystemNodes() {
+		c.cli.Commit(key, &msg)
+	}
 }
 
-// SendViewChangeMsg gets view and sequence and uses client.go to broadcase a view change message.
+// SendViewChangeMsg gets view and uses client.go to broadcase a view change message.
 func (c *Communication) SendViewChangeMsg(msg *pbft.ViewChangeMsg) int {
-	// count the number of sucessful sends
 	count := 1
 	for key := range c.cli.GetSystemNodes() {
 		if err := c.cli.ViewChange(key, msg); err == nil {

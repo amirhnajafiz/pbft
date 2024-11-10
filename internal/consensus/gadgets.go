@@ -16,7 +16,6 @@ import (
 
 // ackMsgReceivedGadget validates a preprepared or prepared ack message.
 func (c *Consensus) ackMsgReceivedGadget(msg *pbft.AckMsg) *pbft.AckMsg {
-	// get the message from our datastore
 	message := c.logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
 		return nil
@@ -24,7 +23,6 @@ func (c *Consensus) ackMsgReceivedGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 
 	digest := hashing.MD5HashRequestMsg(message) // get the digest of input request
 
-	// validate the message
 	if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
 		return nil
 	}
@@ -40,25 +38,21 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	c.requestsHandlersTable[sequence] = channel
 	c.lock.Unlock()
 
-	// send preprepare messages
-	go c.communication.SendPreprepareMsg(msg)
+	go c.communication.SendPreprepareMsg(msg) // send preprepare messages
 
-	// update our own status
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
+	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP) // update our own status
+
+	// byzantine leader stops after sending preprepare
+	if c.memory.GetByzantine() {
+		return
+	}
 
 	// wait for 2f+1 preprepared messages (count our own)
-	count := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget)
-
-	// check for optimized mode
-	if count+1 < c.cfg.Total {
+	if count := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget); count+1 < c.cfg.Total {
 		go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
-		// update our own status
-		if !c.memory.GetByzantine() {
-			c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
-		}
+		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
 
-		// wait for 2f+1 prepared messages (count our own)
 		c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
 	} else {
 		c.logger.Info("optimized mode execution", zap.Int("count", count+1))
@@ -81,8 +75,7 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 
 // executionGadget gets a sequence number and performs the execution logic.
 func (c *Consensus) executionGadget(sequence int) {
-	if !c.memory.GetByzantine() && !c.canExecuteRequest(sequence) {
-		c.logger.Debug("cannot execute this request yet", zap.Int("sequence", sequence))
+	if !c.canExecuteRequest(sequence) {
 		return
 	}
 
@@ -93,18 +86,13 @@ func (c *Consensus) executionGadget(sequence int) {
 	for {
 		// don't reexecute a request
 		if msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
-			resp := c.executeTransaction(msg.GetTransaction()) // execute transaction
-
-			msg.GetResponse().Text = resp
+			msg.GetResponse().Text = c.executeTransaction(msg.GetTransaction())
 			c.logs.SetRequest(index, msg)
 		}
 
-		if !c.memory.GetByzantine() {
-			c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
-		}
+		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
 
 		c.communication.SendReplyMsg(index, c.memory.GetView(), msg)
-		c.logger.Debug("request executed", zap.Int("sequence number", index))
 
 		index++
 		if msg = c.logs.GetRequest(index); msg == nil || msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_C {
@@ -137,7 +125,7 @@ func (c *Consensus) enterViewChangeGadget() {
 				return
 			}
 
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 }
@@ -188,6 +176,10 @@ func (c *Consensus) viewChangeGadget() error {
 
 		select {
 		case msg := <-c.viewChangeGadgetChannel:
+			if msg.GetView() != int64(view) {
+				continue
+			}
+
 			c.logs.AppendViewChange(view, msg)
 
 			if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
@@ -199,12 +191,12 @@ func (c *Consensus) viewChangeGadget() error {
 		}
 	}
 
-	// update the view
+	// update the node view
 	c.memory.SetView(view)
 
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
-		c.logger.Debug("new leader", zap.String("id", c.memory.GetNodeId()))
+		c.logger.Info("new leader elected", zap.String("id", c.memory.GetNodeId()))
 
 		if !c.memory.GetByzantine() {
 			c.newViewLeaderGadget(view)
@@ -215,33 +207,27 @@ func (c *Consensus) viewChangeGadget() error {
 		}
 	}
 
-	// close our channel
+	// return from view change mode
 	c.inViewChangeMode = false
 	c.viewChangeGadgetChannel = nil
 
 	return nil
 }
 
+// newViewBackupGadget waits for a new view message from new leader.
 func (c *Consensus) newViewBackupGadget(view int) error {
 	var (
 		timer = modules.NewTimer(100*c.cfg.ViewChangeTimeout, time.Millisecond)
-		flag  = true
 		msg   *pbft.NewViewMsg
 	)
 
-	for {
-		if !flag {
-			break
-		}
-
-		select {
-		case raw := <-c.consensusHandlersTable[enum.PktNV]:
-			msg = raw.Payload.(*pbft.NewViewMsg)
-			flag = false
-			timer.Stop()
-		case <-timer.Notify(): // if the timer expired, return and reset the view timer
-			return errors.New("leader didn't send new view")
-		}
+	// leader should response before timeout
+	select {
+	case raw := <-c.consensusHandlersTable[enum.PktNV]:
+		msg = raw.Payload.(*pbft.NewViewMsg)
+		timer.Stop()
+	case <-timer.Notify(): // if the timer expired, return and reset the view timer
+		return errors.New("leader didn't send new view")
 	}
 
 	c.logs.AppendNewView(view, msg) // set the message for view change

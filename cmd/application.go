@@ -35,12 +35,8 @@ func (a Application) Main() error {
 		return err
 	}
 
-	// create a new client.go
-	cli := client.NewClient(
-		creds,
-		a.Cfg.Node.NodeId,
-		a.Cfg.GetNodes(),
-	)
+	// create a new client.go instance
+	cli := client.NewClient(creds, a.Cfg.Node.NodeId, a.Cfg.GetNodes())
 
 	// create a new app instance
 	app := application.NewApp(
@@ -51,31 +47,32 @@ func (a Application) Main() error {
 		a.Cfg.GetClients(),
 	)
 
-	// start getting user inputs
+	// terminal goes into a for loop to get user inputs
 	go a.terminal(app)
 
-	// start the gRPC server
+	// start the gRPC server to get requests' replys
 	return app.Service(a.Cfg.Node.Port, creds)
 }
 
+// terminal method reads a csv test-case file, and waits for input commands.
 func (a Application) terminal(app *application.App) {
 	// load the test-case file
-	ts, err := parser.CSVInput(a.Cfg.CSV)
+	testCases, err := parser.CSVInput(a.Cfg.CSV)
 	if err != nil {
 		panic(err)
 	}
 
 	// set the tests index to zero
-	index := 0
+	testCaseIndex := 0
 
-	// print some metadata
-	fmt.Printf("read %s with %d test sets.\n", a.Cfg.CSV, len(ts))
-	for _, t := range ts {
+	// print some metadata about the test-case file
+	fmt.Printf("input test-case file %s with %d test sets.\n", a.Cfg.CSV, len(testCases))
+	for _, testSet := range testCases {
 		fmt.Printf(
-			"transactions of %s is %d (Live Servers=%d, Byzantine Servers=%d)\n",
-			t.Index, len(t.Transactions),
-			len(t.LiveServers),
-			len(t.ByzantineServers),
+			"\t- number transactions in set %s is %d (LiveServers=%d, ByzantineServers=%d)\n",
+			testSet.Index, len(testSet.Transactions),
+			len(testSet.LiveServers),
+			len(testSet.ByzantineServers),
 		)
 	}
 
@@ -87,33 +84,39 @@ func (a Application) terminal(app *application.App) {
 		input, _ := reader.ReadString('\n') // read input until newline
 		input = strings.TrimSpace(input)
 
-		if len(input) == 0 {
+		if len(input) == 0 { // empty input
 			continue
 		}
 
 		parts := strings.Split(input, " ") // break by space and split into parts
 
+		// switch case on the first part of the input
 		switch parts[0] {
 		case "exit":
 			os.Exit(0)
 		case "next":
-			if index < len(ts) {
-				tc := ts[index]
+			if testCaseIndex < len(testCases) {
+				currentTestSet := testCases[testCaseIndex]
 
+				// flush and reset our nodes status
 				for key := range a.Cfg.GetNodes() {
 					app.Client().Flush(key)
-					app.Client().ChangeState(key, lists.IsInList(key, tc.LiveServers), lists.IsInList(key, tc.ByzantineServers))
+					app.Client().ChangeState(key, lists.IsInList(key, currentTestSet.LiveServers), lists.IsInList(key, currentTestSet.ByzantineServers))
 				}
 
-				fmt.Printf("- running set %s\n", tc.Index)
-				for _, trx := range tc.Transactions {
-					app.Transaction(trx)
+				fmt.Printf("- executing set %s\n", currentTestSet.Index)
+
+				// loop over transactions and execute them
+				for _, trx := range currentTestSet.Transactions {
+					app.Transaction(trx) // see application.Transaction method
 				}
 
-				index++
+				testCaseIndex++
+			} else {
+				fmt.Println("end of the test sets!")
 			}
 		case "unblock":
-			for key := range a.Cfg.GetNodes() {
+			for key := range a.Cfg.GetNodes() { // reset only the nodes status (without flushing)
 				app.Client().ChangeState(key, true, false)
 			}
 		case "printlog":
@@ -123,7 +126,7 @@ func (a Application) terminal(app *application.App) {
 		case "printdb":
 			for _, item := range app.Client().PrintDB(parts[1]) {
 				fmt.Printf(
-					"- %d : %d (%s, %s, %d) : %s\n",
+					"\t- %d : %d (%s, %s, %d) : %s\n",
 					item.GetSequenceNumber(),
 					item.GetTransaction().GetTimestamp(),
 					item.GetTransaction().GetSender(),
@@ -133,27 +136,33 @@ func (a Application) terminal(app *application.App) {
 				)
 			}
 		case "printstatus":
-			seq, _ := strconv.Atoi(parts[1])
+			seq, _ := strconv.Atoi(parts[1]) // get the sequence number
+
 			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("\t- %s : %s\n", key, app.Client().PrintStatus(key, seq))
 			}
 		case "printview":
 			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("- node %s\n", key)
+
 				for _, item := range app.Client().PrintView(key) {
 					fmt.Printf("\tnew view: %d\n", item.GetNewView().GetView())
+
 					fmt.Printf("\tpreprepares:\n")
 					for _, msg := range item.GetNewView().GetPreprepares() {
-						fmt.Printf("\t\t- preprepare messages: %s\n", msg.String())
+						fmt.Printf("\t\t- %s\n", msg.String())
 					}
+
 					fmt.Printf("\tviewchanges:\n")
 					for _, msg := range item.GetMessages() {
-						fmt.Printf("\t\t- viewchange %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+						fmt.Printf("\t\t- from %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
+
 						for _, pp := range msg.GetPreprepares() {
 							fmt.Printf("\t\t\t- %s\n", pp.String())
 						}
 					}
-					fmt.Printf("\t- tts: %s\n", item.GetNewView().GetMessage())
+
+					fmt.Printf("\ttreshold signature: %s\n", item.GetNewView().GetMessage())
 					for _, sh := range item.GetNewView().GetShares() {
 						fmt.Printf("\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
 					}

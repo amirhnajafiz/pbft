@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Controller is a program for creating system's nodes.
+// Controller is a process for creating system's nodes.
 type Controller struct {
 	Cfg    config.Config
 	Logger *zap.Logger
@@ -33,6 +33,7 @@ func (c Controller) Main() error {
 	// loop over config files and run each node
 	for index, key := range c.Cfg.CtlFiles {
 		wg.Add(1)
+
 		go func(path string, waitGroup *sync.WaitGroup) {
 			// release waitgroup
 			defer func() {
@@ -44,9 +45,9 @@ func (c Controller) Main() error {
 			node := Node{
 				Cfg:    cfg,
 				Logger: c.Logger.Named("node." + cfg.Node.NodeId),
-				Suite:  suite,
-				Share:  priPoly.Shares(n)[index],
-				Pub:    pubPoly,
+				suite:  suite,
+				share:  priPoly.Shares(n)[index],
+				pub:    pubPoly,
 			}
 
 			c.Logger.Info("instance started", zap.String("instance", cfg.Node.NodeId), zap.String("file", path))
@@ -59,7 +60,7 @@ func (c Controller) Main() error {
 		}(key, &wg)
 	}
 
-	// wait for all
+	// wait for all instances to terminate
 	wg.Wait()
 
 	return nil

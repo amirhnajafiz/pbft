@@ -11,6 +11,9 @@ import (
 )
 
 // list of current system commands.
+// - app: creates a new client application
+// - node: creates a single node instance
+// - controller: sets up a process that builds node instances
 const (
 	AppCmd        = "app"
 	ControllerCmd = "controller"
@@ -23,13 +26,13 @@ func main() {
 		panic("you did not provide enough arguments to run! (./main <command> <config-path>)")
 	}
 
-	// load configs into a config struct
+	// load the config file into a config struct
 	cfg := config.New(argv[2], true)
 
 	// create a new zap logger instance
 	logr := logger.NewLogger(cfg.LogLevel)
 
-	// create cmd instances and pass needed parameters
+	// create cmd instances with config struct and zap logger as input
 	commands := map[string]cmd.CMD{
 		ControllerCmd: cmd.Controller{
 			Cfg:    cfg,
@@ -45,12 +48,12 @@ func main() {
 		},
 	}
 
-	// command is the first argument variable
+	// program uses first argument variable as the command
 	if callback, ok := commands[argv[1]]; ok {
-		if err := callback.Main(); err != nil {
+		if err := callback.Main(); err != nil { // follow cmd.Main methods
 			logr.Panic("failed to run the command", zap.Error(err), zap.String("command", argv[1]))
 		}
 	} else {
-		panic("your input command must be the first argument variable")
+		panic("failed to find the input command")
 	}
 }

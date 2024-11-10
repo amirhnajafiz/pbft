@@ -13,18 +13,21 @@ import (
 	"go.uber.org/zap"
 )
 
-// Node is a app in our transaction system.
+// Node is a single processing unit in our distributed system.
+// note: running single instance node will not use threshold signature.
 type Node struct {
 	Cfg    config.Config
 	Logger *zap.Logger
-	Suite  *bn256.Suite
-	Share  *share.PriShare
-	Pub    *share.PubPoly
+
+	suite *bn256.Suite
+	share *share.PriShare
+	pub   *share.PubPoly
 }
 
 func (n Node) Main() error {
 	// create a memory instance
 	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total, n.Cfg.Node.BFT.KWatermark)
+	// set clients and nodes data inside memory
 	mem.SetBalances(n.Cfg.GetClients())
 	mem.SetNodes(n.Cfg.GetNodesMeta())
 
@@ -38,11 +41,7 @@ func (n Node) Main() error {
 	}
 
 	// create a new client.go
-	cli := client.NewClient(
-		creds,
-		n.Cfg.Node.NodeId,
-		n.Cfg.GetNodes(),
-	)
+	cli := client.NewClient(creds, n.Cfg.Node.NodeId, n.Cfg.GetNodes())
 
 	// create a new gRPC bootstrap instance and execute the server by running the boot commands
 	boot := grpc.Bootstrap{
@@ -55,9 +54,9 @@ func (n Node) Main() error {
 			n.Logger.Named("consensus"),
 			&n.Cfg.Node.BFT,
 			cli,
-			n.Suite,
-			n.Share,
-			n.Pub,
+			n.suite,
+			n.share,
+			n.pub,
 		),
 	}
 

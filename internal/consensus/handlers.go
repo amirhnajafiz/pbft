@@ -233,7 +233,7 @@ func (c *Consensus) checkpointHandler() {
 
 		// check if 2f+1 matching
 		for key, value := range checkpoints {
-			if len(value) >= c.cfg.Checkpoint {
+			if len(value) >= c.cfg.Majority {
 				c.memory.SetLowWaterMakr(key)
 				c.logs.AppendCheckpoint(key, value)
 				delete(checkpoints, key)

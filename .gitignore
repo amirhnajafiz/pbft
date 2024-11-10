@@ -8,8 +8,10 @@ logs.txt
 vendor/
 
 # config files and keys
-configs/client/
-configs/nodes/
+configs/
 ca.crt
 ca.key
 ctl.yaml
+
+# test cases
+tests/

@@ -44,10 +44,10 @@ func (c *Consensus) executeTransaction(trx *pbft.TransactionMsg) string {
 		c.memory.SetBalance(trx.GetSender(), senderBalance-int(amount))
 		c.memory.SetBalance(trx.GetReciever(), receiverBalance+int(amount))
 
-		return enum.RespSuccess
+		return enum.RespSuccessTransaction
 	}
 
-	return enum.RespBadBalance
+	return enum.RespNotEnoughBalance
 }
 
 // shouldCheckpoint checks the number of executions to see if checkpoint is needed or not.

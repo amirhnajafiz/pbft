@@ -39,7 +39,11 @@ func (a *App) transactionHandler(client string, ch chan *models.Transaction) {
 
 // requestHandler gets a transaction and starts PBFT procedures.
 func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
-	// create a pbft request
+	defer func() {
+		go a.emptyChannel(client) // empty the channel on exit
+	}()
+
+	// create a new pbft request
 	req := &pbft.RequestMsg{
 		Transaction: trx,
 		ClientId:    a.memory.GetNodeId(),
@@ -53,38 +57,30 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 
 	currentLeader := a.getCurrentLeader() // get current leader id
 
+	// create a new channel for this handler
 	a.lock.Lock()
-	a.handlers[client] = make(chan *app.ReplyMsg, a.cfg.Total) // get our channel
+	a.handlers[client] = make(chan *app.ReplyMsg, a.cfg.Total)
 	ch := a.handlers[client]
 	a.lock.Unlock()
 
-	// send the request
-	if err := a.cli.Request(currentLeader, req); err != nil {
+	// send the request to the leader
+	a.cli.Request(currentLeader, req)
+
+	// wait for the reply
+	resp, err = a.replyHandler(ch, trx)
+	if err != nil {
 		// if the number of live servers is less than 2f+1, then raise an error
 		if count := a.broadcastRequest(req); count < a.cfg.Majority {
 			return enum.RespNotEnoughServers
 		}
-	}
 
-	// follow the reply
-	for {
-		// handle the reply
 		resp, err = a.replyHandler(ch, trx)
-		if err == nil {
-			break
-		}
-
-		// if the number of live servers is less than 2f+1, then raise an error
-		if count := a.broadcastRequest(req); count < a.cfg.Majority {
-			return enum.RespNotEnoughServers
+		if err != nil {
+			return enum.RespSystemFailed
 		}
 	}
 
-	// empty the channel
-	go a.emptyChannel(client)
-
-	// update the view
-	a.memory.SetView(int(resp.GetView()))
+	a.memory.SetView(int(resp.GetView())) // update the view
 
 	return resp.GetResponse()
 }

@@ -82,9 +82,9 @@ func (a Application) terminal(app *application.App) {
 		fmt.Print("$ ")
 
 		input, _ := reader.ReadString('\n') // read input until newline
-		input = strings.TrimSpace(input)
 
-		if len(input) == 0 { // empty input
+		input = strings.TrimSpace(input)
+		if len(input) == 0 {
 			continue
 		}
 
@@ -146,25 +146,24 @@ func (a Application) terminal(app *application.App) {
 				fmt.Printf("- node %s\n", key)
 
 				for _, item := range app.Client().PrintView(key) {
-					fmt.Printf("\tnew view: %d\n", item.GetNewviewMessage().GetView())
+					fmt.Printf("\t- new view: %d\n", item.GetNewviewMessage().GetView())
 
-					fmt.Printf("\tpreprepares:\n")
+					fmt.Printf("\t\t- preprepare messages:\n")
 					for _, msg := range item.GetNewviewMessage().GetPreprepareMessages() {
-						fmt.Printf("\t\t- %s\n", msg.String())
+						fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
 					}
 
-					fmt.Printf("\tviewchanges:\n")
+					fmt.Printf("\t\tviewchange messages:\n")
 					for _, msg := range item.GetViewchangeMessages() {
-						fmt.Printf("\t\t- from %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
-
-						for _, pp := range msg.GetPreprepareMessages() {
-							fmt.Printf("\t\t\t- %s\n", pp.String())
+						fmt.Printf("\t\t\t- sender=%s sequence=%d\n", msg.GetNodeId(), msg.GetSequenceNumber())
+						for _, msg := range msg.GetPreprepareMessages() {
+							fmt.Printf("\t\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
 						}
 					}
 
-					fmt.Printf("\ttreshold signature: %s\n", item.GetNewviewMessage().GetViewchangeMessage())
+					fmt.Printf("\t\t- treshold signature message: %s\n", item.GetNewviewMessage().GetViewchangeMessage())
 					for _, sh := range item.GetNewviewMessage().GetShares() {
-						fmt.Printf("\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
+						fmt.Printf("\t\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
 					}
 				}
 			}
@@ -172,7 +171,13 @@ func (a Application) terminal(app *application.App) {
 			for key := range a.Cfg.GetNodes() {
 				fmt.Printf("- node %s\n", key)
 				for _, item := range app.Client().PrintCheckpoints(key) {
-					fmt.Printf("\t- %s\n", item.String())
+					fmt.Printf("\t- sequence=%d\n", item.GetSequenceNumber())
+					for _, checkpoint := range item.GetCheckpointMessages() {
+						fmt.Printf("\t\t- sender=%s sequence=%d\n", checkpoint.GetNodeId(), checkpoint.GetSequenceNumber())
+						for _, msg := range checkpoint.GetPreprepareMessages() {
+							fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
+						}
+					}
 				}
 			}
 		default:

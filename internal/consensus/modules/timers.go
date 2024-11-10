@@ -43,9 +43,10 @@ func (t *Timer) AccumaccumulativeStart() {
 // Dismiss reduces the timer if the counter is zero.
 func (t *Timer) Dismiss() {
 	t.lock.Lock()
-	t.counter--
 	if t.counter == 0 {
 		t.clock.Stop()
+	} else if t.counter > 0 {
+		t.counter--
 	}
 	t.lock.Unlock()
 }

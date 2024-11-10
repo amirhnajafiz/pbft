@@ -10,7 +10,6 @@ import (
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 
-	"go.dedis.ch/kyber/v4/sign/bls"
 	"go.dedis.ch/kyber/v4/sign/tbls"
 	"go.uber.org/zap"
 )
@@ -209,7 +208,7 @@ func (c *Consensus) viewChangeGadget() error {
 		}
 	} else { // if the node is backup, it needs new-view message
 		var (
-			timer = modules.NewTimer(2*c.cfg.ViewChangeTimeout, time.Millisecond)
+			timer = modules.NewTimer(100*c.cfg.ViewChangeTimeout, time.Millisecond)
 			flag  = true
 			msg   *pbft.NewViewMsg
 		)
@@ -294,18 +293,6 @@ func (c *Consensus) newLeaderGadget() {
 
 	// get view digest
 	digest := hashing.MD5HashViewMsg(message)
-
-	// recover the full signature
-	sig, err := tbls.Recover(c.suite, c.pub, []byte(digest), sigShares[:c.cfg.Majority], c.cfg.Majority, c.cfg.Total)
-	if err != nil {
-		c.logger.Error("failed to recover signature", zap.Error(err))
-	}
-
-	// verify the record signature
-	public := c.pub.Commit()
-	if err := bls.Verify(c.suite, public, []byte(digest), sig); err != nil {
-		c.logger.Error("failed to verify the signature", zap.Error(err))
-	}
 
 	// create a new view message
 	newViewMsg := pbft.NewViewMsg{

@@ -16,6 +16,9 @@ func (c *Consensus) preprepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktPP]
 		msg := raw.Payload.(*pbft.PrePrepareMsg)
 
+		// start the timer
+		c.viewTimer.AccumaccumulativeStart()
+
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
@@ -36,9 +39,6 @@ func (c *Consensus) preprepareHandler() {
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 		c.logs.SetPreprepare(raw.Sequence, msg)
 
-		// start the timer
-		c.viewTimer.AccumaccumulativeStart()
-
 		// call preprepared RPC to notify the sender
 		c.communication.Client().PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 			View:           int64(c.memory.GetView()),
@@ -54,6 +54,9 @@ func (c *Consensus) prepareHandler() {
 		// get raw P packets and cast them
 		raw := <-c.consensusHandlersTable[enum.PktP]
 		msg := raw.Payload.(*pbft.AckMsg)
+
+		// start the timer
+		c.viewTimer.Start()
 
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
@@ -91,6 +94,9 @@ func (c *Consensus) commitHandler() {
 	for {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
+
+		// start the timer
+		c.viewTimer.Start()
 
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
@@ -185,6 +191,7 @@ func (c *Consensus) timerHandler() {
 		// start view change
 		if !c.inViewChangeMode {
 			c.startViewChangeGadget()
+			c.viewTimer.Stop()
 		}
 	}
 }

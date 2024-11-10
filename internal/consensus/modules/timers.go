@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Timer is a generic timer that is used in consensus module.
+// Timer is a generic timer struct that is used in consensus module.
 type Timer struct {
 	duration time.Duration
 	clock    *time.Timer
@@ -25,35 +25,39 @@ func NewTimer(period int, unit time.Duration) *Timer {
 	}
 }
 
-// Start the timer again.
-func (t *Timer) Start(flag bool) {
+// Start the timer.
+func (t *Timer) Start() {
 	t.lock.Lock()
-
-	if flag {
-		t.counter++
-	}
-
 	t.clock.Reset(t.duration)
+	t.lock.Unlock()
+}
 
+// AccumaccumulativeStart starts the timer and increaments its counter.
+func (t *Timer) AccumaccumulativeStart() {
+	t.lock.Lock()
+	t.counter++
+	t.clock.Reset(t.duration)
+	t.lock.Unlock()
+}
+
+// Dismiss reduces the timer if the counter is zero.
+func (t *Timer) Dismiss() {
+	t.lock.Lock()
+	t.counter--
+	if t.counter == 0 {
+		t.clock.Stop()
+	}
 	t.lock.Unlock()
 }
 
 // Stop the timer.
-func (t *Timer) Stop(flag bool) {
+func (t *Timer) Stop() {
 	t.lock.Lock()
-
-	if flag {
-		t.counter--
-	}
-
-	if t.counter == 0 {
-		t.clock.Stop()
-	}
-
+	t.clock.Stop()
 	t.lock.Unlock()
 }
 
-// Notify when timer expires.
+// Notify returns the timer channel.
 func (t *Timer) Notify() <-chan time.Time {
 	return t.clock.C
 }

@@ -84,5 +84,7 @@ func (l *Logs) AppendCheckpoint(key int, list []*pbft.CheckpointMsg) {
 
 // SetLastCheckpoint updates the value of last checkpoint.
 func (l *Logs) SetLastCheckpoint(in int) {
+	l.lock.Lock()
 	l.lastCheckpoint = in
+	l.lock.Unlock()
 }

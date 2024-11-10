@@ -220,8 +220,9 @@ func (c *Consensus) viewChangeHandler() {
 	}
 }
 
-// checkpointHandler captures checkpoint messages until it gets 2f+1 matches.
+// checkpointHandler captures checkpoint messages.
 func (c *Consensus) checkpointHandler() {
+	// a temporary list of checkpoints.
 	checkpoints := make(map[int][]*pbft.CheckpointMsg)
 
 	for {
@@ -229,13 +230,17 @@ func (c *Consensus) checkpointHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktCP]
 		msg := raw.Payload.(*pbft.CheckpointMsg)
 
-		// collect checkpoints
+		// checkpoint message is old drop it
+		if raw.Sequence < c.logs.GetLastCheckpoint() {
+			continue
+		}
+
 		if _, ok := checkpoints[int(msg.GetSequenceNumber())]; !ok {
 			checkpoints[int(msg.GetSequenceNumber())] = make([]*pbft.CheckpointMsg, 0)
 		}
-
 		checkpoints[raw.Sequence] = append(checkpoints[raw.Sequence], msg)
 
+		// call checkpoint gadget
 		for _, key := range c.checkpointGadget(checkpoints) {
 			delete(checkpoints, key)
 		}

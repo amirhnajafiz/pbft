@@ -325,16 +325,17 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	}()
 }
 
+// checkpointGadget gets a list of checkpoints and updates its logs.
 func (c *Consensus) checkpointGadget(checkpoints map[int][]*pbft.CheckpointMsg) []int {
+	// keys will be returned to the handler to delete used checkpoints.
 	keys := make([]int, 0)
 
 	// check if 2f+1 matching
 	for key, value := range checkpoints {
-		if key < c.logs.GetLastCheckpoint() {
-			keys = append(keys, key)
-		} else if len(value) >= c.cfg.Majority {
+		if len(value) >= c.cfg.Majority {
 			c.logs.AppendCheckpoint(key, value)
 			c.logs.SetLastCheckpoint(key)
+
 			keys = append(keys, key)
 		}
 	}

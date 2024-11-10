@@ -10,7 +10,6 @@ type Timer struct {
 	duration time.Duration
 	clock    *time.Timer
 	lock     sync.Mutex
-	counter  int
 }
 
 // NewTimer returns a timer instance.
@@ -19,7 +18,6 @@ func NewTimer(period int, unit time.Duration) *Timer {
 
 	return &Timer{
 		lock:     sync.Mutex{},
-		counter:  0,
 		clock:    time.NewTimer(du),
 		duration: du,
 	}
@@ -29,25 +27,6 @@ func NewTimer(period int, unit time.Duration) *Timer {
 func (t *Timer) Start() {
 	t.lock.Lock()
 	t.clock.Reset(t.duration)
-	t.lock.Unlock()
-}
-
-// AccumaccumulativeStart starts the timer and increaments its counter.
-func (t *Timer) AccumaccumulativeStart() {
-	t.lock.Lock()
-	t.counter++
-	t.clock.Reset(t.duration)
-	t.lock.Unlock()
-}
-
-// Dismiss reduces the timer if the counter is zero.
-func (t *Timer) Dismiss() {
-	t.lock.Lock()
-	if t.counter == 0 {
-		t.clock.Stop()
-	} else if t.counter > 0 {
-		t.counter--
-	}
 	t.lock.Unlock()
 }
 

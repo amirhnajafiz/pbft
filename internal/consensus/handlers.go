@@ -22,7 +22,7 @@ func (c *Consensus) preprepareHandler() {
 		}
 
 		// start the timer
-		c.viewTimer.AccumaccumulativeStart()
+		c.viewTimer.Start()
 
 		// if the input request is not in watermark, don't accept it
 		if raw.Sequence < c.logs.GetLastCheckpoint() || raw.Sequence > c.logs.GetHighWaterMark() {
@@ -107,7 +107,7 @@ func (c *Consensus) commitHandler() {
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
 		// stop the timer
-		c.viewTimer.Dismiss()
+		c.viewTimer.Stop()
 
 		// send the sequence to the execute handler
 		c.executionChannel <- raw.Sequence
@@ -146,7 +146,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 		// send the request to leader
 		c.communication.Client().Request(c.getCurrentLeader(), msg)
 
-		// start the timer
+		// start the timer so leader can stop it
 		c.viewTimer.Start()
 
 		return
@@ -182,39 +182,35 @@ func (c *Consensus) timerHandler() {
 	// stop the timer so that others can start it
 	c.viewTimer.Stop()
 
+	// timer monitor loop
 	for {
 		<-c.viewTimer.Notify()
-		c.logger.Debug("timer expired")
 
-		// start view change
+		c.logger.Debug("pbft timer expired")
+
+		// enter view change mode
 		if !c.inViewChangeMode {
-			c.enterViewChangeGadget()
 			c.viewTimer.Stop()
+			c.enterViewChangeGadget()
 		}
 	}
 }
 
-// viewChangeHandler waits for f+1 view changes, then it will start view change procedure.
+// viewChangeHandler captures all view change messages.
 func (c *Consensus) viewChangeHandler() {
 	for {
 		// capture view change messages
 		raw := <-c.consensusHandlersTable[enum.PktVC]
 		msg := raw.Payload.(*pbft.ViewChangeMsg)
 
-		// check the destination
-		if !c.inViewChangeMode {
+		if c.inViewChangeMode {
+			c.viewChangeGadgetChannel <- msg
+		} else {
 			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
-			if msg.GetView() == int64(c.memory.GetView()) {
-				continue
-			}
-
+			// if the node gets f+1 view changes, it will go into view change.
 			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
 				c.enterViewChangeGadget()
-			}
-		} else {
-			if c.viewChangeGadgetChannel != nil {
-				c.viewChangeGadgetChannel <- msg
 			}
 		}
 	}

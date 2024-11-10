@@ -50,21 +50,16 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	}
 
 	// wait for 2f+1 preprepared messages (count our own)
-	optimized := true
-	if count := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget); count+1 < c.cfg.Total {
-		optimized = false
+	c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget)
 
-		go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
+	go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
-		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
 
-		c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
-	} else {
-		c.logger.Info("optimized mode execution", zap.Int("count", count+1))
-	}
+	c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
 
 	// broadcast to all using commit
-	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest(), optimized)
+	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
 	// delete our input channel as soon as possible
 	c.lock.Lock()
@@ -72,11 +67,7 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	c.lock.Unlock()
 
 	// update our own status
-	if optimized {
-		c.logs.SetRequestStatusByForce(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
-	} else {
-		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
-	}
+	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
 	// send the sequence to the execute handler
 	c.executionChannel <- sequence

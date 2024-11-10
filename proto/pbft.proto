@@ -68,7 +68,6 @@ message AckMsg {
   int64 view = 2;
   string digest = 3;
   string node_id = 4;
-  bool is_optimized = 5;
 }
 
 // checkpoint message will be used in checkpointing procedure.

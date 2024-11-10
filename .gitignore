@@ -6,3 +6,10 @@ logs.txt
 
 # build files
 vendor/
+
+# config files and keys
+configs/client/
+configs/nodes/
+ca.crt
+ca.key
+ctl.yaml

@@ -17,10 +17,11 @@ type Logs struct {
 	lock           sync.Mutex
 	index          int
 	lastCheckpoint int
+	kvalue         int
 }
 
 // NewLogs returns a new logs instance.
-func NewLogs() *Logs {
+func NewLogs(kvalue int) *Logs {
 	return &Logs{
 		lock:           sync.Mutex{},
 		logs:           make([]string, 0),
@@ -29,5 +30,6 @@ func NewLogs() *Logs {
 		checkpoints:    make(map[int][]*pbft.CheckpointMsg),
 		index:          0,
 		lastCheckpoint: 0,
+		kvalue:         kvalue,
 	}
 }

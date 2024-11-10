@@ -39,13 +39,3 @@ func (m *Memory) GetTimestamp() int {
 
 	return value
 }
-
-// GetLowWaterMark returns the lower water mark.
-func (m *Memory) GetLowWaterMark() int {
-	return m.lowWm
-}
-
-// GetHighWaterMark returns the higher water mark.
-func (m *Memory) GetHighWaterMark() int {
-	return m.lowWm + m.kvalue
-}

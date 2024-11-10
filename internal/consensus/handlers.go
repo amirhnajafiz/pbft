@@ -16,16 +16,16 @@ func (c *Consensus) preprepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktPP]
 		msg := raw.Payload.(*pbft.PrePrepareMsg)
 
-		// start the timer
-		c.viewTimer.AccumaccumulativeStart()
-
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
 
+		// start the timer
+		c.viewTimer.AccumaccumulativeStart()
+
 		// if the input request is not in watermark, don't accept it
-		if raw.Sequence < c.memory.GetLowWaterMark() || raw.Sequence > c.memory.GetHighWaterMark() {
+		if raw.Sequence < c.logs.GetLastCheckpoint() || raw.Sequence > c.logs.GetHighWaterMark() {
 			continue
 		}
 
@@ -55,13 +55,13 @@ func (c *Consensus) prepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktP]
 		msg := raw.Payload.(*pbft.AckMsg)
 
-		// start the timer
-		c.viewTimer.Start()
-
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
+
+		// start the timer
+		c.viewTimer.Start()
 
 		// get the message from our datastore
 		message := c.logs.GetRequest(raw.Sequence)
@@ -78,14 +78,14 @@ func (c *Consensus) prepareHandler() {
 
 			// update the request and set the status of prepare
 			c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_P)
-		}
 
-		// call prepared RPC to notify the sender
-		c.communication.Client().Prepared(msg.GetNodeId(), &pbft.AckMsg{
-			View:           int64(c.memory.GetView()),
-			SequenceNumber: int64(raw.Sequence),
-			Digest:         digest,
-		})
+			// call prepared RPC to notify the sender
+			c.communication.Client().Prepared(msg.GetNodeId(), &pbft.AckMsg{
+				View:           int64(c.memory.GetView()),
+				SequenceNumber: int64(raw.Sequence),
+				Digest:         digest,
+			})
+		}
 	}
 }
 
@@ -95,18 +95,16 @@ func (c *Consensus) commitHandler() {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
 
-		// start the timer
-		c.viewTimer.Start()
-
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
 
+		// start the timer
+		c.viewTimer.Start()
+
 		// update the request and set the status of prepare
-		if !c.memory.GetByzantine() {
-			c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
-		}
+		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
 
 		// stop the timer
 		c.viewTimer.Dismiss()
@@ -190,7 +188,7 @@ func (c *Consensus) timerHandler() {
 
 		// start view change
 		if !c.inViewChangeMode {
-			c.startViewChangeGadget()
+			c.enterViewChangeGadget()
 			c.viewTimer.Stop()
 		}
 	}
@@ -212,7 +210,7 @@ func (c *Consensus) viewChangeHandler() {
 			}
 
 			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
-				c.startViewChangeGadget()
+				c.enterViewChangeGadget()
 			}
 		} else {
 			if c.viewChangeGadgetChannel != nil {
@@ -224,7 +222,6 @@ func (c *Consensus) viewChangeHandler() {
 
 // checkpointHandler captures checkpoint messages until it gets 2f+1 matches.
 func (c *Consensus) checkpointHandler() {
-	// a list to keep checkpoints
 	checkpoints := make(map[int][]*pbft.CheckpointMsg)
 
 	for {
@@ -239,13 +236,8 @@ func (c *Consensus) checkpointHandler() {
 
 		checkpoints[raw.Sequence] = append(checkpoints[raw.Sequence], msg)
 
-		// check if 2f+1 matching
-		for key, value := range checkpoints {
-			if len(value) >= c.cfg.Majority {
-				c.memory.SetLowWaterMakr(key)
-				c.logs.AppendCheckpoint(key, value)
-				delete(checkpoints, key)
-			}
+		for _, key := range c.checkpointGadget(checkpoints) {
+			delete(checkpoints, key)
 		}
 	}
 }

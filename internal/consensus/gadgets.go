@@ -126,8 +126,8 @@ func (c *Consensus) executionGadget(sequence int) {
 	}
 }
 
-// startViewChangeGadget stops the node for view change process.
-func (c *Consensus) startViewChangeGadget() {
+// enterViewChangeGadget stops the node for a new view change process.
+func (c *Consensus) enterViewChangeGadget() {
 	c.inViewChangeMode = true
 	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
 
@@ -207,31 +207,12 @@ func (c *Consensus) viewChangeGadget() error {
 		c.logger.Debug("new leader", zap.String("id", c.memory.GetNodeId()))
 
 		if !c.memory.GetByzantine() {
-			c.newLeaderGadget()
+			c.newViewLeaderGadget(view)
 		}
 	} else { // if the node is backup, it needs new-view message
-		var (
-			timer = modules.NewTimer(100*c.cfg.ViewChangeTimeout, time.Millisecond)
-			flag  = true
-			msg   *pbft.NewViewMsg
-		)
-
-		for {
-			if !flag {
-				break
-			}
-
-			select {
-			case raw := <-c.consensusHandlersTable[enum.PktNV]:
-				msg = raw.Payload.(*pbft.NewViewMsg)
-				flag = false
-				timer.Stop()
-			case <-timer.Notify(): // if the timer expired, return and reset the view timer
-				return errors.New("leader didn't send new view")
-			}
+		if err := c.newViewBackupGadget(view); err != nil {
+			return err
 		}
-
-		c.logs.AppendNewView(view, msg) // set the message for view change
 	}
 
 	// close our channel
@@ -241,11 +222,35 @@ func (c *Consensus) viewChangeGadget() error {
 	return nil
 }
 
-// newLeaderGadget performs the procedure of new leader.
-func (c *Consensus) newLeaderGadget() {
-	// get current view
-	view := c.memory.GetView()
+func (c *Consensus) newViewBackupGadget(view int) error {
+	var (
+		timer = modules.NewTimer(100*c.cfg.ViewChangeTimeout, time.Millisecond)
+		flag  = true
+		msg   *pbft.NewViewMsg
+	)
 
+	for {
+		if !flag {
+			break
+		}
+
+		select {
+		case raw := <-c.consensusHandlersTable[enum.PktNV]:
+			msg = raw.Payload.(*pbft.NewViewMsg)
+			flag = false
+			timer.Stop()
+		case <-timer.Notify(): // if the timer expired, return and reset the view timer
+			return errors.New("leader didn't send new view")
+		}
+	}
+
+	c.logs.AppendNewView(view, msg) // set the message for view change
+
+	return nil
+}
+
+// newLeaderGadget performs the procedure of new leader.
+func (c *Consensus) newViewLeaderGadget(view int) {
 	// get all view change messages from other nodes
 	messages := c.logs.GetViewChanges(view)
 
@@ -313,7 +318,26 @@ func (c *Consensus) newLeaderGadget() {
 	c.communication.SendNewViewMsg(&newViewMsg)
 
 	// start the protocol for every request
-	for _, req := range requests {
-		c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+	go func() {
+		for _, req := range requests {
+			c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+		}
+	}()
+}
+
+func (c *Consensus) checkpointGadget(checkpoints map[int][]*pbft.CheckpointMsg) []int {
+	keys := make([]int, 0)
+
+	// check if 2f+1 matching
+	for key, value := range checkpoints {
+		if key < c.logs.GetLastCheckpoint() {
+			keys = append(keys, key)
+		} else if len(value) >= c.cfg.Majority {
+			c.logs.AppendCheckpoint(key, value)
+			c.logs.SetLastCheckpoint(key)
+			keys = append(keys, key)
+		}
 	}
+
+	return keys
 }

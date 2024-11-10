@@ -26,13 +26,13 @@ type Node struct {
 
 func (n Node) Main() error {
 	// create a memory instance
-	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total, n.Cfg.Node.BFT.KWatermark)
+	mem := local.NewMemory(n.Cfg.Node.NodeId, n.Cfg.Node.BFT.Total)
 	// set clients and nodes data inside memory
 	mem.SetBalances(n.Cfg.GetClients())
 	mem.SetNodes(n.Cfg.GetNodesMeta())
 
 	// create a datalog instance
-	datalog := logs.NewLogs()
+	datalog := logs.NewLogs(n.Cfg.Node.BFT.KWatermark)
 
 	// load tls configs
 	creds, err := n.Cfg.TLS.Creds()

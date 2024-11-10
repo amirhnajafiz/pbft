@@ -104,3 +104,8 @@ func (l *Logs) GetLastCheckpoint() int {
 func (l *Logs) GetLastCheckpointMsgs() []*pbft.CheckpointMsg {
 	return l.checkpoints[l.lastCheckpoint]
 }
+
+// GetHighWaterMark returns the limit of the nodes water mark.
+func (l *Logs) GetHighWaterMark() int {
+	return l.lastCheckpoint + l.kvalue
+}

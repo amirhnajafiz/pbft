@@ -23,21 +23,9 @@ func (c *Consensus) validateMsg(digest, msgDigest string, msgView int64) bool {
 	return true
 }
 
-// checkRequestExecution checks the timestamps to see if a request is executed or not.
-func (c *Consensus) checkRequestExecution(ts int64) (*pbft.RequestMsg, bool) {
-	for _, value := range c.logs.GetPartialRequestsBefore(c.memory.GetLowWaterMark()) {
-		if value.GetTransaction().GetTimestamp() == ts {
-			return value, value.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E
-		}
-	}
-
-	return nil, false
-}
-
-// canExecuteRequest gets a sequence number and checks if all requests before that are executed or not.
+// canExecuteRequest gets a sequence number and checks if all requests before that sequence are executed or not.
 func (c *Consensus) canExecuteRequest(sequence int) bool {
-	// loop from the first sequence and check the execution status
-	for key, value := range c.logs.GetAllRequests() {
+	for key, value := range c.logs.GetRequestsAfterCheckpoint() {
 		if key < sequence && value.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
 			return false
 		}
@@ -46,40 +34,39 @@ func (c *Consensus) canExecuteRequest(sequence int) bool {
 	return true
 }
 
-// executeRequest takes a request message and executes its transaction.
-func (c *Consensus) executeRequest(msg *pbft.RequestMsg) {
-	senderBalance := c.memory.GetBalance(msg.GetTransaction().GetSender())
-	receiverBalance := c.memory.GetBalance(msg.GetTransaction().GetReciever())
-	amount := msg.GetTransaction().GetAmount()
+// executeTransaction takes a transaction message and performs its operation.
+func (c *Consensus) executeTransaction(trx *pbft.TransactionMsg) string {
+	senderBalance := c.memory.GetBalance(trx.GetSender())
+	receiverBalance := c.memory.GetBalance(trx.GetReciever())
+	amount := trx.GetAmount()
 
-	msg.GetResponse().Text = enum.RespBadBalance
-
-	// check if the balance is sufficient
 	if amount <= int64(senderBalance) {
-		c.memory.SetBalance(msg.GetTransaction().GetSender(), senderBalance-int(amount))
-		c.memory.SetBalance(msg.GetTransaction().GetReciever(), receiverBalance+int(amount))
+		c.memory.SetBalance(trx.GetSender(), senderBalance-int(amount))
+		c.memory.SetBalance(trx.GetReciever(), receiverBalance+int(amount))
 
-		msg.GetResponse().Text = enum.RespSuccess
+		return enum.RespSuccess
 	}
+
+	return enum.RespBadBalance
 }
 
 // shouldCheckpoint checks the number of executions to see if checkpoint is needed or not.
-func (c *Consensus) shouldCheckpoint() int {
-	requests := c.logs.GetPartialRequests(c.memory.GetLowWaterMark())
-
+func (c *Consensus) canCheckpoint() (int, bool) {
+	index := c.logs.GetLastCheckpoint()
 	count := 0
-	target := 0
 
-	for key, value := range requests {
-		if value.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
-			count++
-			target = key
+	for {
+		if req := c.logs.GetRequest(index); req == nil {
+			break
+		} else {
+			if req.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+				count++
+				index++
+			} else {
+				break
+			}
 		}
 	}
 
-	if count >= c.cfg.Checkpoint {
-		return target
-	}
-
-	return 0
+	return index, count >= c.cfg.Checkpoint
 }

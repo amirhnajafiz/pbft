@@ -87,7 +87,7 @@ func (c *Consensus) executionGadget(sequence int) {
 		// don't reexecute a request
 		if msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
 			msg.GetResponse().Text = c.executeTransaction(msg.GetTransaction())
-			c.logs.SetRequest(index, msg)
+			c.logs.SetRequest(index, msg, c.logs.GetPreprepare(index))
 		}
 
 		c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
@@ -232,6 +232,14 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 
 	c.logs.AppendNewView(view, msg) // set the message for view change
 
+	// update logs
+	for _, item := range msg.GetPreprepareMessages() {
+		seq := int(item.GetSequenceNumber())
+		if tmp := c.logs.GetRequest(seq); tmp == nil {
+			c.logs.SetRequest(seq, item.Request, item)
+		}
+	}
+
 	return nil
 }
 
@@ -303,12 +311,18 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	// send new view
 	c.communication.SendNewViewMsg(&newViewMsg)
 
-	// start the protocol for every request
-	go func() {
-		for _, req := range requests {
-			c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+	// update our own log
+	for _, item := range requests {
+		seq := int(item.GetSequenceNumber())
+		if tmp := c.logs.GetRequest(seq); tmp == nil {
+			c.logs.SetRequest(seq, item.Request, item)
 		}
-	}()
+	}
+
+	// start the protocol for every request
+	for _, req := range requests {
+		go c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+	}
 }
 
 // checkpointGadget gets a list of checkpoints and updates its logs.

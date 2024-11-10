@@ -35,9 +35,8 @@ func (c *Consensus) preprepareHandler() {
 		}
 
 		// update the request and set the status of preprepared
-		c.logs.SetRequest(raw.Sequence, msg.GetRequest())
+		c.logs.SetRequest(raw.Sequence, msg.GetRequest(), msg)
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
-		c.logs.SetPreprepare(raw.Sequence, msg)
 
 		// call preprepared RPC to notify the sender
 		c.communication.Client().PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
@@ -159,7 +158,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	msg.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
 	// create a preprepare message
-	ppMessage := pbft.PrePrepareMsg{
+	ppMessage := &pbft.PrePrepareMsg{
 		Request:        msg,
 		View:           int64(c.memory.GetView()),
 		NodeId:         c.memory.GetNodeId(),
@@ -168,13 +167,12 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	}
 
 	// store messages into datastore
-	c.logs.SetRequest(sequence, msg)
-	c.logs.SetPreprepare(sequence, &ppMessage)
+	c.logs.SetRequest(sequence, msg, ppMessage)
 
 	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
 	// run a processing gadget
-	c.msgProcessingGadget(sequence, &ppMessage)
+	c.msgProcessingGadget(sequence, ppMessage)
 }
 
 // timerHandler creates a new timer and monitors the timer.

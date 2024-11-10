@@ -178,7 +178,7 @@ func (a Application) terminal(app *application.App) {
 					for _, checkpoint := range item.GetCheckpointMessages() {
 						fmt.Printf("\t\t- sender=%s sequence=%d\n", checkpoint.GetNodeId(), checkpoint.GetSequenceNumber())
 						for _, msg := range checkpoint.GetPreprepareMessages() {
-							fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
+							fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.GetRequest().GetTransaction().GetTimestamp(), msg.GetDigest())
 						}
 					}
 				}

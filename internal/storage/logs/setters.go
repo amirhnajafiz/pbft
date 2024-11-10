@@ -23,15 +23,11 @@ func (l *Logs) InitRequest() int {
 }
 
 // SetRequest adds a new request into the datastore.
-func (l *Logs) SetRequest(index int, req *pbft.RequestMsg) {
+func (l *Logs) SetRequest(index int, req *pbft.RequestMsg, pp *pbft.PrePrepareMsg) {
 	l.datastore[index] = &models.Log{
-		Request: req,
+		Request:    req,
+		PrePrepare: pp,
 	}
-}
-
-// SetPreprepare sets the preprepare message of a request.
-func (l *Logs) SetPreprepare(index int, pp *pbft.PrePrepareMsg) {
-	l.datastore[index].PrePrepare = pp
 }
 
 // AppendLog adds a new log entry to the logs.

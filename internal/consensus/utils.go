@@ -61,9 +61,9 @@ func (c *Consensus) canCheckpoint() (int, bool, []*pbft.PrePrepareMsg) {
 			break
 		} else {
 			if req.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
+				list = append(list, c.logs.GetPreprepare(index))
 				count++
 				index++
-				list = append(list, c.logs.GetPreprepare(index))
 			} else {
 				break
 			}

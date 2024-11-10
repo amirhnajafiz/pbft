@@ -119,11 +119,9 @@ func (c *Consensus) enterViewChangeGadget() {
 	c.inViewChangeMode = true
 	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg, 2*c.cfg.Total)
 
-	c.logger.Debug("node entered the view change mode")
-
 	go func() {
 		for {
-			if err := c.viewChangeGadget(); err == nil {
+			if err := c.viewChangeGadget(); err == nil || errors.Is(err, errViewChangeMajority) {
 				return
 			} else {
 				c.logger.Error("view change failed", zap.Error(err))
@@ -139,8 +137,6 @@ func (c *Consensus) viewChangeGadget() error {
 	// get the current view and increase it
 	view := c.memory.GetView()
 	view++
-
-	c.logger.Debug("node started view chaning", zap.Int("for view", view))
 
 	// create a view change message
 	message := pbft.ViewChangeMsg{
@@ -182,6 +178,8 @@ func (c *Consensus) viewChangeGadget() error {
 
 		select {
 		case msg := <-c.viewChangeGadgetChannel:
+			timer.Start()
+
 			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
 			if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
@@ -189,13 +187,12 @@ func (c *Consensus) viewChangeGadget() error {
 				timer.Stop()
 			}
 		case <-timer.Notify(): // if the timer expired, return and reset the view timer
-			return errors.New("view change timeout")
+			return errViewChangeMajority
 		}
 	}
 
 	// update the node view
 	c.memory.SetView(view)
-	c.logger.Debug("node view update", zap.Int("view", view))
 
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
@@ -214,8 +211,6 @@ func (c *Consensus) viewChangeGadget() error {
 	c.inViewChangeMode = false
 	c.viewChangeGadgetChannel = nil
 
-	c.logger.Debug("view change is over")
-
 	return nil
 }
 
@@ -226,15 +221,13 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 		msg   *pbft.NewViewMsg
 	)
 
-	c.logger.Debug("node entered backup gadget", zap.Int("view", view))
-
 	// leader should response before timeout
 	select {
 	case raw := <-c.consensusHandlersTable[enum.PktNV]:
 		msg = raw.Payload.(*pbft.NewViewMsg)
 		timer.Stop()
 	case <-timer.Notify(): // if the timer expired, return and reset the view timer
-		return errors.New("leader didn't send new view")
+		return errNewViewTimeout
 	}
 
 	c.logs.AppendNewView(view, msg) // set the message for view change
@@ -244,8 +237,6 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 
 // newLeaderGadget performs the procedure of new leader.
 func (c *Consensus) newViewLeaderGadget(view int) {
-	c.logger.Debug("node entered leader gadget", zap.Int("view", view))
-
 	// get all view change messages from other nodes
 	messages := c.logs.GetViewChanges(view)
 

@@ -28,14 +28,16 @@ type Consensus struct {
 	waiter        *modules.Waiter
 	viewTimer     *modules.Timer
 
+	// lock is used when an entity trys to update consensus fields
 	lock sync.Mutex
 
+	// threshold signature keys
 	tss   *share.PriShare
 	suite *bn256.Suite
 	pub   *share.PubPoly
 
-	inViewChangeMode        bool // a flag for in view change mode
-	viewChangeGadgetChannel chan *pbft.ViewChangeMsg
+	inViewChangeMode        bool                     // a flag for in view change mode
+	viewChangeGadgetChannel chan *pbft.ViewChangeMsg // view change gadget channel forwards the view change messages
 
 	executionChannel chan int // execution channel is the execution handler input channel
 

@@ -146,8 +146,6 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 		// send the request to leader
 		c.communication.Client().Request(c.getCurrentLeader(), msg)
 
-		c.logger.Debug("request to non-leader, timer started")
-
 		// start the timer so leader can stop it
 		c.viewTimer.Start()
 
@@ -208,13 +206,9 @@ func (c *Consensus) viewChangeHandler() {
 		// next view is a value that is used for getting only fresh view change messages
 		nextView := c.memory.GetView() + 1
 
-		c.logger.Debug("a view change request received", zap.String("from", msg.GetNodeId()), zap.Int64("for view", msg.GetView()))
-
 		if c.inViewChangeMode {
-			c.logger.Debug("the view change message sent to gadget")
 			c.viewChangeGadgetChannel <- msg
 		} else {
-			c.logger.Debug("the view change messsage stored")
 			c.logs.AppendViewChange(int(msg.GetView()), msg)
 
 			// if the node gets f+1 view changes, it will go into view change.

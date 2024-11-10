@@ -16,16 +16,17 @@ func (c *Consensus) preprepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktPP]
 		msg := raw.Payload.(*pbft.PrePrepareMsg)
 
+		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
 
+		// if the input request is not in watermark, don't accept it
 		if raw.Sequence < c.memory.GetLowWaterMark() || raw.Sequence > c.memory.GetHighWaterMark() {
 			continue
 		}
 
-		digest := hashing.MD5Req(msg.GetRequest()) // get the digest of request
-
+		digest := hashing.MD5HashRequestMsg(msg.GetRequest()) // get the digest of request
 		if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
 			continue
 		}
@@ -36,13 +37,13 @@ func (c *Consensus) preprepareHandler() {
 		c.logs.SetPreprepare(raw.Sequence, msg)
 
 		// start the timer
-		c.viewTimer.Start(true)
+		c.viewTimer.AccumaccumulativeStart()
 
 		// call preprepared RPC to notify the sender
 		c.communication.Client().PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
 			View:           int64(c.memory.GetView()),
 			SequenceNumber: int64(raw.Sequence),
-			Digest:         msg.GetDigest(),
+			Digest:         digest,
 		})
 	}
 }
@@ -54,6 +55,7 @@ func (c *Consensus) prepareHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktP]
 		msg := raw.Payload.(*pbft.AckMsg)
 
+		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
@@ -64,7 +66,7 @@ func (c *Consensus) prepareHandler() {
 			continue
 		}
 
-		digest := hashing.MD5Req(message) // get the digest of input request
+		digest := hashing.MD5HashRequestMsg(message) // get the digest of input request
 
 		if !c.memory.GetByzantine() { // byzantine nodes don't prepare messages
 			if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
@@ -90,6 +92,7 @@ func (c *Consensus) commitHandler() {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
 
+		// don't accept messages in view change mode
 		if c.inViewChangeMode {
 			continue
 		}
@@ -100,7 +103,7 @@ func (c *Consensus) commitHandler() {
 		}
 
 		// stop the timer
-		c.viewTimer.Stop(true)
+		c.viewTimer.Dismiss()
 
 		// send the sequence to the execute handler
 		c.executionChannel <- raw.Sequence
@@ -110,10 +113,8 @@ func (c *Consensus) commitHandler() {
 // executeHandler gets sequence numbers from handlers and executes a request.
 func (c *Consensus) executeHandler() {
 	for {
-		seq := <-c.executionChannel
-
-		// execute the request
-		c.newExecutionGadget(seq)
+		seq := <-c.executionChannel // get the sequence number
+		c.executionGadget(seq)      // execute the request
 	}
 }
 
@@ -122,14 +123,15 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	// parse the input message
 	msg := pkt.Payload.(*pbft.RequestMsg)
 
+	// don't accept messages in view change mode
 	if c.inViewChangeMode {
 		return
 	}
 
-	// check if we had a request with the given timestamp
-	if req, ok := c.checkRequestExecution(msg.GetTransaction().GetTimestamp()); req != nil {
-		if ok {
-			c.communication.SendReplyMsg(req, c.memory.GetView())
+	// check if we have a request with the given timestamp
+	if seq, req := c.logs.GetRequestByTimestamp(msg.GetTransaction().GetTimestamp()); req != nil {
+		if req.Status == pbft.RequestStatus_REQUEST_STATUS_E {
+			c.communication.SendReplyMsg(seq, c.memory.GetView(), req)
 		}
 
 		return
@@ -141,7 +143,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 		c.communication.Client().Request(c.getCurrentLeader(), msg)
 
 		// start the timer
-		c.viewTimer.Start(false)
+		c.viewTimer.Start()
 
 		return
 	}
@@ -150,7 +152,6 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	sequence := c.logs.InitRequest()
 
 	// update request metadata
-	msg.SequenceNumber = int64(sequence)
 	msg.Status = pbft.RequestStatus_REQUEST_STATUS_UNSPECIFIED
 
 	// create a preprepare message
@@ -159,7 +160,7 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 		View:           int64(c.memory.GetView()),
 		NodeId:         c.memory.GetNodeId(),
 		SequenceNumber: int64(sequence),
-		Digest:         hashing.MD5Req(msg),
+		Digest:         hashing.MD5HashRequestMsg(msg),
 	}
 
 	// store messages into datastore
@@ -169,13 +170,13 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 	c.logger.Debug("new request got into the system", zap.Int("sequece", sequence), zap.Int64("time", msg.Transaction.GetTimestamp()))
 
 	// run a processing gadget
-	c.newProcessingGadet(sequence, &ppMessage)
+	c.msgProcessingGadget(sequence, &ppMessage)
 }
 
 // timerHandler creates a new timer and monitors the timer.
 func (c *Consensus) timerHandler() {
 	// stop the timer so that others can start it
-	c.viewTimer.Stop(false)
+	c.viewTimer.Stop()
 
 	for {
 		<-c.viewTimer.Notify()
@@ -183,7 +184,7 @@ func (c *Consensus) timerHandler() {
 
 		// start view change
 		if !c.inViewChangeMode {
-			c.newViewChangeModeGadget()
+			c.startViewChangeGadget()
 		}
 	}
 }
@@ -204,7 +205,7 @@ func (c *Consensus) viewChangeHandler() {
 			}
 
 			if len(c.logs.GetViewChanges(int(msg.GetView()))) >= c.cfg.Responses {
-				c.newViewChangeModeGadget()
+				c.startViewChangeGadget()
 			}
 		} else {
 			if c.viewChangeGadgetChannel != nil {
@@ -216,6 +217,7 @@ func (c *Consensus) viewChangeHandler() {
 
 // checkpointHandler captures checkpoint messages until it gets 2f+1 matches.
 func (c *Consensus) checkpointHandler() {
+	// a list to keep checkpoints
 	checkpoints := make(map[int][]*pbft.CheckpointMsg)
 
 	for {
@@ -223,12 +225,11 @@ func (c *Consensus) checkpointHandler() {
 		raw := <-c.consensusHandlersTable[enum.PktCP]
 		msg := raw.Payload.(*pbft.CheckpointMsg)
 
-		// collect 2f+1 checkpoints
+		// collect checkpoints
 		if _, ok := checkpoints[int(msg.GetSequenceNumber())]; !ok {
 			checkpoints[int(msg.GetSequenceNumber())] = make([]*pbft.CheckpointMsg, 0)
 		}
 
-		// append the message
 		checkpoints[raw.Sequence] = append(checkpoints[raw.Sequence], msg)
 
 		// check if 2f+1 matching

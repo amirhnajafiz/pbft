@@ -5,6 +5,17 @@ import (
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
 )
 
+// GetRequestByTimestamp checks the requests for matching timestamp request.
+func (l *Logs) GetRequestByTimestamp(ts int64) (int, *pbft.RequestMsg) {
+	for key, value := range l.datastore {
+		if value.Request.Transaction.GetTimestamp() == ts {
+			return key, value.Request
+		}
+	}
+
+	return 0, nil
+}
+
 // GetRequest is returns a request by its index.
 func (l *Logs) GetRequest(index int) *pbft.RequestMsg {
 	if value, ok := l.datastore[index]; ok {

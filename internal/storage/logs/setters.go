@@ -24,10 +24,12 @@ func (l *Logs) InitRequest() int {
 
 // SetRequest adds a new request into the datastore.
 func (l *Logs) SetRequest(index int, req *pbft.RequestMsg, pp *pbft.PrePrepareMsg) {
+	l.lock.Lock()
 	l.datastore[index] = &models.Log{
 		Request:    req,
 		PrePrepare: pp,
 	}
+	l.lock.Unlock()
 }
 
 // AppendLog adds a new log entry to the logs.
@@ -68,14 +70,18 @@ func (l *Logs) Reset() {
 
 // SetRequestStatus accepts an index and status, and updates it if the new status is higher than what it is.
 func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
+	l.lock.Lock()
 	if l.datastore[index].Request.GetStatus().Number()+1 == status.Number() {
 		l.datastore[index].Request.Status = status
 	}
+	l.lock.Unlock()
 }
 
 // SetRequestStatusByForce accepts an index and status, and updates it.
 func (l *Logs) SetRequestStatusByForce(index int, status pbft.RequestStatus) {
+	l.lock.Lock()
 	l.datastore[index].Request.Status = status
+	l.lock.Unlock()
 }
 
 // AppendCheckpoint adds a new checkpoint log.

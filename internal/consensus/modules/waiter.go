@@ -25,9 +25,10 @@ func NewWaiter(cfg *bft.Config) *Waiter {
 }
 
 // NewPrePreparedWaiter takes packets from a channel until it gets 2f+1 matching preprepared messages.
-func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Validator) int {
-	// create a list of messages
+func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.PacketType, validator Validator) int {
+	// create a list of messages and nodes
 	messages := make(map[string]int)
+	nodes := make(map[string]bool)
 
 	// create a new timer, time start flag, and a target holder
 	var (
@@ -40,18 +41,21 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Val
 		if timerStarted {
 			select {
 			case intr := <-channel:
-				// ignore messages that are not preprepared
-				if intr.Type != enum.PktPPed {
+				if intr.Type != targetType {
 					continue
 				}
 
-				// validate the message
 				msg := intr.Payload.(*pbft.AckMsg)
 				if msg = validator(msg); msg == nil {
 					continue
 				}
 
-				// extract the digest to count the messages
+				if _, ok := nodes[msg.GetNodeId()]; !ok {
+					nodes[msg.GetNodeId()] = true
+				} else {
+					continue
+				}
+
 				digest := msg.GetDigest()
 				if _, ok := messages[digest]; !ok {
 					messages[digest] = 1
@@ -62,21 +66,23 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Val
 				return messages[target]
 			}
 		} else {
-			// the timer is not started, so keep waiting
 			intr := <-channel
 
-			// ignore messages that are not preprepared
 			if intr.Type != enum.PktPPed {
 				continue
 			}
 
-			// validate the message
 			msg := intr.Payload.(*pbft.AckMsg)
 			if msg = validator(msg); msg == nil {
 				continue
 			}
 
-			// extract the digest to count the messages
+			if _, ok := nodes[msg.GetNodeId()]; !ok {
+				nodes[msg.GetNodeId()] = true
+			} else {
+				continue
+			}
+
 			digest := msg.GetDigest()
 			if _, ok := messages[digest]; !ok {
 				messages[digest] = 1
@@ -91,43 +97,6 @@ func (w *Waiter) NewPrePreparedWaiter(channel chan *models.Packet, validator Val
 					timerStarted = true
 					timer = time.NewTimer(time.Duration(w.cfg.MajorityTimeout) * time.Millisecond)
 				}
-			}
-		}
-	}
-}
-
-// NewPreparedWaiter takes packets from a channel until it gets 2f+1 matching prepared messages.
-func (w *Waiter) NewPreparedWaiter(channel chan *models.Packet, validator Validator) int {
-	// create a list of messages
-	messages := make(map[string]int)
-
-	for {
-		// get raw interrupts
-		intr := <-channel
-
-		// ignore messages that are not prepared
-		if intr.Type != enum.PktPed {
-			continue
-		}
-
-		// validate the message
-		msg := intr.Payload.(*pbft.AckMsg)
-		if msg = validator(msg); msg == nil {
-			continue
-		}
-
-		// extract the digest to count the messages
-		digest := msg.GetDigest()
-		if _, ok := messages[digest]; !ok {
-			messages[digest] = 1
-		} else {
-			messages[digest]++
-		}
-
-		// check for having 2f+1 match messages
-		for _, value := range messages {
-			if value >= w.cfg.Majority-1 {
-				return value
 			}
 		}
 	}

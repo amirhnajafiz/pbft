@@ -21,7 +21,7 @@ service PBFT {
   rpc Checkpoint(CheckpointMsg) returns (google.protobuf.Empty) {}
   // client calls
   rpc PrintLog(google.protobuf.Empty) returns (stream LogRsp) {}
-  rpc PrintDB(google.protobuf.Empty) returns (stream RequestMsg) {}
+  rpc PrintDB(google.protobuf.Empty) returns (stream RequestRsp) {}
   rpc PrintStatus(StatusMsg) returns (StatusRsp) {}
   rpc PrintView(google.protobuf.Empty) returns (stream ViewRsp) {}
   rpc PrintCheckpoints(google.protobuf.Empty) returns (stream CheckpointRsp) {}
@@ -112,6 +112,12 @@ message LogRsp {
 // status response will be sent to the user.
 message StatusRsp {
   RequestStatus status = 1;
+}
+
+// request response will be sent to the user.
+message RequestRsp {
+  RequestMsg request = 1;
+  int64 sequence_number = 2;
 }
 
 // view response will be sent to the user.

@@ -56,7 +56,7 @@ type PBFTClient interface {
 	Checkpoint(ctx context.Context, in *CheckpointMsg, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// client calls
 	PrintLog(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogRsp], error)
-	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error)
+	PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestRsp], error)
 	PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error)
 	PrintView(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ViewRsp], error)
 	PrintCheckpoints(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CheckpointRsp], error)
@@ -179,13 +179,13 @@ func (c *pBFTClient) PrintLog(ctx context.Context, in *emptypb.Empty, opts ...gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PBFT_PrintLogClient = grpc.ServerStreamingClient[LogRsp]
 
-func (c *pBFTClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestMsg], error) {
+func (c *pBFTClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[RequestRsp], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &PBFT_ServiceDesc.Streams[1], PBFT_PrintDB_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[emptypb.Empty, RequestMsg]{ClientStream: stream}
+	x := &grpc.GenericClientStream[emptypb.Empty, RequestRsp]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (c *pBFTClient) PrintDB(ctx context.Context, in *emptypb.Empty, opts ...grp
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type PBFT_PrintDBClient = grpc.ServerStreamingClient[RequestMsg]
+type PBFT_PrintDBClient = grpc.ServerStreamingClient[RequestRsp]
 
 func (c *pBFTClient) PrintStatus(ctx context.Context, in *StatusMsg, opts ...grpc.CallOption) (*StatusRsp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -266,7 +266,7 @@ type PBFTServer interface {
 	Checkpoint(context.Context, *CheckpointMsg) (*emptypb.Empty, error)
 	// client calls
 	PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error
-	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error
+	PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestRsp]) error
 	PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error)
 	PrintView(*emptypb.Empty, grpc.ServerStreamingServer[ViewRsp]) error
 	PrintCheckpoints(*emptypb.Empty, grpc.ServerStreamingServer[CheckpointRsp]) error
@@ -310,7 +310,7 @@ func (UnimplementedPBFTServer) Checkpoint(context.Context, *CheckpointMsg) (*emp
 func (UnimplementedPBFTServer) PrintLog(*emptypb.Empty, grpc.ServerStreamingServer[LogRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintLog not implemented")
 }
-func (UnimplementedPBFTServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestMsg]) error {
+func (UnimplementedPBFTServer) PrintDB(*emptypb.Empty, grpc.ServerStreamingServer[RequestRsp]) error {
 	return status.Errorf(codes.Unimplemented, "method PrintDB not implemented")
 }
 func (UnimplementedPBFTServer) PrintStatus(context.Context, *StatusMsg) (*StatusRsp, error) {
@@ -521,11 +521,11 @@ func _PBFT_PrintDB_Handler(srv interface{}, stream grpc.ServerStream) error {
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(PBFTServer).PrintDB(m, &grpc.GenericServerStream[emptypb.Empty, RequestMsg]{ServerStream: stream})
+	return srv.(PBFTServer).PrintDB(m, &grpc.GenericServerStream[emptypb.Empty, RequestRsp]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type PBFT_PrintDBServer = grpc.ServerStreamingServer[RequestMsg]
+type PBFT_PrintDBServer = grpc.ServerStreamingServer[RequestRsp]
 
 func _PBFT_PrintStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusMsg)

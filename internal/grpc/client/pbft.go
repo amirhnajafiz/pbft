@@ -111,7 +111,6 @@ func (c *Client) Prepared(target string, msg *pbft.AckMsg) error {
 // Request calls the Request RPC on the target machine (clients to nodes).
 func (c *Client) Request(target string, msg *pbft.RequestMsg) error {
 	address := c.nodes[target]
-	msg.NodeId = c.nodeId
 
 	// base connection
 	conn, err := c.connect(address)
@@ -189,9 +188,9 @@ func (c *Client) Checkpoint(target string, msg *pbft.CheckpointMsg) error {
 }
 
 // PrintDB gets a target datastore.
-func (c *Client) PrintDB(target string) []*pbft.RequestMsg {
+func (c *Client) PrintDB(target string) []*pbft.RequestRsp {
 	address := c.nodes[target]
-	list := make([]*pbft.RequestMsg, 0)
+	list := make([]*pbft.RequestRsp, 0)
 
 	// base connection
 	conn, err := c.connect(address)

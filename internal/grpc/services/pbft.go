@@ -101,8 +101,11 @@ func (p *PBFT) PrintDB(_ *emptypb.Empty, stream pbft.PBFT_PrintDBServer) error {
 	ds := p.Logs.GetAllRequests()
 
 	// publish requests one by one
-	for _, block := range ds {
-		if err := stream.Send(block); err != nil {
+	for key, block := range ds {
+		if err := stream.Send(&pbft.RequestRsp{
+			SequenceNumber: int64(key),
+			Request:        block,
+		}); err != nil {
 			return err
 		}
 	}
@@ -146,9 +149,9 @@ func (p *PBFT) PrintView(_ *emptypb.Empty, stream pbft.PBFT_PrintViewServer) err
 	// publish views one by one
 	for key, value := range views {
 		if err := stream.Send(&pbft.ViewRsp{
-			View:     int64(key),
-			Messages: value.ViewChangeMsgs,
-			NewView:  value.NewViewMsg,
+			View:               int64(key),
+			NewviewMessage:     value.NewViewMsg,
+			ViewchangeMessages: value.ViewChangeMsgs,
 		}); err != nil {
 			return err
 		}
@@ -164,8 +167,8 @@ func (p *PBFT) PrintCheckpoints(_ *emptypb.Empty, stream pbft.PBFT_PrintCheckpoi
 	// publish views one by one
 	for key, value := range views {
 		if err := stream.Send(&pbft.CheckpointRsp{
-			SequenceNumber: int64(key),
-			Checkpoints:    value,
+			SequenceNumber:     int64(key),
+			CheckpointMessages: value,
 		}); err != nil {
 			return err
 		}

@@ -22,12 +22,23 @@ func (l *Logs) InitRequest() int {
 	}
 }
 
+// ResetRequest sets a position free.
+func (l *Logs) ResetRequest(index int) {
+	l.lock.Lock()
+	delete(l.datastore, index)
+	l.lock.Unlock()
+}
+
 // SetRequest adds a new request into the datastore.
 func (l *Logs) SetRequest(index int, req *pbft.RequestMsg, pp *pbft.PrePrepareMsg) {
 	l.lock.Lock()
 	l.datastore[index] = &models.Log{
 		Request:    req,
 		PrePrepare: pp,
+	}
+
+	if index > l.lastProcessingSeq {
+		l.lastProcessingSeq = index
 	}
 	l.lock.Unlock()
 }
@@ -66,6 +77,7 @@ func (l *Logs) Reset() {
 	l.viewChanges = make(map[int]*models.ViewLog)
 	l.checkpoints = make(map[int][]*pbft.CheckpointMsg)
 	l.index = 0
+	l.lastProcessingSeq = 0
 }
 
 // SetRequestStatus accepts an index and status, and updates it if the new status is higher than what it is.

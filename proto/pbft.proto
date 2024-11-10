@@ -81,10 +81,11 @@ message CheckpointMsg {
 message ViewChangeMsg {
   int64 view = 1;
   int64 sequence_number = 2;
-  string node_id = 3;
-  bytes signature = 4;
-  repeated CheckpointMsg checkpoint_messages = 5;
-  repeated PrePrepareMsg preprepare_messages = 6;
+  int64 last_processing_sequence = 3;
+  string node_id = 4;
+  bytes signature = 5;
+  repeated CheckpointMsg checkpoint_messages = 6;
+  repeated PrePrepareMsg preprepare_messages = 7;
 }
 
 // new view message will be sent by the new leader to update other nodes logs.

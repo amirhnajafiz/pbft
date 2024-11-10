@@ -109,3 +109,8 @@ func (l *Logs) GetLastCheckpointMsgs() []*pbft.CheckpointMsg {
 func (l *Logs) GetHighWaterMark() int {
 	return l.lastCheckpoint + l.kvalue
 }
+
+// GetLastProcessingSeq returns the last processing sequence number.
+func (l *Logs) GetLastProcessingSeq() int {
+	return l.lastProcessingSeq
+}

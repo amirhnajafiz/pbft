@@ -140,11 +140,12 @@ func (c *Consensus) viewChangeGadget() error {
 
 	// create a view change message
 	message := pbft.ViewChangeMsg{
-		NodeId:             c.memory.GetNodeId(),
-		View:               int64(view),
-		SequenceNumber:     int64(c.logs.GetLastCheckpoint()),
-		CheckpointMessages: c.logs.GetLastCheckpointMsgs(),
-		PreprepareMessages: c.logs.GetPrepreparesAfterCheckpoint(),
+		NodeId:                 c.memory.GetNodeId(),
+		View:                   int64(view),
+		SequenceNumber:         int64(c.logs.GetLastCheckpoint()),
+		LastProcessingSequence: int64(c.logs.GetLastProcessingSeq()),
+		CheckpointMessages:     c.logs.GetLastCheckpointMsgs(),
+		PreprepareMessages:     c.logs.GetPrepreparesAfterCheckpoint(),
 	}
 
 	// sign the message by using its digest
@@ -232,6 +233,13 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 
 	c.logs.AppendNewView(view, msg) // set the message for view change
 
+	// update our logs
+	for _, req := range msg.GetPreprepareMessages() {
+		if req.Request == nil {
+			c.logs.ResetRequest(int(req.GetSequenceNumber()))
+		}
+	}
+
 	return nil
 }
 
@@ -255,10 +263,16 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	// loop in all view change messages
 	for _, msg := range messages {
 		sequence := int(msg.GetSequenceNumber())
+		lastProcess := int(msg.GetLastProcessingSequence())
 
 		// see if anyone has a better checkpoint
 		if sequence > minSequence {
 			minSequence = sequence
+		}
+
+		// see if anyone has a better
+		if maxSequence < lastProcess {
+			maxSequence = lastProcess
 		}
 
 		// every single view change message is the same
@@ -268,26 +282,22 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 
 		// loop over preprepare messages
 		for _, pp := range msg.GetPreprepareMessages() {
-			ppSeq := int(pp.GetSequenceNumber())
-			if ppSeq > maxSequence {
-				maxSequence = ppSeq
-			}
-
-			logsMap[ppSeq] = pp
+			logsMap[int(pp.GetSequenceNumber())] = pp
 		}
 	}
 
 	// create an array to store sequences
-	requests := make([]*pbft.PrePrepareMsg, 0)
+	preprepareMessages := make([]*pbft.PrePrepareMsg, 0)
 
 	// collect all requets that are prepared
-	for i := minSequence; i < maxSequence; i++ {
-		if item := c.logs.GetPreprepare(i); item != nil {
-			item.View = int64(view)
-			requests = append(requests, item)
-		} else if item, ok := logsMap[i]; ok {
-			item.View = int64(view)
-			requests = append(requests, item)
+	for i := minSequence; i <= maxSequence; i++ {
+		if item, ok := logsMap[i]; ok {
+			preprepareMessages = append(preprepareMessages, item)
+		} else {
+			preprepareMessages = append(preprepareMessages, &pbft.PrePrepareMsg{
+				SequenceNumber: int64(i),
+				Request:        nil,
+			})
 		}
 	}
 
@@ -299,7 +309,7 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 		View:               int64(view),
 		NodeId:             c.memory.GetNodeId(),
 		ViewchangeMessage:  digest,
-		PreprepareMessages: requests,
+		PreprepareMessages: preprepareMessages,
 		Shares:             sigShares,
 	}
 
@@ -309,9 +319,18 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	// send new view
 	c.communication.SendNewViewMsg(&newViewMsg)
 
+	// update our logs
+	for _, req := range preprepareMessages {
+		if req.Request == nil {
+			c.logs.ResetRequest(int(req.GetSequenceNumber()))
+		}
+	}
+
 	// start the protocol for every request
-	for _, req := range requests {
-		go c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+	for _, req := range preprepareMessages {
+		if req.GetRequest() != nil {
+			go c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
+		}
 	}
 }
 

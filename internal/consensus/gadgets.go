@@ -241,14 +241,6 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 
 	c.logs.AppendNewView(view, msg) // set the message for view change
 
-	// update logs
-	for _, item := range msg.GetPreprepareMessages() {
-		seq := int(item.GetSequenceNumber())
-		if tmp := c.logs.GetRequest(seq); tmp == nil {
-			c.logs.SetRequest(seq, item.Request, item)
-		}
-	}
-
 	return nil
 }
 
@@ -261,8 +253,8 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	logsMap := make(map[int]*pbft.PrePrepareMsg)
 
 	// set the min and max
-	minSequence := c.logs.GetLastCheckpoint()
-	maxSequence := c.logs.GetLastCheckpoint()
+	minSequence := 0
+	maxSequence := 0
 
 	var (
 		message   *pbft.ViewChangeMsg
@@ -273,20 +265,24 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	for _, msg := range messages {
 		sequence := int(msg.GetSequenceNumber())
 
-		message = msg
-		sigShares = append(sigShares, []byte(msg.GetSignature()))
-
-		// loop over preprepares to insert them inside a logs map
-		for _, pp := range msg.GetPreprepareMessages() {
-			logsMap[int(pp.GetSequenceNumber())] = pp
-		}
-
-		// update the minimum and maximum bounds
-		if sequence <= minSequence {
+		// see if anyone has a better checkpoint
+		if sequence > minSequence {
 			minSequence = sequence
 		}
-		if sequence >= maxSequence {
-			maxSequence = sequence
+
+		// every single view change message is the same
+		message = msg
+		// append the signature
+		sigShares = append(sigShares, []byte(msg.GetSignature()))
+
+		// loop over preprepare messages
+		for _, pp := range msg.GetPreprepareMessages() {
+			ppSeq := int(pp.GetSequenceNumber())
+			if ppSeq > maxSequence {
+				maxSequence = ppSeq
+			}
+
+			logsMap[ppSeq] = pp
 		}
 	}
 
@@ -294,7 +290,7 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	requests := make([]*pbft.PrePrepareMsg, 0)
 
 	// collect all requets that are prepared
-	for i := minSequence; i <= maxSequence; i++ {
+	for i := minSequence; i < maxSequence; i++ {
 		if item := c.logs.GetPreprepare(i); item != nil {
 			item.View = int64(view)
 			requests = append(requests, item)
@@ -321,14 +317,6 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 
 	// send new view
 	c.communication.SendNewViewMsg(&newViewMsg)
-
-	// update our own log
-	for _, item := range requests {
-		seq := int(item.GetSequenceNumber())
-		if tmp := c.logs.GetRequest(seq); tmp == nil {
-			c.logs.SetRequest(seq, item.Request, item)
-		}
-	}
 
 	// start the protocol for every request
 	for _, req := range requests {

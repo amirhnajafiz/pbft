@@ -139,6 +139,13 @@ func (c *Consensus) requestHandler(pkt *models.Packet) {
 
 	// check if we have a request with the given timestamp
 	if seq, req := c.logs.GetRequestByTimestamp(msg.GetTransaction().GetTimestamp()); req != nil {
+		c.logger.Debug(
+			"request exists",
+			zap.Int("sequence", seq),
+			zap.Int64("ts", msg.GetTransaction().GetTimestamp()),
+			zap.String("status", req.Status.String()),
+		)
+
 		if req.Status == pbft.RequestStatus_REQUEST_STATUS_E {
 			c.communication.SendReplyMsg(seq, c.memory.GetView(), req)
 		}

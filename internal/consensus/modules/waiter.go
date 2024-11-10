@@ -68,7 +68,7 @@ func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.Packe
 		} else {
 			intr := <-channel
 
-			if intr.Type != enum.PktPPed {
+			if intr.Type != targetType {
 				continue
 			}
 

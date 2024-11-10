@@ -93,7 +93,10 @@ func (c *Consensus) executionGadget(sequence int) {
 	for {
 		// don't reexecute a request
 		if msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
-			c.executeTransaction(msg.GetTransaction()) // execute transaction
+			resp := c.executeTransaction(msg.GetTransaction()) // execute transaction
+
+			msg.GetResponse().Text = resp
+			c.logs.SetRequest(index, msg)
 		}
 
 		if !c.memory.GetByzantine() {

@@ -128,11 +128,11 @@ func (a Application) terminal(app *application.App) {
 				fmt.Printf(
 					"\t- %d : %d (%s, %s, %d) : %s\n",
 					item.GetSequenceNumber(),
-					item.GetTransaction().GetTimestamp(),
-					item.GetTransaction().GetSender(),
-					item.GetTransaction().GetReciever(),
-					item.GetTransaction().GetAmount(),
-					item.GetResponse().GetText(),
+					item.GetRequest().GetTransaction().GetTimestamp(),
+					item.GetRequest().GetTransaction().GetSender(),
+					item.GetRequest().GetTransaction().GetReciever(),
+					item.GetRequest().GetTransaction().GetAmount(),
+					item.GetRequest().GetResponse().GetText(),
 				)
 			}
 		case "printstatus":
@@ -146,24 +146,24 @@ func (a Application) terminal(app *application.App) {
 				fmt.Printf("- node %s\n", key)
 
 				for _, item := range app.Client().PrintView(key) {
-					fmt.Printf("\tnew view: %d\n", item.GetNewView().GetView())
+					fmt.Printf("\tnew view: %d\n", item.GetNewviewMessage().GetView())
 
 					fmt.Printf("\tpreprepares:\n")
-					for _, msg := range item.GetNewView().GetPreprepares() {
+					for _, msg := range item.GetNewviewMessage().GetPreprepareMessages() {
 						fmt.Printf("\t\t- %s\n", msg.String())
 					}
 
 					fmt.Printf("\tviewchanges:\n")
-					for _, msg := range item.GetMessages() {
+					for _, msg := range item.GetViewchangeMessages() {
 						fmt.Printf("\t\t- from %s : sequence (%d)\n", msg.GetNodeId(), msg.GetSequenceNumber())
 
-						for _, pp := range msg.GetPreprepares() {
+						for _, pp := range msg.GetPreprepareMessages() {
 							fmt.Printf("\t\t\t- %s\n", pp.String())
 						}
 					}
 
-					fmt.Printf("\ttreshold signature: %s\n", item.GetNewView().GetMessage())
-					for _, sh := range item.GetNewView().GetShares() {
+					fmt.Printf("\ttreshold signature: %s\n", item.GetNewviewMessage().GetViewchangeMessage())
+					for _, sh := range item.GetNewviewMessage().GetShares() {
 						fmt.Printf("\t\t- %s\n", base64.StdEncoding.EncodeToString(sh))
 					}
 				}

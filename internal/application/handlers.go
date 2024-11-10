@@ -41,10 +41,9 @@ func (a *App) transactionHandler(client string, ch chan *models.Transaction) {
 func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	// create a pbft request
 	req := &pbft.RequestMsg{
-		Transaction:    trx,
-		ClientId:       a.memory.GetNodeId(),
-		Response:       &pbft.TransactionRsp{},
-		SequenceNumber: -1,
+		Transaction: trx,
+		ClientId:    a.memory.GetNodeId(),
+		Response:    &pbft.TransactionRsp{},
 	}
 
 	var (

@@ -14,7 +14,10 @@ type Logs struct {
 	viewChanges map[int]*models.ViewLog
 	checkpoints map[int][]*pbft.CheckpointMsg
 
-	lock              sync.Mutex
+	datastoreLock   sync.Mutex
+	checkpointsLock sync.Mutex
+	viewChangesLock sync.Mutex
+
 	index             int
 	lastCheckpoint    int
 	kvalue            int
@@ -24,7 +27,6 @@ type Logs struct {
 // NewLogs returns a new logs instance.
 func NewLogs(kvalue int) *Logs {
 	return &Logs{
-		lock:              sync.Mutex{},
 		logs:              make([]string, 0),
 		datastore:         make(map[int]*models.Log),
 		viewChanges:       make(map[int]*models.ViewLog),
@@ -33,5 +35,8 @@ func NewLogs(kvalue int) *Logs {
 		lastCheckpoint:    0,
 		kvalue:            kvalue,
 		lastProcessingSeq: 0,
+		datastoreLock:     sync.Mutex{},
+		checkpointsLock:   sync.Mutex{},
+		viewChangesLock:   sync.Mutex{},
 	}
 }

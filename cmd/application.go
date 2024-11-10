@@ -153,14 +153,14 @@ func (a Application) terminal(app *application.App) {
 
 					fmt.Printf("\t\t- preprepare messages:\n")
 					for _, msg := range item.GetNewviewMessage().GetPreprepareMessages() {
-						fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
+						fmt.Printf("\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.GetRequest().GetTransaction().GetTimestamp(), msg.GetDigest())
 					}
 
-					fmt.Printf("\t\tviewchange messages:\n")
+					fmt.Printf("\t\t- viewchange messages:\n")
 					for _, msg := range item.GetViewchangeMessages() {
 						fmt.Printf("\t\t\t- sender=%s sequence=%d\n", msg.GetNodeId(), msg.GetSequenceNumber())
 						for _, msg := range msg.GetPreprepareMessages() {
-							fmt.Printf("\t\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.Request.Transaction.GetTimestamp(), msg.GetDigest())
+							fmt.Printf("\t\t\t\t- seq=%d timestamp=%d digest=%s\n", msg.GetSequenceNumber(), msg.GetRequest().GetTransaction().GetTimestamp(), msg.GetDigest())
 						}
 					}
 

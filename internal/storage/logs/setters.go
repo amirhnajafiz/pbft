@@ -68,9 +68,14 @@ func (l *Logs) Reset() {
 
 // SetRequestStatus accepts an index and status, and updates it if the new status is higher than what it is.
 func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
-	if l.datastore[index].Request.GetStatus().Number() <= status.Number() {
+	if l.datastore[index].Request.GetStatus().Number()+1 == status.Number() {
 		l.datastore[index].Request.Status = status
 	}
+}
+
+// SetRequestStatusByForce accepts an index and status, and updates it.
+func (l *Logs) SetRequestStatusByForce(index int, status pbft.RequestStatus) {
+	l.datastore[index].Request.Status = status
 }
 
 // AppendCheckpoint adds a new checkpoint log.

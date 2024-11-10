@@ -48,7 +48,10 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	}
 
 	// wait for 2f+1 preprepared messages (count our own)
+	optimized := true
 	if count := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget); count+1 < c.cfg.Total {
+		optimized = false
+
 		go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
 		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
@@ -59,7 +62,7 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	}
 
 	// broadcast to all using commit
-	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest())
+	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest(), optimized)
 
 	// delete our input channel as soon as possible
 	c.lock.Lock()

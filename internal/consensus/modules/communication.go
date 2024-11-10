@@ -59,11 +59,12 @@ func (c *Communication) SendPrepareMsg(sequence, view int, digest string) {
 }
 
 // SendCommitMsg gets a request message and uses client.go to broadcast a commit message.
-func (c *Communication) SendCommitMsg(sequence, view int, digest string) {
+func (c *Communication) SendCommitMsg(sequence, view int, digest string, optimized bool) {
 	msg := pbft.AckMsg{
 		SequenceNumber: int64(sequence),
 		View:           int64(view),
 		Digest:         digest,
+		IsOptimized:    optimized,
 	}
 
 	for key := range c.cli.GetSystemNodes() {

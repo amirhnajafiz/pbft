@@ -93,6 +93,7 @@ func (c *Consensus) commitHandler() {
 	for {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
+		msg := raw.Payload.(*pbft.AckMsg)
 
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
@@ -103,7 +104,11 @@ func (c *Consensus) commitHandler() {
 		c.viewTimer.Start()
 
 		// update the request and set the status of prepare
-		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		if msg.IsOptimized {
+			c.logs.SetRequestStatusByForce(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		} else {
+			c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		}
 
 		// stop the timer
 		c.viewTimer.Stop()

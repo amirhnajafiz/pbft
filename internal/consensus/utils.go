@@ -51,7 +51,8 @@ func (c *Consensus) executeTransaction(trx *pbft.TransactionMsg) string {
 }
 
 // shouldCheckpoint checks the number of executions to see if checkpoint is needed or not.
-func (c *Consensus) canCheckpoint() (int, bool) {
+func (c *Consensus) canCheckpoint() (int, bool, []*pbft.PrePrepareMsg) {
+	list := make([]*pbft.PrePrepareMsg, 0)
 	index := c.logs.GetLastCheckpoint()
 	count := 0
 
@@ -62,11 +63,12 @@ func (c *Consensus) canCheckpoint() (int, bool) {
 			if req.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
 				count++
 				index++
+				list = append(list, c.logs.GetPreprepare(index))
 			} else {
 				break
 			}
 		}
 	}
 
-	return index, count >= c.cfg.Checkpoint
+	return index, count >= c.cfg.Checkpoint, list
 }

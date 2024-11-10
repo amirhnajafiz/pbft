@@ -47,6 +47,12 @@ func (l *Logs) AppendViewChange(view int, msg *pbft.ViewChangeMsg) {
 		}
 	}
 
+	for _, tmp := range l.viewChanges[view].ViewChangeMsgs {
+		if tmp.GetNodeId() == msg.GetNodeId() {
+			return
+		}
+	}
+
 	l.viewChanges[view].ViewChangeMsgs = append(l.viewChanges[view].ViewChangeMsgs, msg)
 }
 

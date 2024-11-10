@@ -15,16 +15,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// newAckGadget validates a preprepared or prepared ack message.
-func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
+// ackMsgReceivedGadget validates a preprepared or prepared ack message.
+func (c *Consensus) ackMsgReceivedGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	// get the message from our datastore
 	message := c.logs.GetRequest(int(msg.GetSequenceNumber()))
 	if message == nil {
 		return nil
 	}
 
-	// get the digest of input request
-	digest := hashing.MD5Req(message)
+	digest := hashing.MD5HashRequestMsg(message) // get the digest of input request
 
 	// validate the message
 	if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
@@ -34,27 +33,26 @@ func (c *Consensus) newAckGadget(msg *pbft.AckMsg) *pbft.AckMsg {
 	return msg
 }
 
-func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
-	// open a communication channel
-	channel := make(chan *models.Packet, c.cfg.Total*2)
+// msgProcessingGadget gets a preprepare message and sequence number to perform BFT protocol.
+func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
+	channel := make(chan *models.Packet, c.cfg.Total*2) // open a communication channel
 
 	c.lock.Lock()
 	c.requestsHandlersTable[sequence] = channel
 	c.lock.Unlock()
 
 	// send preprepare messages
-	go c.communication.SendPreprepareMsg(msg, c.memory.GetView())
+	go c.communication.SendPreprepareMsg(msg)
 
 	// update our own status
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 
 	// wait for 2f+1 preprepared messages (count our own)
-	count := c.waiter.NewPrePreparedWaiter(channel, c.newAckGadget)
+	count := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget)
 
-	// optimized mode
+	// check for optimized mode
 	if count+1 < c.cfg.Total {
-		// broadcast to all using prepare
-		go c.communication.SendPrepareMsg(msg.GetRequest(), c.memory.GetView())
+		go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
 		// update our own status
 		if !c.memory.GetByzantine() {
@@ -62,13 +60,13 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 		}
 
 		// wait for 2f+1 prepared messages (count our own)
-		c.waiter.NewPreparedWaiter(channel, c.newAckGadget)
+		c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
 	} else {
-		c.logger.Info("optimized mode", zap.Int("count", count+1))
+		c.logger.Info("optimized mode execution", zap.Int("count", count+1))
 	}
 
-	// broadcast to all using commit, make sure everyone get's it
-	go c.communication.SendCommitMsg(msg.GetRequest(), c.memory.GetView())
+	// broadcast to all using commit
+	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest())
 
 	// delete our input channel as soon as possible
 	c.lock.Lock()
@@ -82,8 +80,8 @@ func (c *Consensus) newProcessingGadet(sequence int, msg *pbft.PrePrepareMsg) {
 	c.executionChannel <- sequence
 }
 
-// newExecutionGadget gets a sequence number and performs the execution logic.
-func (c *Consensus) newExecutionGadget(sequence int) {
+// executionGadget gets a sequence number and performs the execution logic.
+func (c *Consensus) executionGadget(sequence int) {
 	if !c.memory.GetByzantine() && !c.canExecuteRequest(sequence) {
 		c.logger.Debug("cannot execute this request yet", zap.Int("sequence", sequence))
 		return
@@ -93,19 +91,17 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 	index := sequence
 	msg := c.logs.GetRequest(index)
 
-	// don't reexecute a request
-	if msg.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_E {
-		return
-	}
-
 	for {
-		c.executeRequest(msg) // execute request
+		// don't reexecute a request
+		if msg.GetStatus() != pbft.RequestStatus_REQUEST_STATUS_E {
+			c.executeTransaction(msg.GetTransaction()) // execute transaction
+		}
 
 		if !c.memory.GetByzantine() {
 			c.logs.SetRequestStatus(index, pbft.RequestStatus_REQUEST_STATUS_E) // update the request and set the status of prepare
 		}
 
-		c.communication.SendReplyMsg(msg, c.memory.GetView()) // send the reply message using helper functions
+		c.communication.SendReplyMsg(index, c.memory.GetView(), msg)
 		c.logger.Debug("request executed", zap.Int("sequence number", index))
 
 		index++
@@ -114,26 +110,28 @@ func (c *Consensus) newExecutionGadget(sequence int) {
 		}
 	}
 
-	// check the number of executions
-	if sequence := c.shouldCheckpoint(); sequence > 0 {
+	// check if we can checkpoint on this node
+	if target, ok, preprepares := c.canCheckpoint(); ok {
 		checkpointMsg := pbft.CheckpointMsg{
-			SequenceNumber: int64(sequence),
-			NodeId:         c.memory.GetNodeId(),
+			SequenceNumber:     int64(target),
+			NodeId:             c.memory.GetNodeId(),
+			PreprepareMessages: preprepares,
 		}
 
+		// send checkpoint message and notify our own handler
 		c.communication.SendCheckpoint(&checkpointMsg)
-		c.consensusHandlersTable[enum.PktCP] <- models.NewPacket(&checkpointMsg, enum.PktCP, sequence)
+		c.SignalToHandlers(models.NewPacket(&checkpointMsg, enum.PktCP, target))
 	}
 }
 
-// newViewChangeModeGadget stops the node for view change.
-func (c *Consensus) newViewChangeModeGadget() {
+// startViewChangeGadget stops the node for view change process.
+func (c *Consensus) startViewChangeGadget() {
 	c.inViewChangeMode = true
 	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
 
 	go func() {
 		for {
-			if err := c.newViewChangeGadget(); err == nil {
+			if err := c.viewChangeGadget(); err == nil {
 				return
 			}
 
@@ -142,31 +140,28 @@ func (c *Consensus) newViewChangeModeGadget() {
 	}()
 }
 
-// newViewChangeGadget gets a count number of view-change messages and starts view change procedure.
-func (c *Consensus) newViewChangeGadget() error {
-	// change the view to stop processing requests
-	c.memory.IncView()
-
+// viewChangeGadget starts a view change procedure.
+func (c *Consensus) viewChangeGadget() error {
+	// get the current view and increase it
 	view := c.memory.GetView()
-	lwm := c.memory.GetLowWaterMark()
-	seq := c.logs.GetSequenceNumber(lwm)
+	view++
 
-	// create a new view change msg
+	// create a view change message
 	message := pbft.ViewChangeMsg{
-		NodeId:         c.memory.GetNodeId(),
-		View:           int64(view),
-		SequenceNumber: int64(seq),
-		Preprepares:    c.logs.GetPreprepares(seq, lwm),
-		Checkpoints:    c.logs.GetCheckpoints()[lwm],
+		NodeId:             c.memory.GetNodeId(),
+		View:               int64(view),
+		SequenceNumber:     int64(c.logs.GetLastCheckpoint()),
+		CheckpointMessages: c.logs.GetLastCheckpointMsgs(),
+		PreprepareMessages: c.logs.GetPrepreparesAfterCheckpoint(),
 	}
 
-	// sign the message
-	sig, err := tbls.Sign(c.suite, c.tss, []byte(hashing.MD5View(&message)))
+	// sign the message by using its digest
+	sig, err := tbls.Sign(c.suite, c.tss, []byte(hashing.MD5HashViewMsg(&message)))
 	if err != nil {
 		c.logger.Error("failed to sign the view message", zap.Error(err))
 	}
 
-	// set the signature
+	// set the signature message
 	message.Signature = sig
 
 	// append own view change msg
@@ -179,11 +174,11 @@ func (c *Consensus) newViewChangeGadget() error {
 	}
 
 	// create a new timer
+	flag := true
 	timer := modules.NewTimer(c.cfg.ViewChangeTimeout, time.Millisecond)
-	timer.Start(false)
+	timer.Start()
 
 	// wait for 2f+1 messages
-	flag := true
 	for {
 		if !flag {
 			break
@@ -195,22 +190,29 @@ func (c *Consensus) newViewChangeGadget() error {
 
 			if len(c.logs.GetViewChanges(view)) >= c.cfg.Majority {
 				flag = false
-				timer.Stop(false)
+				timer.Stop()
 			}
 		case <-timer.Notify(): // if the timer expired, return and reset the view timer
-			return errors.New("view change failed")
+			return errors.New("view change timeout")
 		}
 	}
+
+	// update the view
+	c.memory.SetView(view)
 
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
 		c.logger.Debug("new leader", zap.String("id", c.memory.GetNodeId()))
+
 		if !c.memory.GetByzantine() {
 			c.newLeaderGadget()
 		}
-	} else { // if the node is primary, it needs new-view message
-		timer = modules.NewTimer(c.cfg.ViewChangeTimeout, time.Millisecond)
-		flag = true
+	} else { // if the node is backup, it needs new-view message
+		var (
+			timer = modules.NewTimer(2*c.cfg.ViewChangeTimeout, time.Millisecond)
+			flag  = true
+			msg   *pbft.NewViewMsg
+		)
 
 		for {
 			if !flag {
@@ -219,24 +221,15 @@ func (c *Consensus) newViewChangeGadget() error {
 
 			select {
 			case raw := <-c.consensusHandlersTable[enum.PktNV]:
-				msg := raw.Payload.(*pbft.NewViewMsg)
-
-				// update the view
-				c.memory.SetView(int(msg.GetView()))
-
-				// set the message for view change
-				c.logs.AppendNewView(int(msg.GetView()), msg)
-
-				// update the log
-				for _, msg := range msg.GetPreprepares() {
-					c.logs.SetRequest(int(msg.GetSequenceNumber()), msg.GetRequest())
-				}
-
+				msg = raw.Payload.(*pbft.NewViewMsg)
 				flag = false
+				timer.Stop()
 			case <-timer.Notify(): // if the timer expired, return and reset the view timer
-				return errors.New("view change failed")
+				return errors.New("leader didn't send new view")
 			}
 		}
+
+		c.logs.AppendNewView(view, msg) // set the message for view change
 	}
 
 	// close our channel
@@ -258,16 +251,15 @@ func (c *Consensus) newLeaderGadget() {
 	logsMap := make(map[int]*pbft.PrePrepareMsg)
 
 	// set the min and max
-	lwm := c.memory.GetLowWaterMark()
-	minSequence := c.logs.GetSequenceNumber(lwm)
-	maxSequence := c.logs.GetSequenceNumber(lwm)
+	minSequence := c.logs.GetLastCheckpoint()
+	maxSequence := c.logs.GetLastCheckpoint()
 
 	var (
 		message   *pbft.ViewChangeMsg
 		sigShares [][]byte
 	)
 
-	// loop in all messages
+	// loop in all view change messages
 	for _, msg := range messages {
 		sequence := int(msg.GetSequenceNumber())
 
@@ -275,7 +267,7 @@ func (c *Consensus) newLeaderGadget() {
 		sigShares = append(sigShares, []byte(msg.GetSignature()))
 
 		// loop over preprepares to insert them inside a logs map
-		for _, pp := range msg.GetPreprepares() {
+		for _, pp := range msg.GetPreprepareMessages() {
 			logsMap[int(pp.GetSequenceNumber())] = pp
 		}
 
@@ -301,7 +293,7 @@ func (c *Consensus) newLeaderGadget() {
 	}
 
 	// get view digest
-	digest := hashing.MD5View(message)
+	digest := hashing.MD5HashViewMsg(message)
 
 	// recover the full signature
 	sig, err := tbls.Recover(c.suite, c.pub, []byte(digest), sigShares[:c.cfg.Majority], c.cfg.Majority, c.cfg.Total)
@@ -317,12 +309,11 @@ func (c *Consensus) newLeaderGadget() {
 
 	// create a new view message
 	newViewMsg := pbft.NewViewMsg{
-		View:        int64(view),
-		NodeId:      c.memory.GetNodeId(),
-		Preprepares: requests,
-		Messages:    messages,
-		Message:     digest,
-		Shares:      sigShares,
+		View:               int64(view),
+		NodeId:             c.memory.GetNodeId(),
+		ViewchangeMessage:  digest,
+		PreprepareMessages: requests,
+		Shares:             sigShares,
 	}
 
 	// save the entry
@@ -333,6 +324,6 @@ func (c *Consensus) newLeaderGadget() {
 
 	// start the protocol for every request
 	for _, req := range requests {
-		c.newProcessingGadet(int(req.GetSequenceNumber()), req)
+		c.msgProcessingGadget(int(req.GetSequenceNumber()), req)
 	}
 }

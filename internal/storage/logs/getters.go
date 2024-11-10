@@ -88,3 +88,8 @@ func (l *Logs) GetCheckpoints() map[int][]*pbft.CheckpointMsg {
 func (l *Logs) GetLastCheckpoint() int {
 	return l.lastCheckpoint
 }
+
+// GetLastCheckpoint messages returns a list of checkpoints certificates.
+func (l *Logs) GetLastCheckpointMsgs() []*pbft.CheckpointMsg {
+	return l.checkpoints[l.lastCheckpoint]
+}

@@ -74,18 +74,16 @@ message AckMsg {
 message CheckpointMsg {
   int64 sequence_number = 1;
   string node_id = 2;
-  string preprepare_message = 3;
-  repeated bytes shares = 4;
-  repeated PrePrepareMsg preprepare_messages = 5;
+  repeated PrePrepareMsg preprepare_messages = 3;
 }
 
 // view chane message will be used in view changing procedure.
 message ViewChangeMsg {
-  CheckpointMsg checkpoint = 1;
-  int64 view = 2;
-  int64 sequence_number = 3;
-  string node_id = 4;
-  bytes signature = 5;
+  int64 view = 1;
+  int64 sequence_number = 2;
+  string node_id = 3;
+  bytes signature = 4;
+  repeated CheckpointMsg checkpoint_messages = 5;
   repeated PrePrepareMsg preprepare_messages = 6;
 }
 

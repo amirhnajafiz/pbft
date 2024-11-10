@@ -5,6 +5,7 @@ import (
 	"github.com/f24-cse535/pbft/pkg/enum"
 	"github.com/f24-cse535/pbft/pkg/models"
 	"github.com/f24-cse535/pbft/pkg/rpc/pbft"
+	"go.dedis.ch/kyber/v4/sign/tbls"
 
 	"go.uber.org/zap"
 )
@@ -39,12 +40,25 @@ func (c *Consensus) preprepareHandler() {
 		c.logs.SetRequest(raw.Sequence, msg.GetRequest(), msg)
 		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_PP)
 
-		// call preprepared RPC to notify the sender
-		c.communication.Client().PrePrepared(msg.GetNodeId(), &pbft.AckMsg{
+		// build the ack message
+		ackMsg := &pbft.AckMsg{
 			View:           int64(c.memory.GetView()),
 			SequenceNumber: int64(raw.Sequence),
 			Digest:         digest,
-		})
+			Sign:           nil,
+		}
+
+		// sign the message is not byzantine
+		if !c.memory.GetByzantine() {
+			// sign the message by using its digest
+			sig, err := tbls.Sign(c.suite, c.tss, []byte(digest))
+			if err == nil {
+				ackMsg.Sign = sig
+			}
+		}
+
+		// call preprepared RPC to notify the sender
+		c.communication.Client().PrePrepared(msg.GetNodeId(), ackMsg)
 	}
 }
 
@@ -94,6 +108,7 @@ func (c *Consensus) commitHandler() {
 	for {
 		// get raw C packets
 		raw := <-c.consensusHandlersTable[enum.PktCmt]
+		msg := raw.Payload.(*pbft.AckMsg)
 
 		// don't accept messages in view change mode
 		if c.inViewChangeMode {
@@ -104,7 +119,11 @@ func (c *Consensus) commitHandler() {
 		c.viewTimer.Start()
 
 		// update the request and set the status of prepare
-		c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		if msg.Optimized && !c.memory.GetByzantine() {
+			c.logs.SetRequestStatusForce(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		} else {
+			c.logs.SetRequestStatus(raw.Sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+		}
 
 		// stop the timer
 		c.viewTimer.Stop()

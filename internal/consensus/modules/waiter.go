@@ -25,10 +25,11 @@ func NewWaiter(cfg *bft.Config) *Waiter {
 }
 
 // NewPrePreparedWaiter takes packets from a channel until it gets 2f+1 matching preprepared messages.
-func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.PacketType, validator Validator) int {
+func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.PacketType, validator Validator) (int, int) {
 	// create a list of messages and nodes
 	messages := make(map[string]int)
 	nodes := make(map[string]bool)
+	signed := 0
 
 	// create a new timer, time start flag, and a target holder
 	var (
@@ -56,6 +57,10 @@ func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.Packe
 					continue
 				}
 
+				if msg.GetSign() != nil && len(msg.GetSign()) > 0 {
+					signed++
+				}
+
 				digest := msg.GetDigest()
 				if _, ok := messages[digest]; !ok {
 					messages[digest] = 1
@@ -63,7 +68,7 @@ func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.Packe
 					messages[digest]++
 				}
 			case <-timer.C:
-				return messages[target]
+				return messages[target], signed
 			}
 		} else {
 			intr := <-channel
@@ -81,6 +86,10 @@ func (w *Waiter) StartWaiting(channel chan *models.Packet, targetType enum.Packe
 				nodes[msg.GetNodeId()] = true
 			} else {
 				continue
+			}
+
+			if msg.GetSign() != nil && len(msg.GetSign()) > 0 {
+				signed++
 			}
 
 			digest := msg.GetDigest()

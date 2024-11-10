@@ -94,6 +94,13 @@ func (l *Logs) SetRequestStatus(index int, status pbft.RequestStatus) {
 	l.datastoreLock.Unlock()
 }
 
+// SetRequestStatusForce accepts an index and status, and updates it.
+func (l *Logs) SetRequestStatusForce(index int, status pbft.RequestStatus) {
+	l.datastoreLock.Lock()
+	l.datastore[index].Request.Status = status
+	l.datastoreLock.Unlock()
+}
+
 // AppendCheckpoint adds a new checkpoint log.
 func (l *Logs) AppendCheckpoint(key int, list []*pbft.CheckpointMsg) {
 	l.checkpointsLock.Lock()

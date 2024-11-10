@@ -49,17 +49,23 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 		return
 	}
 
-	// wait for 2f+1 preprepared messages (count our own)
-	c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget)
+	optimized := false
 
-	go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
+	// wait for preprepared messages (count our own)
+	_, signed := c.waiter.StartWaiting(channel, enum.PktPPed, c.ackMsgReceivedGadget)
+	if !c.memory.GetByzantine() && signed+1 == c.cfg.Total {
+		optimized = true
+		c.logger.Debug("reducing phases (optimized mode)", zap.Int("signes", signed+1))
+	} else {
+		// callback protocol waits for 2f+1 prepare messages
+		go c.communication.SendPrepareMsg(sequence, c.memory.GetView(), msg.GetDigest())
+		c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
 
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
-
-	c.waiter.StartWaiting(channel, enum.PktPed, c.ackMsgReceivedGadget)
+		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_P)
+	}
 
 	// broadcast to all using commit
-	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest())
+	go c.communication.SendCommitMsg(sequence, c.memory.GetView(), msg.GetDigest(), optimized)
 
 	// delete our input channel as soon as possible
 	c.lock.Lock()
@@ -67,7 +73,11 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	c.lock.Unlock()
 
 	// update our own status
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	if optimized && !c.memory.GetByzantine() {
+		c.logs.SetRequestStatusForce(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	} else {
+		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	}
 
 	// send the sequence to the execute handler
 	c.executionChannel <- sequence

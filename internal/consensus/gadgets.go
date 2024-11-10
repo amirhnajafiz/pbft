@@ -38,6 +38,8 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	c.requestsHandlersTable[sequence] = channel
 	c.lock.Unlock()
 
+	c.logger.Debug("msg processing gadget activated", zap.Int("sequence", sequence), zap.Int64("timestamp", msg.GetRequest().GetTransaction().GetTimestamp()))
+
 	go c.communication.SendPreprepareMsg(msg) // send preprepare messages
 
 	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_PP) // update our own status
@@ -70,7 +72,11 @@ func (c *Consensus) msgProcessingGadget(sequence int, msg *pbft.PrePrepareMsg) {
 	c.lock.Unlock()
 
 	// update our own status
-	c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	if optimized {
+		c.logs.SetRequestStatusByForce(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	} else {
+		c.logs.SetRequestStatus(sequence, pbft.RequestStatus_REQUEST_STATUS_C)
+	}
 
 	// send the sequence to the execute handler
 	c.executionChannel <- sequence
@@ -290,8 +296,10 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	// collect all requets that are prepared
 	for i := minSequence; i <= maxSequence; i++ {
 		if item := c.logs.GetPreprepare(i); item != nil {
+			item.View = int64(view)
 			requests = append(requests, item)
 		} else if item, ok := logsMap[i]; ok {
+			item.View = int64(view)
 			requests = append(requests, item)
 		}
 	}

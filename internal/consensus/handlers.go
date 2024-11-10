@@ -25,12 +25,13 @@ func (c *Consensus) preprepareHandler() {
 		c.viewTimer.Start()
 
 		// if the input request is not in watermark, don't accept it
-		if raw.Sequence < c.logs.GetLastCheckpoint() || raw.Sequence > c.logs.GetHighWaterMark() {
+		if raw.Sequence > c.logs.GetHighWaterMark() {
 			continue
 		}
 
 		digest := hashing.MD5HashRequestMsg(msg.GetRequest()) // get the digest of request
 		if !c.validateMsg(digest, msg.GetDigest(), msg.GetView()) {
+			c.logger.Warn("preprepare message is not valid", zap.Int64("view", msg.GetView()), zap.Int("sequence number", raw.Sequence))
 			continue
 		}
 

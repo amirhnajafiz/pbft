@@ -34,6 +34,7 @@ func (p *PBFT) Commit(ctx context.Context, msg *pbft.AckMsg) (*emptypb.Empty, er
 
 // PrePrepare RPC generates a packet for consensus' preprepare handler.
 func (p *PBFT) PrePrepare(ctx context.Context, msg *pbft.PrePrepareMsg) (*emptypb.Empty, error) {
+	p.Logger.Debug("input preprepare", zap.String("message", msg.String()))
 	p.Logs.AppendLog("PrePrepare", msg.String())
 	p.Consensus.SignalToHandlers(models.NewPacket(msg, enum.PktPP, int(msg.GetSequenceNumber())))
 

@@ -131,6 +131,11 @@ func (c *Consensus) enterViewChangeGadget() {
 
 	go func() {
 		for {
+			if c.stop {
+				c.stop = false
+				return
+			}
+
 			if err := c.viewChangeGadget(); err == nil || errors.Is(err, errViewChangeMajority) {
 				return
 			} else {

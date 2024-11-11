@@ -42,9 +42,10 @@ func (b *Bootstrap) ListenAnsServer(port int, creds *tls.Config) error {
 
 	// register all gRPC services
 	liveness.RegisterLivenessServer(server, &services.Liveness{
-		Memory: b.Memory,
-		Logs:   b.Logs,
-		Logger: b.Logger.Named("liveness"),
+		Consensus: b.Consensus,
+		Memory:    b.Memory,
+		Logs:      b.Logs,
+		Logger:    b.Logger.Named("liveness"),
 	})
 	pbft.RegisterPBFTServer(server, &services.PBFT{
 		Consensus: b.Consensus,

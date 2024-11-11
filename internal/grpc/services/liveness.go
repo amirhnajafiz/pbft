@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/f24-cse535/pbft/internal/consensus"
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/storage/logs"
 	"github.com/f24-cse535/pbft/pkg/rpc/liveness"
@@ -16,9 +17,10 @@ import (
 type Liveness struct {
 	liveness.UnimplementedLivenessServer
 
-	Memory *local.Memory
-	Logs   *logs.Logs
-	Logger *zap.Logger
+	Consensus *consensus.Consensus
+	Memory    *local.Memory
+	Logs      *logs.Logs
+	Logger    *zap.Logger
 }
 
 // Ping RPC is used to check if a server is alive and can process or not.
@@ -40,6 +42,7 @@ func (l *Liveness) ChangeStatus(ctx context.Context, input *liveness.StatusMsg) 
 
 // Flush is used to remove everything from the node's memory.
 func (l *Liveness) Flush(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	l.Consensus.Stop()
 	l.Memory.Reset()
 	l.Logs.Reset()
 

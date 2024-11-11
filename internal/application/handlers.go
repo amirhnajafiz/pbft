@@ -71,7 +71,7 @@ func (a *App) requestHandler(client string, trx *pbft.TransactionMsg) string {
 	if err != nil {
 		flag := false
 
-		for i := 0; i < 3; i++ {
+		for i := 0; i < a.cfg.ClientRetrys; i++ {
 			// if the number of live servers is less than 2f+1, then raise an error
 			if count := a.broadcastRequest(req); count < a.cfg.Majority {
 				return enum.RespNotEnoughServers

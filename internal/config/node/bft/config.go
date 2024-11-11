@@ -2,6 +2,7 @@ package bft
 
 // Config stores BFT protocl parameters.
 type Config struct {
+	ClientRetrys      int `konaf:"client_retrys"`
 	KWatermark        int `koanf:"k_watermark"`
 	Checkpoint        int `koanf:"checkpoint"`
 	Total             int `koanf:"total"`              // 3f+1

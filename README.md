@@ -1,6 +1,10 @@
 # PBFT
 
-Theis project is for implementing a version of the PBFT (Practical Byzantine Fault Tolerance) consensus protocol. PBFT can achieve consensus with a minimum of 3f + 1 nodes, where *f* represents the maximum number of faulty (Byzantine) nodes that may be present at the same time. In this project, I implement the normal operation and the view-change routine of a BFT protocol called linear-PBFT. Unlike PBFT, the normal operation of linear-PBFT achieves consensus with linear communication complexity, though its view-change routine remains the same as in PBFT. Similar to the first project, a basic distributed banking application will be used; however, in this case, all client requests will be handled by all nodes.
+Theis project is for implementing a version of the PBFT (Practical Byzantine Fault Tolerance) consensus protocol. PBFT can achieve consensus with a minimum of 3f + 1 nodes, where *f* represents the maximum number of faulty (Byzantine) nodes that may be present at the same time.
+
+In this project, I implement the normal operation and the view-change routine of a BFT protocol called linear-PBFT. Unlike PBFT, the normal operation of linear-PBFT achieves consensus with linear communication complexity, though its view-change routine remains the same as in PBFT.
+
+Similar to the `APAXOS` project, a basic distributed banking application will be used; however, in this case, all client requests will be handled by all nodes.
 
 ## Requirements
 
@@ -19,9 +23,9 @@ Theis project is for implementing a version of the PBFT (Practical Byzantine Fau
 - Checkpointing
 - Threshold Signature
 
-## Example Config
+## Compile and Run
 
-You can run `app`, `node`, and `controllers` commands by specifing a config file path. An example config file:
+You can use `go build -o main` to create a runnable file. After that, you can run `app`, `node`, and `controllers` commands by specifing a config file path. An example config file:
 
 ```yaml
 # ctl files is a list of config files for controller app
@@ -68,6 +72,9 @@ node:
   port: 6001
   node_id: client
   bft: # pbft configs
+    client_retrys: 5
+    k_watermark: 100
+    checkpoint: 2
     total: 4
     majority: 3
     responses: 2
@@ -80,10 +87,14 @@ node:
 
 ## Schema
 
-In here you can see system, components, and core (aka app) logic.
+In the following diagrams, you can see system, consensus, and core (aka app) logic.
 
 ![system](.github/assets/CSE-535-bflow.drawio.png)
 
+---
+
 ![consensus](.github/assets/CSE-535-consensus.drawio.png)
+
+---
 
 ![core / app](.github/assets/CSE-535-core.drawio.png)

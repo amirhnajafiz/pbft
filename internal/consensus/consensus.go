@@ -36,7 +36,6 @@ type Consensus struct {
 	suite *bn256.Suite
 	pub   *share.PubPoly
 
-	stop                    bool                     // stop is used when flushing the system
 	inViewChangeMode        bool                     // a flag for in view change mode
 	viewChangeGadgetChannel chan *pbft.ViewChangeMsg // view change gadget channel forwards the view change messages
 
@@ -68,7 +67,6 @@ func NewConsensus(
 		suite:            suite,
 		tss:              share,
 		pub:              pub,
-		stop:             false,
 	}
 
 	// create consensus modules
@@ -116,23 +114,4 @@ func (c *Consensus) SignalToReqHandlers(pkt *models.Packet) {
 	} else if ch, ok := c.requestsHandlersTable[pkt.Sequence]; ok {
 		ch <- pkt // if the request handler exists, pass the packet to it
 	}
-}
-
-// Stop is used when the consensus is stuck in view change.
-func (c *Consensus) Stop() {
-	c.lock.Lock()
-	c.stop = true
-	c.viewTimer.Stop()
-	c.executionChannel = make(chan int)
-	c.inViewChangeMode = false
-	c.viewChangeGadgetChannel = make(chan *pbft.ViewChangeMsg)
-	c.consensusHandlersTable = map[enum.PacketType]chan *models.Packet{
-		enum.PktPP:  make(chan *models.Packet, c.cfg.Total), // size of total
-		enum.PktP:   make(chan *models.Packet, c.cfg.Total), // size of total
-		enum.PktCmt: make(chan *models.Packet, c.cfg.Total), // size of total
-		enum.PktVC:  make(chan *models.Packet, c.cfg.Total), // size of total
-		enum.PktNV:  make(chan *models.Packet, c.cfg.Total), // size of total
-		enum.PktCP:  make(chan *models.Packet, c.cfg.Total), // size of total
-	}
-	c.lock.Unlock()
 }

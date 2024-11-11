@@ -137,7 +137,7 @@ func (c *Consensus) enterViewChangeGadget() {
 				c.logger.Error("view change failed", zap.Error(err))
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10000 * time.Millisecond)
 		}
 	}()
 }
@@ -205,10 +205,10 @@ func (c *Consensus) viewChangeGadget() error {
 	// update the node view
 	c.memory.SetView(view)
 
+	c.logger.Info("new leader elected", zap.String("leader id", c.getCurrentLeader()))
+
 	// if the node is the leader, run a new leader gadget
 	if c.getCurrentLeader() == c.memory.GetNodeId() {
-		c.logger.Info("new leader elected", zap.String("id", c.memory.GetNodeId()))
-
 		if !c.memory.GetByzantine() {
 			c.newViewLeaderGadget(view)
 		}

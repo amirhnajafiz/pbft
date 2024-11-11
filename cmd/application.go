@@ -14,6 +14,7 @@ import (
 	"github.com/f24-cse535/pbft/internal/storage/local"
 	"github.com/f24-cse535/pbft/internal/utils/lists"
 	"github.com/f24-cse535/pbft/internal/utils/parser"
+	"github.com/f24-cse535/pbft/pkg/models"
 
 	"go.uber.org/zap"
 )
@@ -122,6 +123,8 @@ func (a Application) terminal(app *application.App) {
 			for key := range a.Cfg.GetNodes() { // reset only the nodes status (without flushing)
 				app.Client().ChangeState(key, true, false)
 			}
+		case "dumb":
+			app.Transaction(&models.Transaction{Sender: "A", Receiver: "A", Amount: 0})
 		case "printlog":
 			for _, item := range app.Client().PrintLog(parts[1]) {
 				fmt.Printf("- %s\n", item)

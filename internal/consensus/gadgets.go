@@ -244,11 +244,7 @@ func (c *Consensus) newViewBackupGadget(view int) error {
 	c.logs.AppendNewView(view, msg) // set the message for view change
 
 	// update our logs
-	for _, req := range msg.GetPreprepareMessages() {
-		if req.Request == nil {
-			c.logs.ResetRequest(int(req.GetSequenceNumber()))
-		}
-	}
+	c.logs.StashPreprepares()
 
 	return nil
 }
@@ -330,11 +326,7 @@ func (c *Consensus) newViewLeaderGadget(view int) {
 	c.communication.SendNewViewMsg(&newViewMsg)
 
 	// update our logs
-	for _, req := range preprepareMessages {
-		if req.Request == nil {
-			c.logs.ResetRequest(int(req.GetSequenceNumber()))
-		}
-	}
+	c.logs.StashPreprepares()
 
 	// start the protocol for every request
 	for _, req := range preprepareMessages {

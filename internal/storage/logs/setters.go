@@ -101,6 +101,17 @@ func (l *Logs) SetRequestStatusForce(index int, status pbft.RequestStatus) {
 	l.datastoreLock.Unlock()
 }
 
+// StashPreprepares removes all preprepare messages.
+func (l *Logs) StashPreprepares() {
+	l.datastoreLock.Lock()
+	for key, value := range l.datastore {
+		if value.Request.GetStatus() == pbft.RequestStatus_REQUEST_STATUS_PP {
+			delete(l.datastore, key)
+		}
+	}
+	l.datastoreLock.Unlock()
+}
+
 // AppendCheckpoint adds a new checkpoint log.
 func (l *Logs) AppendCheckpoint(key int, list []*pbft.CheckpointMsg) {
 	l.checkpointsLock.Lock()

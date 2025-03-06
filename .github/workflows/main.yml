@@ -1,0 +1,17 @@
+name: Submit Lab1
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**'
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'submit lab2')
+    steps:
+      - name: Notify server for submission
+        run: |
+          curl -X POST https://www.paxsync.com/submit-lab \
+          -H "Content-Type: application/json" \
+          -d '{"student_repo": "${{ github.repository }}", "commit_id": "${{ github.sha }}"}'

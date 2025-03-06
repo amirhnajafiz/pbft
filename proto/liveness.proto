@@ -1,0 +1,19 @@
+syntax = "proto3";
+package liveness;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./rpc/liveness";
+
+// Liveness service is for node's liveness status management.
+service Liveness {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc ChangeStatus(StatusMsg) returns (google.protobuf.Empty) {}
+  rpc Flush(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+// liveness service messages
+message StatusMsg {
+  bool status = 1;
+  bool byzantine = 2;
+}
